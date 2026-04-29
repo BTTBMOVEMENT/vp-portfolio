@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import Image from "next/image";
 import { MotionConfig, motion, useScroll, useTransform } from "motion/react";
 
 const profile = {
@@ -47,24 +48,27 @@ const skills = [
 export default function Page() {
   const { scrollYProgress } = useScroll();
 
-  const heroRef = useRef<HTMLElement | null>(null);
+  const heroSceneRef = useRef<HTMLElement | null>(null);
+
   const { scrollYProgress: heroProgress } = useScroll({
-    target: heroRef,
-    offset: ["start start", "end start"],
+    target: heroSceneRef,
+    offset: ["start start", "end end"],
   });
 
-  const heroTextY = useTransform(heroProgress, [0, 1], [0, -120]);
-  const heroMetaY = useTransform(heroProgress, [0, 1], [0, -60]);
-  const heroTextOpacity = useTransform(heroProgress, [0, 0.7, 1], [1, 0.65, 0.2]);
+  const heroImageScale = useTransform(heroProgress, [0, 1], [1, 1.18]);
+  const heroImageY = useTransform(heroProgress, [0, 1], [0, 90]);
 
-  const heroVisualY = useTransform(heroProgress, [0, 1], [0, 110]);
-  const heroVisualScale = useTransform(heroProgress, [0, 1], [1, 1.12]);
+  const heroTitleY = useTransform(heroProgress, [0, 1], [0, -140]);
+  const heroMetaY = useTransform(heroProgress, [0, 1], [0, -70]);
+  const heroCopyOpacity = useTransform(heroProgress, [0, 0.75, 1], [1, 0.65, 0.18]);
 
-  const heroOverlayOpacity = useTransform(heroProgress, [0, 1], [0.18, 0.55]);
-  const heroGhostY = useTransform(heroProgress, [0, 1], [0, -80]);
+  const heroOverlayOpacity = useTransform(heroProgress, [0, 1], [0.22, 0.62]);
 
-  const heroNavY = useTransform(heroProgress, [0, 1], [0, -40]);
-  const heroNavOpacity = useTransform(heroProgress, [0, 1], [1, 0.3]);
+  const ghostTextY = useTransform(heroProgress, [0, 1], [0, -90]);
+  const ghostTextOpacity = useTransform(heroProgress, [0, 0.7, 1], [0.14, 0.1, 0.03]);
+
+  const heroBottomY = useTransform(heroProgress, [0, 1], [0, -36]);
+  const heroBottomOpacity = useTransform(heroProgress, [0, 1], [1, 0.35]);
 
   return (
     <MotionConfig reducedMotion="user">
@@ -74,134 +78,119 @@ export default function Page() {
           style={{ scaleX: scrollYProgress }}
         />
 
-        <section ref={heroRef} id="hero" className="px-5 pb-10 pt-6 sm:px-8">
-          <div className="mx-auto flex min-h-screen max-w-6xl flex-col justify-between">
+        <section ref={heroSceneRef} id="hero" className="relative h-[180vh]">
+          <div className="sticky top-0 h-screen overflow-hidden border-b border-white/10 bg-black">
             <motion.div
-              className="flex items-center justify-between text-[11px] uppercase tracking-[0.28em] text-zinc-500"
-              initial={{ opacity: 0, y: -24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
+              style={{ scale: heroImageScale, y: heroImageY }}
+              className="absolute inset-0"
             >
-              <span>{profile.name}</span>
-              <span>Portfolio / 01</span>
+              <Image
+                src="/images/hero/hero-main.jpg"
+                alt="Hero still for BTTB Movement portfolio"
+                fill
+                sizes="100vw"
+                className="object-cover"
+              />
             </motion.div>
 
-            <div className="space-y-6 py-10">
-              <motion.p
-                style={{ y: heroMetaY, opacity: heroTextOpacity }}
-                className="text-[11px] uppercase tracking-[0.35em] text-zinc-400"
-              >
-                {profile.role}
-              </motion.p>
-
-              <motion.h1
-                style={{ y: heroTextY, opacity: heroTextOpacity }}
-                className="max-w-[10ch] text-5xl font-semibold leading-[0.92] sm:text-6xl md:max-w-[12ch] md:text-7xl lg:text-8xl"
-              >
-                {profile.headline}
-              </motion.h1>
-
-              <motion.p
-                style={{ y: heroMetaY, opacity: heroTextOpacity }}
-                className="max-w-md text-sm leading-7 text-zinc-300 sm:text-base"
-              >
-                {profile.intro}
-              </motion.p>
-            </div>
+            <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/25 to-black/80" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.14),transparent_28%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.10),transparent_22%)]" />
 
             <motion.div
-              initial={{ opacity: 0, y: 72, scale: 0.94 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 1.05, ease: "easeOut" }}
-              className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-900"
-            >
-              <motion.div
-                style={{ y: heroVisualY, scale: heroVisualScale }}
-                className="relative aspect-[4/5] sm:aspect-[16/10]"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-zinc-700 via-zinc-900 to-black" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.16),transparent_32%)]" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.08),transparent_28%)]" />
-                <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.07),transparent_30%,transparent_65%,rgba(255,255,255,0.04))]" />
+              style={{ opacity: heroOverlayOpacity }}
+              className="absolute inset-0 bg-black"
+            />
 
+            <div className="relative z-10 mx-auto flex h-full max-w-6xl flex-col justify-between px-5 pb-8 pt-6 sm:px-8">
+              <motion.div
+                initial={{ opacity: 0, y: -18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, ease: "easeOut" }}
+                className="flex items-center justify-between text-[11px] uppercase tracking-[0.28em] text-zinc-300"
+              >
+                <span>{profile.name}</span>
+                <span>Portfolio / 01</span>
+              </motion.div>
+
+              <div className="relative flex flex-1 items-center">
                 <motion.div
-                  style={{ y: heroGhostY }}
-                  className="absolute -right-2 bottom-0 select-none text-[28vw] font-semibold leading-none tracking-[-0.09em] text-white/[0.06]"
+                  style={{ y: ghostTextY, opacity: ghostTextOpacity }}
+                  className="pointer-events-none absolute -bottom-4 right-0 select-none text-[26vw] font-semibold leading-none tracking-[-0.08em] text-white"
                 >
                   BTTB
                 </motion.div>
 
-                <motion.div
-                  style={{ opacity: heroOverlayOpacity }}
-                  className="absolute inset-0 bg-black"
-                />
+                <div className="relative z-10 max-w-3xl space-y-6">
+                  <motion.p
+                    style={{ y: heroMetaY, opacity: heroCopyOpacity }}
+                    className="text-[11px] uppercase tracking-[0.35em] text-zinc-300"
+                  >
+                    {profile.role}
+                  </motion.p>
 
-                <div className="relative flex h-full flex-col justify-between p-6 sm:p-8">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-2">
-                      <p className="text-[11px] uppercase tracking-[0.3em] text-zinc-300">
-                        Hero Frame
-                      </p>
-                      <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
-                        Mobile-first cinematic direction
-                      </p>
-                    </div>
+                  <motion.h1
+                    style={{ y: heroTitleY, opacity: heroCopyOpacity }}
+                    className="max-w-[10ch] text-5xl font-semibold leading-[0.92] sm:text-6xl md:max-w-[12ch] md:text-7xl lg:text-8xl"
+                  >
+                    {profile.headline}
+                  </motion.h1>
 
-                    <div className="text-right text-[11px] uppercase tracking-[0.22em] text-zinc-500">
-                      <div>Frame 001</div>
-                      <div>2026</div>
-                    </div>
+                  <motion.p
+                    style={{ y: heroMetaY, opacity: heroCopyOpacity }}
+                    className="max-w-md text-sm leading-7 text-zinc-200 sm:text-base"
+                  >
+                    {profile.intro}
+                  </motion.p>
+                </div>
+              </div>
+
+              <motion.div
+                style={{ y: heroBottomY, opacity: heroBottomOpacity }}
+                className="space-y-5"
+              >
+                <div className="flex items-center justify-between gap-4 text-[11px] uppercase tracking-[0.24em] text-zinc-300">
+                  <div className="space-y-1">
+                    <div>Frame 001</div>
+                    <div className="text-zinc-500">Featured Hero Still</div>
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="max-w-[16rem] space-y-2">
-                      <p className="text-xs uppercase tracking-[0.25em] text-zinc-300">
-                        Placeholder visual designed to simulate depth before final key art is chosen
-                      </p>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-4 text-[11px] uppercase tracking-[0.22em] text-zinc-400">
-                      <span>Virtual Production</span>
-                      <span>Cinematography</span>
-                    </div>
-
-                    <div className="h-px w-full bg-white/20" />
+                  <div className="text-right">
+                    <div>Virtual Production</div>
+                    <div className="text-zinc-500">Cinematography</div>
                   </div>
                 </div>
-              </motion.div>
-            </motion.div>
 
-            <motion.div
-              style={{ y: heroNavY, opacity: heroNavOpacity }}
-              className="pt-6"
-            >
-              <nav className="flex flex-wrap gap-3 text-[11px] uppercase tracking-[0.25em] text-zinc-500">
-                <motion.a
-                  href="#works"
-                  whileTap={{ scale: 0.95 }}
-                  whileHover={{ y: -2 }}
-                  className="rounded-full border border-white/10 px-3 py-2 transition hover:border-white/30 hover:text-white"
-                >
-                  Works
-                </motion.a>
-                <motion.a
-                  href="#about"
-                  whileTap={{ scale: 0.95 }}
-                  whileHover={{ y: -2 }}
-                  className="rounded-full border border-white/10 px-3 py-2 transition hover:border-white/30 hover:text-white"
-                >
-                  About
-                </motion.a>
-                <motion.a
-                  href="#contact"
-                  whileTap={{ scale: 0.95 }}
-                  whileHover={{ y: -2 }}
-                  className="rounded-full border border-white/10 px-3 py-2 transition hover:border-white/30 hover:text-white"
-                >
-                  Contact
-                </motion.a>
-              </nav>
-            </motion.div>
+                <div className="h-px w-full bg-white/20" />
+
+                <nav className="flex flex-wrap gap-3 text-[11px] uppercase tracking-[0.25em] text-zinc-300">
+                  <motion.a
+                    href="#works"
+                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ y: -2 }}
+                    className="rounded-full border border-white/15 px-3 py-2 transition hover:border-white/40 hover:text-white"
+                  >
+                    Works
+                  </motion.a>
+                  <motion.a
+                    href="#about"
+                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ y: -2 }}
+                    className="rounded-full border border-white/15 px-3 py-2 transition hover:border-white/40 hover:text-white"
+                  >
+                    About
+                  </motion.a>
+                  <motion.a
+                    href="#contact"
+                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ y: -2 }}
+                    className="rounded-full border border-white/15 px-3 py-2 transition hover:border-white/40 hover:text-white"
+                  >
+                    Contact
+                  </motion.a>
+                </nav>
+              </motion.div>
+            </div>
           </div>
         </section>
 
@@ -223,8 +212,8 @@ export default function Page() {
               </h2>
 
               <p className="max-w-xl text-sm leading-7 text-zinc-300 sm:text-base">
-                The hero is now scroll-linked, while the rest of the page keeps the current
-                reveal behavior.
+                The hero is now pinned visually for a longer scroll so the typography and image
+                can finish their motion before the page continues.
               </p>
             </motion.div>
 
@@ -395,7 +384,7 @@ export default function Page() {
               viewport={{ amount: 0.4 }}
               transition={{ duration: 0.75, ease: "easeOut" }}
             >
-              {profile.name} / Hero cinematic polish
+              {profile.name} / Sticky hero step 20
             </motion.footer>
           </div>
         </section>

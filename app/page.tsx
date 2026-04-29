@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { MotionConfig, motion, useScroll } from "motion/react";
 
 const profile = {
@@ -19,18 +20,24 @@ const projects = [
     year: "2026",
     role: "Virtual Production, Fake Documentary / DP",
     description: "Greenscreen Virtual Production with In-Camera VFX test project",
+    image: "/images/projects/jesus-is-christ-cover.jpg",
+    alt: "Cover still for Jesus is Christ",
   },
   {
     title: "the King of kings",
     year: "2027",
     role: "Virtual Production, Cinematography / DP",
     description: "the First Virtual Production with Unreal Engine",
+    image: "/images/projects/the-king-of-kings-cover.jpg",
+    alt: "Cover still for the King of kings",
   },
   {
     title: "Trinity",
     year: "2027",
     role: "Documentary / DP",
     description: "Previs-to-final visual development with a clean case-study structure.",
+    image: "/images/projects/trinity-cover.jpg",
+    alt: "Cover still for Trinity",
   },
 ];
 
@@ -58,9 +65,10 @@ export default function Page() {
           <div className="mx-auto flex min-h-screen max-w-6xl flex-col justify-between">
             <motion.div
               className="flex items-center justify-between text-[11px] uppercase tracking-[0.28em] text-zinc-500"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
+              initial={{ opacity: 0, y: -24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ amount: 0.8 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
             >
               <span>{profile.name}</span>
               <span>Portfolio / 01</span>
@@ -68,9 +76,10 @@ export default function Page() {
 
             <motion.div
               className="space-y-6 py-10"
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
+              initial={{ opacity: 0, y: 56, scale: 0.98 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              viewport={{ amount: 0.35 }}
+              transition={{ duration: 0.95, ease: "easeOut" }}
             >
               <p className="text-[11px] uppercase tracking-[0.35em] text-zinc-400">
                 {profile.role}
@@ -87,25 +96,34 @@ export default function Page() {
 
             <motion.div
               className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-900"
-              initial={{ opacity: 0, scale: 0.98, y: 24 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ duration: 0.9, ease: "easeOut", delay: 0.2 }}
+              initial={{ opacity: 0, y: 72, scale: 0.94 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              viewport={{ amount: 0.25 }}
+              transition={{ duration: 1.05, ease: "easeOut" }}
             >
               <div className="relative aspect-[4/5] sm:aspect-[16/10]">
-                <div className="absolute inset-0 bg-gradient-to-b from-zinc-800 via-zinc-900 to-black" />
-                <div className="absolute -left-10 top-10 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
-                <div className="absolute -right-10 bottom-8 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
+                <Image
+                  src="/images/hero/hero-main.jpg"
+                  alt="Hero still for BTTB Movement portfolio"
+                  fill
+                  sizes="(max-width: 640px) 100vw, 1200px"
+                  className="object-cover"
+                />
+
+                <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/30 to-black/80" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.14),transparent_30%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.08),transparent_25%)]" />
 
                 <div className="relative flex h-full flex-col justify-between p-6 sm:p-8">
-                  <span className="text-[11px] uppercase tracking-[0.3em] text-zinc-400">
-                    Hero Visual Placeholder
+                  <span className="text-[11px] uppercase tracking-[0.3em] text-zinc-300">
+                    Featured Hero Still
                   </span>
 
                   <div className="space-y-3">
-                    <p className="text-xs uppercase tracking-[0.25em] text-zinc-500">
-                      Later replace this block with a still frame or showreel poster
+                    <p className="max-w-xs text-xs uppercase tracking-[0.25em] text-zinc-300">
+                      Mobile-first visual presentation for Virtual Production and Cinematography
                     </p>
-                    <div className="h-px w-full bg-white/10" />
+                    <div className="h-px w-full bg-white/20" />
                   </div>
                 </div>
               </div>
@@ -113,28 +131,32 @@ export default function Page() {
 
             <motion.div
               className="pt-6"
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: "easeOut", delay: 0.3 }}
+              initial={{ opacity: 0, y: 36 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ amount: 0.8 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
             >
               <nav className="flex flex-wrap gap-3 text-[11px] uppercase tracking-[0.25em] text-zinc-500">
                 <motion.a
                   href="#works"
-                  whileTap={{ scale: 0.97 }}
+                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ y: -2 }}
                   className="rounded-full border border-white/10 px-3 py-2 transition hover:border-white/30 hover:text-white"
                 >
                   Works
                 </motion.a>
                 <motion.a
                   href="#about"
-                  whileTap={{ scale: 0.97 }}
+                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ y: -2 }}
                   className="rounded-full border border-white/10 px-3 py-2 transition hover:border-white/30 hover:text-white"
                 >
                   About
                 </motion.a>
                 <motion.a
                   href="#contact"
-                  whileTap={{ scale: 0.97 }}
+                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ y: -2 }}
                   className="rounded-full border border-white/10 px-3 py-2 transition hover:border-white/30 hover:text-white"
                 >
                   Contact
@@ -148,10 +170,10 @@ export default function Page() {
           <div className="mx-auto max-w-6xl">
             <motion.div
               className="mb-10 space-y-4"
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 70 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.25 }}
-              transition={{ duration: 0.7, ease: "easeOut" }}
+              viewport={{ amount: 0.2 }}
+              transition={{ duration: 0.9, ease: "easeOut" }}
             >
               <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-400">
                 Selected Works
@@ -162,8 +184,8 @@ export default function Page() {
               </h2>
 
               <p className="max-w-xl text-sm leading-7 text-zinc-300 sm:text-base">
-                This section is now motion-enabled, but still intentionally restrained.
-                We are adding reveal behavior first before more advanced scroll storytelling.
+                The placeholders are now replaced with actual project stills so the page reads
+                like a real portfolio, not a wireframe.
               </p>
             </motion.div>
 
@@ -171,23 +193,38 @@ export default function Page() {
               {projects.map((project, index) => (
                 <motion.article
                   key={project.title}
-                  className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03]"
-                  initial={{ opacity: 0, y: 36 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.2 }}
+                  className="group overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03]"
+                  initial={{ opacity: 0, y: 90, scale: 0.94 }}
+                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                  viewport={{ amount: 0.18 }}
                   transition={{
-                    duration: 0.65,
+                    duration: 0.9,
                     ease: "easeOut",
                     delay: index * 0.08,
                   }}
                 >
                   <div className="relative aspect-[4/5] overflow-hidden border-b border-white/10 bg-zinc-900">
-                    <div className="absolute inset-0 bg-gradient-to-b from-zinc-800 via-zinc-900 to-black" />
-                    <div className="absolute left-6 top-6 text-[11px] uppercase tracking-[0.28em] text-zinc-400">
-                      Visual Placeholder
+                    <Image
+                      src={project.image}
+                      alt={project.alt}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                    />
+
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/20 to-black/75" />
+
+                    <div className="absolute left-6 top-6 text-[11px] uppercase tracking-[0.28em] text-zinc-300">
+                      {project.year}
                     </div>
+
                     <div className="absolute bottom-6 left-6 right-6">
-                      <div className="h-px w-full bg-white/10" />
+                      <div className="space-y-2">
+                        <p className="text-[11px] uppercase tracking-[0.22em] text-zinc-300">
+                          Featured Still
+                        </p>
+                        <div className="h-px w-full bg-white/20" />
+                      </div>
                     </div>
                   </div>
 
@@ -216,10 +253,10 @@ export default function Page() {
           <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.1fr_0.9fr]">
             <motion.div
               className="space-y-5"
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 72 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.25 }}
-              transition={{ duration: 0.7, ease: "easeOut" }}
+              viewport={{ amount: 0.2 }}
+              transition={{ duration: 0.9, ease: "easeOut" }}
             >
               <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-400">About</p>
 
@@ -242,10 +279,10 @@ export default function Page() {
 
             <motion.div
               className="space-y-5"
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 72 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.25 }}
-              transition={{ duration: 0.7, ease: "easeOut", delay: 0.1 }}
+              viewport={{ amount: 0.2 }}
+              transition={{ duration: 0.9, ease: "easeOut", delay: 0.08 }}
             >
               <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-400">Focus</p>
 
@@ -254,11 +291,11 @@ export default function Page() {
                   <motion.span
                     key={skill}
                     className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-200"
-                    initial={{ opacity: 0, y: 18 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.2 }}
+                    initial={{ opacity: 0, y: 36, scale: 0.95 }}
+                    whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                    viewport={{ amount: 0.15 }}
                     transition={{
-                      duration: 0.45,
+                      duration: 0.65,
                       ease: "easeOut",
                       delay: index * 0.05,
                     }}
@@ -276,10 +313,10 @@ export default function Page() {
             <div className="grid gap-10 lg:grid-cols-[1fr_0.9fr]">
               <motion.div
                 className="space-y-4"
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 72 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.25 }}
-                transition={{ duration: 0.7, ease: "easeOut" }}
+                viewport={{ amount: 0.2 }}
+                transition={{ duration: 0.9, ease: "easeOut" }}
               >
                 <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-400">
                   Contact
@@ -290,17 +327,16 @@ export default function Page() {
                 </h2>
 
                 <p className="max-w-xl text-sm leading-7 text-zinc-300 sm:text-base">
-                  In the next step, we will keep this exact structure and add more visual
-                  intensity without breaking the mobile-first rhythm.
+                  The structure stays stable while the visual layer becomes more cinematic.
                 </p>
               </motion.div>
 
               <motion.div
                 className="space-y-4 rounded-3xl border border-white/10 bg-white/[0.03] p-6"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.25 }}
-                transition={{ duration: 0.7, ease: "easeOut", delay: 0.1 }}
+                initial={{ opacity: 0, y: 82, scale: 0.96 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ amount: 0.2 }}
+                transition={{ duration: 0.95, ease: "easeOut", delay: 0.05 }}
               >
                 <div className="space-y-2">
                   <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
@@ -330,12 +366,12 @@ export default function Page() {
 
             <motion.footer
               className="pt-16 text-[11px] uppercase tracking-[0.28em] text-zinc-600"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true, amount: 0.5 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ amount: 0.4 }}
+              transition={{ duration: 0.75, ease: "easeOut" }}
             >
-              {profile.name} / Motion step 17
+              {profile.name} / Real image step 18
             </motion.footer>
           </div>
         </section>

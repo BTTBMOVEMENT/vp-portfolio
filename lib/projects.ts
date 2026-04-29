@@ -274,7 +274,6 @@ export function getProjectBySlug(slug: string) {
 
 export function getBoardPages() {
   const maxBoardPage = Math.max(1, ...projects.map((project) => project.boardPage));
-
   return Array.from({ length: maxBoardPage }, (_, index) => index + 1);
 }
 

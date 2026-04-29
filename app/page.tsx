@@ -131,59 +131,46 @@ export default function Page() {
               </div>
 
               <motion.div
-                style={{ y: heroBottomY, opacity: heroBottomOpacity }}
-                className="space-y-5"
-              >
-                <div className="flex items-center justify-between gap-4 text-[11px] uppercase tracking-[0.24em] text-zinc-300">
-                  <div className="space-y-1">
-                    <div>Frame 001</div>
-                    <div className="text-zinc-500">Featured Hero Still</div>
-                  </div>
+  style={{ y: heroBottomY, opacity: heroBottomOpacity }}
+  className="space-y-5"
+>
+  <div className="flex items-center justify-between gap-4 text-[11px] uppercase tracking-[0.24em] text-zinc-300">
+    <div className="space-y-1">
+      <div>Frame 001</div>
+      <div className="text-zinc-500">Featured Hero Still</div>
+    </div>
 
-                  <div className="text-right">
-                    <div>Virtual Production</div>
-                    <div className="text-zinc-500">Cinematography</div>
-                  </div>
-                </div>
+    <div className="text-right">
+      <div>Virtual Production</div>
+      <div className="text-zinc-500">Cinematography</div>
+    </div>
+  </div>
 
-                <div className="h-px w-full bg-white/20" />
+  <div className="h-px w-full bg-white/20" />
 
-                <nav className="flex flex-wrap gap-3 text-[11px] uppercase tracking-[0.25em] text-zinc-300">
-                  <motion.a
-                    href="/works"
-                    whileTap={{ scale: 0.95 }}
-                    whileHover={{ y: -2 }}
-                    className="rounded-full border border-white/15 px-3 py-2 transition hover:border-white/40 hover:text-white"
-                  >
-                    Works
-                  </motion.a>
+  <div className="flex flex-wrap items-center gap-3">
+    <Link
+      href="/works"
+      className="inline-flex rounded-full bg-white px-5 py-3 text-sm text-black transition hover:bg-zinc-200"
+    >
+      Open Works Archive
+    </Link>
 
-                  <Link
-                    href="/journal"
-                    className="rounded-full border border-white/15 px-3 py-2 transition hover:border-white/40 hover:text-white"
-                  >
-                    Journal
-                  </Link>
+    <Link
+      href="/journal"
+      className="inline-flex rounded-full border border-white/15 px-5 py-3 text-sm text-zinc-200 transition hover:border-white/30 hover:text-white"
+    >
+      Open Journal
+    </Link>
 
-                  <motion.a
-                    href="#about"
-                    whileTap={{ scale: 0.95 }}
-                    whileHover={{ y: -2 }}
-                    className="rounded-full border border-white/15 px-3 py-2 transition hover:border-white/40 hover:text-white"
-                  >
-                    About
-                  </motion.a>
-
-                  <motion.a
-                    href="#contact"
-                    whileTap={{ scale: 0.95 }}
-                    whileHover={{ y: -2 }}
-                    className="rounded-full border border-white/15 px-3 py-2 transition hover:border-white/40 hover:text-white"
-                  >
-                    Contact
-                  </motion.a>
-                </nav>
-              </motion.div>
+    <a
+      href="#about"
+      className="inline-flex rounded-full border border-white/15 px-5 py-3 text-sm text-zinc-300 transition hover:border-white/30 hover:text-white"
+    >
+      About Practice
+    </a>
+  </div>
+</motion.div>
             </div>
           </div>
         </section>

@@ -17,22 +17,43 @@ const profile = {
 
 const projects = [
   {
+    number: "01",
     title: "Jesus is Christ",
     year: "2026",
     role: "Virtual Production, Fake Documentary / DP",
-    description: "Greenscreen Virtual Production with In-Camera VFX test project",
+    description:
+      "Greenscreen Virtual Production with In-Camera VFX test project.",
+    image: "/images/projects/jesus-is-christ-cover.jpg",
+    alt: "Cover still for Jesus is Christ",
+    format: "Test Film",
+    pipeline: "Greenscreen · In-Camera VFX",
+    tools: ["Unreal Engine", "Virtual Camera", "Lighting Test"],
   },
   {
+    number: "02",
     title: "the King of kings",
     year: "2027",
     role: "Virtual Production, Cinematography / DP",
-    description: "the First Virtual Production with Unreal Engine",
+    description:
+      "The first Virtual Production build with Unreal Engine, focused on translating previs into finished cinematic frames.",
+    image: "/images/projects/the-king-of-kings-cover.jpg",
+    alt: "Cover still for the King of kings",
+    format: "VP Build",
+    pipeline: "Previs · Unreal Engine",
+    tools: ["Unreal Engine", "Lens Language", "Shot Planning"],
   },
   {
+    number: "03",
     title: "Trinity",
     year: "2027",
     role: "Documentary / DP",
-    description: "Previs-to-final visual development with a clean case-study structure.",
+    description:
+      "A documentary-driven project framed as a clean case-study preview with stronger editorial presentation.",
+    image: "/images/projects/trinity-cover.jpg",
+    alt: "Cover still for Trinity",
+    format: "Documentary",
+    pipeline: "Visual Development · Case Study",
+    tools: ["Documentary", "Camera Blocking", "Visual Storytelling"],
   },
 ];
 
@@ -89,6 +110,7 @@ export default function Page() {
                 alt="Hero still for BTTB Movement portfolio"
                 fill
                 sizes="100vw"
+                fetchPriority="high"
                 className="object-cover"
               />
             </motion.div>
@@ -197,67 +219,161 @@ export default function Page() {
         <section id="works" className="border-t border-white/10 px-5 py-20 sm:px-8">
           <div className="mx-auto max-w-6xl">
             <motion.div
-              className="mb-10 space-y-4"
+              className="mb-14 grid gap-6 lg:grid-cols-[0.55fr_1.45fr] lg:items-end"
               initial={{ opacity: 0, y: 70 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ amount: 0.2 }}
               transition={{ duration: 0.9, ease: "easeOut" }}
             >
-              <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-400">
-                Selected Works
-              </p>
+              <div className="space-y-3">
+                <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-400">
+                  Selected Works
+                </p>
+                <div className="h-px w-20 bg-white/15" />
+                <p className="text-sm leading-7 text-zinc-500">
+                  Three featured project previews.
+                </p>
+              </div>
 
-              <h2 className="max-w-[12ch] text-3xl font-semibold leading-tight sm:text-4xl md:text-5xl">
-                Three featured projects.
-              </h2>
-
-              <p className="max-w-xl text-sm leading-7 text-zinc-300 sm:text-base">
-                The hero is now pinned visually for a longer scroll so the typography and image
-                can finish their motion before the page continues.
-              </p>
+              <div className="space-y-4">
+                <h2 className="max-w-[13ch] text-3xl font-semibold leading-tight sm:text-4xl md:text-5xl">
+                  From simple cards to editorial case-study previews.
+                </h2>
+                <p className="max-w-2xl text-sm leading-7 text-zinc-300 sm:text-base">
+                  Each project now reads more like a chapter entry: large image, stronger
+                  metadata, cleaner hierarchy, and more cinematic spacing.
+                </p>
+              </div>
             </motion.div>
 
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {projects.map((project, index) => (
-                <motion.article
-                  key={project.title}
-                  className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03]"
-                  initial={{ opacity: 0, y: 90, scale: 0.94 }}
-                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                  viewport={{ amount: 0.18 }}
-                  transition={{
-                    duration: 0.9,
-                    ease: "easeOut",
-                    delay: index * 0.08,
-                  }}
-                >
-                  <div className="relative aspect-[4/5] overflow-hidden border-b border-white/10 bg-zinc-900">
-                    <div className="absolute inset-0 bg-gradient-to-b from-zinc-800 via-zinc-900 to-black" />
-                    <div className="absolute left-6 top-6 text-[11px] uppercase tracking-[0.28em] text-zinc-400">
-                      Visual Placeholder
-                    </div>
-                    <div className="absolute bottom-6 left-6 right-6">
-                      <div className="h-px w-full bg-white/10" />
-                    </div>
-                  </div>
+            <div className="space-y-20">
+              {projects.map((project, index) => {
+                const isReversed = index % 2 === 1;
 
-                  <div className="space-y-4 p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h3 className="text-2xl font-medium">{project.title}</h3>
-                        <p className="mt-1 text-sm text-zinc-400">{project.role}</p>
+                return (
+                  <motion.article
+                    key={project.title}
+                    className="group"
+                    initial={{ opacity: 0, y: 80 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ amount: 0.15 }}
+                    transition={{ duration: 0.9, ease: "easeOut" }}
+                  >
+                    <div className="grid gap-6 lg:items-end lg:gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+                      <div className={isReversed ? "lg:order-2" : ""}>
+                        <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-900">
+                          <div className="relative aspect-[4/5] sm:aspect-[16/10] lg:aspect-[4/5]">
+                            <Image
+                              src={project.image}
+                              alt={project.alt}
+                              fill
+                              sizes="(max-width: 1024px) 100vw, 50vw"
+                              className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                            />
+
+                            <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/20 to-black/75" />
+
+                            <div className="absolute left-6 top-6 flex items-start justify-between gap-4">
+                              <div className="space-y-1">
+                                <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-200">
+                                  {project.number}
+                                </p>
+                                <p className="text-[11px] uppercase tracking-[0.22em] text-zinc-400">
+                                  Featured Still
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="absolute bottom-6 left-6 right-6 space-y-3">
+                              <div className="flex items-center justify-between gap-4 text-[11px] uppercase tracking-[0.22em] text-zinc-200">
+                                <span>{project.pipeline}</span>
+                                <span>{project.year}</span>
+                              </div>
+                              <div className="h-px w-full bg-white/20" />
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <span className="text-sm text-zinc-500">{project.year}</span>
-                    </div>
 
-                    <p className="text-sm leading-7 text-zinc-300">{project.description}</p>
+                      <div className={`relative ${isReversed ? "lg:order-1" : ""}`}>
+                        <motion.div
+                          className="pointer-events-none absolute -top-10 right-0 hidden select-none text-[8rem] font-semibold leading-none tracking-[-0.08em] text-white/[0.04] lg:block"
+                          initial={{ opacity: 0 }}
+                          whileInView={{ opacity: 1 }}
+                          viewport={{ amount: 0.4 }}
+                          transition={{ duration: 0.8, ease: "easeOut" }}
+                        >
+                          {project.number}
+                        </motion.div>
 
-                    <div className="pt-2 text-[11px] uppercase tracking-[0.25em] text-zinc-500">
-                      Detail page later
+                        <div className="relative z-10 space-y-6">
+                          <div className="space-y-3">
+                            <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
+                              Chapter {project.number}
+                            </p>
+
+                            <h3 className="max-w-[12ch] text-4xl font-semibold leading-[0.95] sm:text-5xl">
+                              {project.title}
+                            </h3>
+
+                            <p className="text-sm leading-7 text-zinc-400 sm:text-base">
+                              {project.role}
+                            </p>
+                          </div>
+
+                          <p className="max-w-xl text-sm leading-7 text-zinc-300 sm:text-base">
+                            {project.description}
+                          </p>
+
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                              <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
+                                Format
+                              </p>
+                              <p className="mt-3 text-base text-zinc-200">
+                                {project.format}
+                              </p>
+                            </div>
+
+                            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                              <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
+                                Pipeline
+                              </p>
+                              <p className="mt-3 text-base text-zinc-200">
+                                {project.pipeline}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
+                              Tools / Focus
+                            </p>
+
+                            <div className="flex flex-wrap gap-3">
+                              {project.tools.map((tool) => (
+                                <span
+                                  key={tool}
+                                  className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-200"
+                                >
+                                  {tool}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between gap-4 pt-2 text-[11px] uppercase tracking-[0.25em] text-zinc-500">
+                            <span>Case study preview</span>
+                            <span>{project.year}</span>
+                          </div>
+
+                          <div className="h-px w-full bg-white/10" />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </motion.article>
-              ))}
+                  </motion.article>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -340,7 +456,8 @@ export default function Page() {
                 </h2>
 
                 <p className="max-w-xl text-sm leading-7 text-zinc-300 sm:text-base">
-                  The structure stays stable while the hero gets a stronger cinematic identity.
+                  The hero is established. Now the projects section starts to feel like a real
+                  portfolio instead of a prototype.
                 </p>
               </motion.div>
 
@@ -384,7 +501,7 @@ export default function Page() {
               viewport={{ amount: 0.4 }}
               transition={{ duration: 0.75, ease: "easeOut" }}
             >
-              {profile.name} / Sticky hero step 20
+              {profile.name} / Works editorial upgrade
             </motion.footer>
           </div>
         </section>

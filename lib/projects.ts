@@ -1,3 +1,20 @@
+export type ProjectFrame = {
+  label: string;
+  caption: string;
+  image: string;
+  alt: string;
+};
+
+export type ProjectNote = {
+  title: string;
+  body: string;
+};
+
+export type ProjectCredit = {
+  label: string;
+  value: string;
+};
+
 export type Project = {
   slug: string;
   number: string;
@@ -14,6 +31,10 @@ export type Project = {
   contribution: string;
   approach: string;
   highlights: string[];
+  quote: string;
+  frameStudy: ProjectFrame[];
+  processNotes: ProjectNote[];
+  credits: ProjectCredit[];
 };
 
 export const projects: Project[] = [
@@ -42,6 +63,48 @@ export const projects: Project[] = [
       "Focused on believable cinematic framing",
       "Explored light separation and camera control",
     ],
+    quote:
+      "The goal was not simply to prove that the workflow functioned, but that the image could still feel authored, restrained, and cinematic inside a technical test.",
+    frameStudy: [
+      {
+        label: "Frame Study 01",
+        caption: "Initial image language and subject separation.",
+        image: "/images/projects/jesus-is-christ-cover.jpg",
+        alt: "Frame study 01 for Jesus is Christ",
+      },
+      {
+        label: "Frame Study 02",
+        caption: "Lighting control and foreground-background balance.",
+        image: "/images/projects/jesus-is-christ-cover.jpg",
+        alt: "Frame study 02 for Jesus is Christ",
+      },
+      {
+        label: "Frame Study 03",
+        caption: "A wider frame intended to suggest the final cinematic direction.",
+        image: "/images/projects/jesus-is-christ-cover.jpg",
+        alt: "Frame study 03 for Jesus is Christ",
+      },
+    ],
+    processNotes: [
+      {
+        title: "Visual Goal",
+        body: "Create a frame language that still feels deliberate and cinematic inside a constrained technical test environment.",
+      },
+      {
+        title: "Workflow Focus",
+        body: "Reduce variables, preserve image clarity, and test how camera movement and separation survive the VP pipeline.",
+      },
+      {
+        title: "Image Priority",
+        body: "Favor control, restraint, and believable contrast over purely demonstrative technical spectacle.",
+      },
+    ],
+    credits: [
+      { label: "Role", value: "DP / VP Visual Direction" },
+      { label: "Format", value: "Test Film" },
+      { label: "Pipeline", value: "Greenscreen · In-Camera VFX" },
+      { label: "Year", value: "2026" },
+    ],
   },
   {
     slug: "the-king-of-kings",
@@ -68,6 +131,48 @@ export const projects: Project[] = [
       "Lens and shot-language testing",
       "Focused on cinematic readability",
     ],
+    quote:
+      "The real challenge was not making previs look impressive, but making the finished frame carry the same intent without losing emotional clarity.",
+    frameStudy: [
+      {
+        label: "Frame Study 01",
+        caption: "Previs-to-frame continuity and visual rhythm.",
+        image: "/images/projects/the-king-of-kings-cover.jpg",
+        alt: "Frame study 01 for the King of kings",
+      },
+      {
+        label: "Frame Study 02",
+        caption: "Testing lens behavior and subject emphasis.",
+        image: "/images/projects/the-king-of-kings-cover.jpg",
+        alt: "Frame study 02 for the King of kings",
+      },
+      {
+        label: "Frame Study 03",
+        caption: "A broader composition used to test final image readability.",
+        image: "/images/projects/the-king-of-kings-cover.jpg",
+        alt: "Frame study 03 for the King of kings",
+      },
+    ],
+    processNotes: [
+      {
+        title: "Visual Goal",
+        body: "Preserve intention from previs through final frame without letting the pipeline flatten the image language.",
+      },
+      {
+        title: "Workflow Focus",
+        body: "Use Unreal and shot-planning as tools for consistency, not as a substitute for authored cinematography.",
+      },
+      {
+        title: "Image Priority",
+        body: "Maintain emotional readability and lens discipline while scaling the technical system underneath it.",
+      },
+    ],
+    credits: [
+      { label: "Role", value: "DP / VP Build" },
+      { label: "Format", value: "VP Build" },
+      { label: "Pipeline", value: "Previs · Unreal Engine" },
+      { label: "Year", value: "2027" },
+    ],
   },
   {
     slug: "trinity",
@@ -93,6 +198,48 @@ export const projects: Project[] = [
       "Editorial case-study framing",
       "Focused on clarity and restraint",
       "Built for strong still-image presentation",
+    ],
+    quote:
+      "The strength of the project comes from restraint: the image feels considered not because it is overloaded, but because every decision stays legible.",
+    frameStudy: [
+      {
+        label: "Frame Study 01",
+        caption: "Subject clarity and measured documentary framing.",
+        image: "/images/projects/trinity-cover.jpg",
+        alt: "Frame study 01 for Trinity",
+      },
+      {
+        label: "Frame Study 02",
+        caption: "Editorial stillness used as visual structure.",
+        image: "/images/projects/trinity-cover.jpg",
+        alt: "Frame study 02 for Trinity",
+      },
+      {
+        label: "Frame Study 03",
+        caption: "A wider composition preserving restraint and readability.",
+        image: "/images/projects/trinity-cover.jpg",
+        alt: "Frame study 03 for Trinity",
+      },
+    ],
+    processNotes: [
+      {
+        title: "Visual Goal",
+        body: "Keep the image emotionally grounded while preserving a polished editorial rhythm.",
+      },
+      {
+        title: "Workflow Focus",
+        body: "Use structure and hierarchy to elevate documentary material without forcing spectacle onto it.",
+      },
+      {
+        title: "Image Priority",
+        body: "Favor clarity, restraint, and compositional confidence over heavier interface-driven effects.",
+      },
+    ],
+    credits: [
+      { label: "Role", value: "DP" },
+      { label: "Format", value: "Documentary" },
+      { label: "Pipeline", value: "Visual Development · Case Study" },
+      { label: "Year", value: "2027" },
     ],
   },
 ];

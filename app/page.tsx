@@ -2,7 +2,9 @@
 
 import { useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { MotionConfig, motion, useScroll, useTransform } from "motion/react";
+import { projects } from "../lib/projects";
 
 const profile = {
   name: "BTTB Movement",
@@ -14,48 +16,6 @@ const profile = {
   instagramPrimary: "@24minus0.024",
   instagramSecondary: "@bttbmovement",
 };
-
-const projects = [
-  {
-    number: "01",
-    title: "Jesus is Christ",
-    year: "2026",
-    role: "Virtual Production, Fake Documentary / DP",
-    description:
-      "Greenscreen Virtual Production with In-Camera VFX test project.",
-    image: "/images/projects/jesus-is-christ-cover.jpg",
-    alt: "Cover still for Jesus is Christ",
-    format: "Test Film",
-    pipeline: "Greenscreen · In-Camera VFX",
-    tools: ["Unreal Engine", "Virtual Camera", "Lighting Test"],
-  },
-  {
-    number: "02",
-    title: "the King of kings",
-    year: "2027",
-    role: "Virtual Production, Cinematography / DP",
-    description:
-      "The first Virtual Production build with Unreal Engine, focused on translating previs into finished cinematic frames.",
-    image: "/images/projects/the-king-of-kings-cover.jpg",
-    alt: "Cover still for the King of kings",
-    format: "VP Build",
-    pipeline: "Previs · Unreal Engine",
-    tools: ["Unreal Engine", "Lens Language", "Shot Planning"],
-  },
-  {
-    number: "03",
-    title: "Trinity",
-    year: "2027",
-    role: "Documentary / DP",
-    description:
-      "A documentary-driven project framed as a clean case-study preview with stronger editorial presentation.",
-    image: "/images/projects/trinity-cover.jpg",
-    alt: "Cover still for Trinity",
-    format: "Documentary",
-    pipeline: "Visual Development · Case Study",
-    tools: ["Documentary", "Camera Blocking", "Visual Storytelling"],
-  },
-];
 
 const skills = [
   "Virtual Production",
@@ -110,7 +70,6 @@ export default function Page() {
                 alt="Hero still for BTTB Movement portfolio"
                 fill
                 sizes="100vw"
-                fetchPriority="high"
                 className="object-cover"
               />
             </motion.div>
@@ -237,11 +196,10 @@ export default function Page() {
 
               <div className="space-y-4">
                 <h2 className="max-w-[13ch] text-3xl font-semibold leading-tight sm:text-4xl md:text-5xl">
-                  From simple cards to editorial case-study previews.
+                  Editorial previews that now open real detail pages.
                 </h2>
                 <p className="max-w-2xl text-sm leading-7 text-zinc-300 sm:text-base">
-                  Each project now reads more like a chapter entry: large image, stronger
-                  metadata, cleaner hierarchy, and more cinematic spacing.
+                  Each preview is now a real entry point into its own project page.
                 </p>
               </div>
             </motion.div>
@@ -252,29 +210,29 @@ export default function Page() {
 
                 return (
                   <motion.article
-                    key={project.title}
+                    key={project.slug}
                     className="group"
                     initial={{ opacity: 0, y: 80 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ amount: 0.15 }}
                     transition={{ duration: 0.9, ease: "easeOut" }}
                   >
-                    <div className="grid gap-6 lg:items-end lg:gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-                      <div className={isReversed ? "lg:order-2" : ""}>
-                        <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-900">
-                          <div className="relative aspect-[4/5] sm:aspect-[16/10] lg:aspect-[4/5]">
-                            <Image
-                              src={project.image}
-                              alt={project.alt}
-                              fill
-                              sizes="(max-width: 1024px) 100vw, 50vw"
-                              className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-                            />
+                    <Link href={`/projects/${project.slug}`} className="block">
+                      <div className="grid gap-6 lg:items-end lg:gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+                        <div className={isReversed ? "lg:order-2" : ""}>
+                          <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-900">
+                            <div className="relative aspect-[4/5] sm:aspect-[16/10] lg:aspect-[4/5]">
+                              <Image
+                                src={project.image}
+                                alt={project.alt}
+                                fill
+                                sizes="(max-width: 1024px) 100vw, 50vw"
+                                className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                              />
 
-                            <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/20 to-black/75" />
+                              <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/20 to-black/75" />
 
-                            <div className="absolute left-6 top-6 flex items-start justify-between gap-4">
-                              <div className="space-y-1">
+                              <div className="absolute left-6 top-6 space-y-1">
                                 <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-200">
                                   {project.number}
                                 </p>
@@ -282,95 +240,89 @@ export default function Page() {
                                   Featured Still
                                 </p>
                               </div>
-                            </div>
 
-                            <div className="absolute bottom-6 left-6 right-6 space-y-3">
-                              <div className="flex items-center justify-between gap-4 text-[11px] uppercase tracking-[0.22em] text-zinc-200">
-                                <span>{project.pipeline}</span>
-                                <span>{project.year}</span>
+                              <div className="absolute bottom-6 left-6 right-6 space-y-3">
+                                <div className="flex items-center justify-between gap-4 text-[11px] uppercase tracking-[0.22em] text-zinc-200">
+                                  <span>{project.pipeline}</span>
+                                  <span>{project.year}</span>
+                                </div>
+                                <div className="h-px w-full bg-white/20" />
                               </div>
-                              <div className="h-px w-full bg-white/20" />
                             </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className={`relative ${isReversed ? "lg:order-1" : ""}`}>
-                        <motion.div
-                          className="pointer-events-none absolute -top-10 right-0 hidden select-none text-[8rem] font-semibold leading-none tracking-[-0.08em] text-white/[0.04] lg:block"
-                          initial={{ opacity: 0 }}
-                          whileInView={{ opacity: 1 }}
-                          viewport={{ amount: 0.4 }}
-                          transition={{ duration: 0.8, ease: "easeOut" }}
-                        >
-                          {project.number}
-                        </motion.div>
-
-                        <div className="relative z-10 space-y-6">
-                          <div className="space-y-3">
-                            <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                              Chapter {project.number}
-                            </p>
-
-                            <h3 className="max-w-[12ch] text-4xl font-semibold leading-[0.95] sm:text-5xl">
-                              {project.title}
-                            </h3>
-
-                            <p className="text-sm leading-7 text-zinc-400 sm:text-base">
-                              {project.role}
-                            </p>
+                        <div className={`relative ${isReversed ? "lg:order-1" : ""}`}>
+                          <div className="pointer-events-none absolute -top-10 right-0 hidden select-none text-[8rem] font-semibold leading-none tracking-[-0.08em] text-white/[0.04] lg:block">
+                            {project.number}
                           </div>
 
-                          <p className="max-w-xl text-sm leading-7 text-zinc-300 sm:text-base">
-                            {project.description}
-                          </p>
+                          <div className="relative z-10 space-y-6">
+                            <div className="space-y-3">
+                              <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
+                                Chapter {project.number}
+                              </p>
 
-                          <div className="grid gap-4 sm:grid-cols-2">
-                            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                              <h3 className="max-w-[12ch] text-4xl font-semibold leading-[0.95] sm:text-5xl">
+                                {project.title}
+                              </h3>
+
+                              <p className="text-sm leading-7 text-zinc-400 sm:text-base">
+                                {project.role}
+                              </p>
+                            </div>
+
+                            <p className="max-w-xl text-sm leading-7 text-zinc-300 sm:text-base">
+                              {project.description}
+                            </p>
+
+                            <div className="grid gap-4 sm:grid-cols-2">
+                              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                                <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
+                                  Format
+                                </p>
+                                <p className="mt-3 text-base text-zinc-200">
+                                  {project.format}
+                                </p>
+                              </div>
+
+                              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                                <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
+                                  Pipeline
+                                </p>
+                                <p className="mt-3 text-base text-zinc-200">
+                                  {project.pipeline}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="space-y-3">
                               <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                                Format
+                                Tools / Focus
                               </p>
-                              <p className="mt-3 text-base text-zinc-200">
-                                {project.format}
-                              </p>
+
+                              <div className="flex flex-wrap gap-3">
+                                {project.tools.map((tool) => (
+                                  <span
+                                    key={tool}
+                                    className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-200"
+                                  >
+                                    {tool}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
 
-                            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                              <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                                Pipeline
-                              </p>
-                              <p className="mt-3 text-base text-zinc-200">
-                                {project.pipeline}
-                              </p>
+                            <div className="flex items-center justify-between gap-4 pt-2 text-[11px] uppercase tracking-[0.25em] text-zinc-500">
+                              <span>Open case study</span>
+                              <span>{project.year}</span>
                             </div>
+
+                            <div className="h-px w-full bg-white/10" />
                           </div>
-
-                          <div className="space-y-3">
-                            <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                              Tools / Focus
-                            </p>
-
-                            <div className="flex flex-wrap gap-3">
-                              {project.tools.map((tool) => (
-                                <span
-                                  key={tool}
-                                  className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-200"
-                                >
-                                  {tool}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="flex items-center justify-between gap-4 pt-2 text-[11px] uppercase tracking-[0.25em] text-zinc-500">
-                            <span>Case study preview</span>
-                            <span>{project.year}</span>
-                          </div>
-
-                          <div className="h-px w-full bg-white/10" />
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   </motion.article>
                 );
               })}
@@ -456,8 +408,7 @@ export default function Page() {
                 </h2>
 
                 <p className="max-w-xl text-sm leading-7 text-zinc-300 sm:text-base">
-                  The hero is established. Now the projects section starts to feel like a real
-                  portfolio instead of a prototype.
+                  The home page now feeds real project pages instead of stopping at previews.
                 </p>
               </motion.div>
 
@@ -501,7 +452,7 @@ export default function Page() {
               viewport={{ amount: 0.4 }}
               transition={{ duration: 0.75, ease: "easeOut" }}
             >
-              {profile.name} / Works editorial upgrade
+              {profile.name} / Detail routing step 22
             </motion.footer>
           </div>
         </section>

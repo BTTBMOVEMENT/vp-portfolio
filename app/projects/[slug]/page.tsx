@@ -52,7 +52,7 @@ export default async function ProjectPage({ params }: PageProps) {
         <div className="mx-auto max-w-6xl">
           <div className="flex items-center justify-between gap-4 text-[11px] uppercase tracking-[0.28em] text-zinc-400">
             <Link
-              href="/#works"
+              href="/works"
               className="rounded-full border border-white/10 px-3 py-2 transition hover:border-white/30 hover:text-white"
             >
               Back to Works
@@ -252,7 +252,7 @@ export default async function ProjectPage({ params }: PageProps) {
 
                 <div className="mt-5 space-y-3">
                   <Link
-                    href="/#works"
+                    href="/works"
                     className="block rounded-full border border-white/10 px-4 py-3 text-sm text-zinc-200 transition hover:border-white/30 hover:text-white"
                   >
                     Return to project list

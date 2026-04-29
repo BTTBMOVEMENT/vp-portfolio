@@ -4,7 +4,7 @@ import { useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { MotionConfig, motion, useScroll, useTransform } from "motion/react";
-import { projects } from "../lib/projects";
+import WorksStoryboardTeaser from "../components/home/WorksStoryboardTeaser";
 import JournalOrbit from "../components/home/JournalOrbit";
 
 const profile = {
@@ -150,7 +150,7 @@ export default function Page() {
 
                 <nav className="flex flex-wrap gap-3 text-[11px] uppercase tracking-[0.25em] text-zinc-300">
                   <motion.a
-                    href="#works"
+                    href="/works"
                     whileTap={{ scale: 0.95 }}
                     whileHover={{ y: -2 }}
                     className="rounded-full border border-white/15 px-3 py-2 transition hover:border-white/40 hover:text-white"
@@ -188,160 +188,7 @@ export default function Page() {
           </div>
         </section>
 
-        <section id="works" className="border-t border-white/10 px-5 py-20 sm:px-8">
-          <div className="mx-auto max-w-6xl">
-            <motion.div
-              className="mb-14 grid gap-6 lg:grid-cols-[0.55fr_1.45fr] lg:items-end"
-              initial={{ opacity: 0, y: 70 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ amount: 0.2 }}
-              transition={{ duration: 0.9, ease: "easeOut" }}
-            >
-              <div className="space-y-3">
-                <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-400">
-                  Selected Works
-                </p>
-                <div className="h-px w-20 bg-white/15" />
-                <p className="text-sm leading-7 text-zinc-500">
-                  Three featured project previews.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <h2 className="max-w-[13ch] text-3xl font-semibold leading-tight sm:text-4xl md:text-5xl">
-                  Editorial previews that open real case-study pages.
-                </h2>
-                <p className="max-w-2xl text-sm leading-7 text-zinc-300 sm:text-base">
-                  Each project preview acts like a chapter entry into its own project page.
-                </p>
-              </div>
-            </motion.div>
-
-            <div className="space-y-20">
-              {projects.map((project, index) => {
-                const isReversed = index % 2 === 1;
-
-                return (
-                  <motion.article
-                    key={project.slug}
-                    className="group"
-                    initial={{ opacity: 0, y: 80 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ amount: 0.15 }}
-                    transition={{ duration: 0.9, ease: "easeOut" }}
-                  >
-                    <Link href={`/projects/${project.slug}`} className="block">
-                      <div className="grid gap-6 lg:items-end lg:gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-                        <div className={isReversed ? "lg:order-2" : ""}>
-                          <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-900">
-                            <div className="relative aspect-[4/5] sm:aspect-[16/10] lg:aspect-[4/5]">
-                              <Image
-                                src={project.image}
-                                alt={project.alt}
-                                fill
-                                sizes="(max-width: 1024px) 100vw, 50vw"
-                                className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-                              />
-
-                              <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/20 to-black/75" />
-
-                              <div className="absolute left-6 top-6 space-y-1">
-                                <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-200">
-                                  {project.number}
-                                </p>
-                                <p className="text-[11px] uppercase tracking-[0.22em] text-zinc-400">
-                                  Featured Still
-                                </p>
-                              </div>
-
-                              <div className="absolute bottom-6 left-6 right-6 space-y-3">
-                                <div className="flex items-center justify-between gap-4 text-[11px] uppercase tracking-[0.22em] text-zinc-200">
-                                  <span>{project.pipeline}</span>
-                                  <span>{project.year}</span>
-                                </div>
-                                <div className="h-px w-full bg-white/20" />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className={`relative ${isReversed ? "lg:order-1" : ""}`}>
-                          <div className="pointer-events-none absolute -top-10 right-0 hidden select-none text-[8rem] font-semibold leading-none tracking-[-0.08em] text-white/[0.04] lg:block">
-                            {project.number}
-                          </div>
-
-                          <div className="relative z-10 space-y-6">
-                            <div className="space-y-3">
-                              <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                                Chapter {project.number}
-                              </p>
-
-                              <h3 className="max-w-[12ch] text-4xl font-semibold leading-[0.95] sm:text-5xl">
-                                {project.title}
-                              </h3>
-
-                              <p className="text-sm leading-7 text-zinc-400 sm:text-base">
-                                {project.role}
-                              </p>
-                            </div>
-
-                            <p className="max-w-xl text-sm leading-7 text-zinc-300 sm:text-base">
-                              {project.description}
-                            </p>
-
-                            <div className="grid gap-4 sm:grid-cols-2">
-                              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                                <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                                  Format
-                                </p>
-                                <p className="mt-3 text-base text-zinc-200">
-                                  {project.format}
-                                </p>
-                              </div>
-
-                              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                                <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                                  Pipeline
-                                </p>
-                                <p className="mt-3 text-base text-zinc-200">
-                                  {project.pipeline}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="space-y-3">
-                              <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                                Tools / Focus
-                              </p>
-
-                              <div className="flex flex-wrap gap-3">
-                                {project.tools.map((tool) => (
-                                  <span
-                                    key={tool}
-                                    className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-200"
-                                  >
-                                    {tool}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-
-                            <div className="flex items-center justify-between gap-4 pt-2 text-[11px] uppercase tracking-[0.25em] text-zinc-500">
-                              <span>Open case study</span>
-                              <span>{project.year}</span>
-                            </div>
-
-                            <div className="h-px w-full bg-white/10" />
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  </motion.article>
-                );
-              })}
-            </div>
-          </div>
-        </section>
+        <WorksStoryboardTeaser />
 
        <JournalOrbit />
 

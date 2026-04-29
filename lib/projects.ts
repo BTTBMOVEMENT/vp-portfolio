@@ -15,6 +15,8 @@ export type ProjectCredit = {
   value: string;
 };
 
+export type ProjectBoardSize = "frame" | "wide";
+
 export type Project = {
   slug: string;
   number: string;
@@ -35,7 +37,14 @@ export type Project = {
   frameStudy: ProjectFrame[];
   processNotes: ProjectNote[];
   credits: ProjectCredit[];
+  boardPage: number;
+  boardOrder: number;
+  boardLabel: string;
+  boardCaption: string;
+  boardSize: ProjectBoardSize;
 };
+
+export const BOARD_SLOTS_PER_PAGE = 12;
 
 export const projects: Project[] = [
   {
@@ -105,6 +114,11 @@ export const projects: Project[] = [
       { label: "Pipeline", value: "Greenscreen · In-Camera VFX" },
       { label: "Year", value: "2026" },
     ],
+    boardPage: 1,
+    boardOrder: 1,
+    boardLabel: "A01",
+    boardCaption: "Greenscreen VP Test",
+    boardSize: "frame",
   },
   {
     slug: "the-king-of-kings",
@@ -173,6 +187,11 @@ export const projects: Project[] = [
       { label: "Pipeline", value: "Previs · Unreal Engine" },
       { label: "Year", value: "2027" },
     ],
+    boardPage: 1,
+    boardOrder: 2,
+    boardLabel: "A02",
+    boardCaption: "Previs Translation",
+    boardSize: "frame",
   },
   {
     slug: "trinity",
@@ -241,9 +260,26 @@ export const projects: Project[] = [
       { label: "Pipeline", value: "Visual Development · Case Study" },
       { label: "Year", value: "2027" },
     ],
+    boardPage: 1,
+    boardOrder: 3,
+    boardLabel: "A03",
+    boardCaption: "Documentary Chapter",
+    boardSize: "frame",
   },
 ];
 
 export function getProjectBySlug(slug: string) {
   return projects.find((project) => project.slug === slug);
+}
+
+export function getBoardPages() {
+  const maxBoardPage = Math.max(1, ...projects.map((project) => project.boardPage));
+
+  return Array.from({ length: maxBoardPage }, (_, index) => index + 1);
+}
+
+export function getProjectsForBoard(boardPage: number) {
+  return projects
+    .filter((project) => project.boardPage === boardPage)
+    .sort((a, b) => a.boardOrder - b.boardOrder);
 }

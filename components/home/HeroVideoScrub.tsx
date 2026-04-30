@@ -80,16 +80,16 @@ export default function HeroVideoScrub({
   role,
   headline,
   intro,
-  sequenceLabel = "180 frame image sequence",
+  sequenceLabel = "Image sequence",
 }: HeroVideoScrubProps) {
   const sectionRef = useRef<HTMLElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const imagesRef = useRef<Array<HTMLImageElement | null>>([]);
+  const loadingRef = useRef<Set<number>>(new Set());
   const currentFrameRef = useRef(0);
 
   const [frameUrls, setFrameUrls] = useState<string[]>([]);
-  const [loadedCount, setLoadedCount] = useState(0);
   const [framesReady, setFramesReady] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -164,6 +164,7 @@ export default function HeroVideoScrub({
   function redrawFrame(index: number) {
     const canvas = canvasRef.current;
     const stage = stageRef.current;
+
     if (!canvas || !stage || frameUrls.length === 0) return;
 
     const image = findNearestLoadedFrame(imagesRef.current, index);
@@ -173,56 +174,103 @@ export default function HeroVideoScrub({
     drawCoverImage(canvas, image, rect.width, rect.height);
   }
 
+  function loadFrame(index: number) {
+    if (index < 0 || index >= frameUrls.length) return;
+    if (imagesRef.current[index]) return;
+    if (loadingRef.current.has(index)) return;
+
+    loadingRef.current.add(index);
+
+    const image = new window.Image();
+    image.decoding = "async";
+    image.src = frameUrls[index]!;
+
+    image.onload = () => {
+      loadingRef.current.delete(index);
+      imagesRef.current[index] = image;
+
+      if (!framesReady) {
+        setFramesReady(true);
+      }
+
+      redrawFrame(currentFrameRef.current);
+    };
+
+    image.onerror = () => {
+      loadingRef.current.delete(index);
+    };
+  }
+
+  function warmUpAround(index: number) {
+    const range = isMobile ? 3 : 6;
+
+    loadFrame(index);
+
+    for (let step = 1; step <= range; step += 1) {
+      loadFrame(index + step);
+      loadFrame(index - step);
+    }
+  }
+
   useEffect(() => {
     let cancelled = false;
 
-    async function loadFrames() {
+    async function fetchFrames() {
       try {
         const response = await fetch("/api/hero-sequence", { cache: "no-store" });
         const data = (await response.json()) as { frames?: string[] };
-        const frames = Array.isArray(data.frames) ? data.frames : [];
 
         if (cancelled) return;
 
-        setFrameUrls(frames);
-        setLoadedCount(0);
+        const actualFrames = Array.isArray(data.frames) ? data.frames : [];
+
+        setFrameUrls(actualFrames);
+        imagesRef.current = new Array(actualFrames.length).fill(null);
+        loadingRef.current.clear();
         setFramesReady(false);
-        imagesRef.current = new Array(frames.length).fill(null);
-
-        frames.forEach((src, index) => {
-          const image = new window.Image();
-          image.decoding = "async";
-          image.src = src;
-
-          image.onload = () => {
-            if (cancelled) return;
-
-            imagesRef.current[index] = image;
-            setLoadedCount((count) => count + 1);
-
-            if (index === 0) {
-              setFramesReady(true);
-              redrawFrame(currentFrameRef.current);
-            } else {
-              redrawFrame(currentFrameRef.current);
-            }
-          };
-        });
       } catch {
-        if (!cancelled) {
-          setFrameUrls([]);
-          setLoadedCount(0);
-          setFramesReady(false);
-        }
+        if (cancelled) return;
+
+        setFrameUrls([]);
+        imagesRef.current = [];
+        loadingRef.current.clear();
+        setFramesReady(false);
       }
     }
 
-    void loadFrames();
+    void fetchFrames();
 
     return () => {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (frameUrls.length === 0) return;
+
+    warmUpAround(0);
+
+    const backgroundQueue = frameUrls.map((_, index) => index).slice(1);
+    let cursor = 0;
+
+    function pump() {
+      for (let i = 0; i < 6 && cursor < backgroundQueue.length; i += 1) {
+        loadFrame(backgroundQueue[cursor]!);
+        cursor += 1;
+      }
+
+      if (cursor < backgroundQueue.length) {
+        window.setTimeout(pump, 60);
+      }
+    }
+
+    window.setTimeout(pump, 100);
+  }, [frameUrls]);
+
+  useEffect(() => {
+    if (!framesReady) return;
+    redrawFrame(currentFrameRef.current);
+  }, [framesReady]);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -235,13 +283,15 @@ export default function HeroVideoScrub({
     observer.observe(stage);
 
     return () => observer.disconnect();
-  }, [frameUrls.length]);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = smoothProgress.on("change", (latest) => {
       if (frameUrls.length === 0) return;
 
       const nextIndex = Math.round(latest * Math.max(0, frameUrls.length - 1));
+
+      warmUpAround(nextIndex);
 
       if (nextIndex !== currentFrameRef.current) {
         currentFrameRef.current = nextIndex;
@@ -250,10 +300,7 @@ export default function HeroVideoScrub({
     });
 
     return () => unsubscribe();
-  }, [smoothProgress, frameUrls.length]);
-
-  const loadedLabel =
-    frameUrls.length > 0 ? `${loadedCount} / ${frameUrls.length} loaded` : sequenceLabel;
+  }, [smoothProgress, frameUrls.length, isMobile]);
 
   return (
     <section ref={sectionRef} id="hero" className="relative h-[230vh]">
@@ -285,14 +332,6 @@ export default function HeroVideoScrub({
           className="absolute inset-0 bg-black"
         />
 
-        {!framesReady && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <div className="rounded-full border border-white/10 bg-black/40 px-5 py-3 text-[11px] uppercase tracking-[0.28em] text-zinc-400 backdrop-blur-xl">
-              Loading hero sequence...
-            </div>
-          </div>
-        )}
-
         <div className="relative z-10 mx-auto flex h-full max-w-6xl flex-col justify-between px-5 pb-8 pt-24 sm:px-8 md:pt-28">
           <motion.div
             initial={{ opacity: 0, y: -18 }}
@@ -307,7 +346,7 @@ export default function HeroVideoScrub({
 
             <div className="text-right">
               <div>{sequenceLabel}</div>
-              <div className="text-zinc-500">{loadedLabel}</div>
+              <div className="text-zinc-500">&nbsp;</div>
             </div>
           </motion.div>
 
@@ -355,7 +394,7 @@ export default function HeroVideoScrub({
 
               <div className="text-right">
                 <div>Scroll Down / Reverse Up</div>
-                <div className="text-zinc-500">180-frame image sequence</div>
+                <div className="text-zinc-500">&nbsp;</div>
               </div>
             </div>
 

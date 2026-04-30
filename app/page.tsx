@@ -6,7 +6,6 @@ import HeroVideoScrub from "../components/home/HeroVideoScrub";
 import WorksStoryboardTeaser from "../components/home/WorksStoryboardTeaser";
 import JournalOrbit from "../components/home/JournalOrbit";
 import MyAlbumGateway from "../components/home/MyAlbumGateway";
-import SocialMediaGateway from "../components/home/SocialMediaGateway";
 
 const profile = {
   name: "BTTB Movement",
@@ -57,8 +56,6 @@ export default function Page() {
 
         <MyAlbumGateway />
 
-        <SocialMediaGateway />
-
         <section id="about" className="border-t border-white/10 px-5 py-20 sm:px-8">
           <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.1fr_0.9fr]">
             <motion.div
@@ -85,8 +82,7 @@ export default function Page() {
               <p className="max-w-2xl text-sm leading-7 text-zinc-300 sm:text-base">
                 The current build is already structured like a system: a motion-led hero,
                 storyboard-style works archive, orbit-based journal rail, a personal album,
-                a social publishing layer, and long-form project case studies that can
-                keep expanding over time.
+                and long-form project case studies that can keep expanding over time.
               </p>
             </motion.div>
 
@@ -143,8 +139,8 @@ export default function Page() {
 
                 <p className="max-w-xl text-sm leading-7 text-zinc-300 sm:text-base">
                   The home page now ties together the hero sequence, works archive,
-                  journal orbit, personal album, and social publishing layer into one
-                  continuous visual system.
+                  journal orbit, personal album, and long-form project case studies
+                  into one continuous visual system.
                 </p>
               </motion.div>
 
@@ -207,16 +203,6 @@ export default function Page() {
                       /my-album
                     </Link>
                   </div>
-
-                  <div className="flex items-start justify-between gap-4">
-                    <span className="text-zinc-500">Social Media</span>
-                    <Link
-                      href="/social-media"
-                      className="underline decoration-white/20 underline-offset-4"
-                    >
-                      /social-media
-                    </Link>
-                  </div>
                 </div>
               </motion.div>
             </div>
@@ -228,7 +214,7 @@ export default function Page() {
               viewport={{ amount: 0.4 }}
               transition={{ duration: 0.75, ease: "easeOut" }}
             >
-              {profile.name} / Social gateway step
+              {profile.name} / Social removed
             </motion.footer>
           </div>
         </section>

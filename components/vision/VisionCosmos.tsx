@@ -1,11 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import type { VisionEntry } from "../../lib/vision";
 
 type VisionCosmosProps = {
   entries: VisionEntry[];
+};
+
+type Size = {
+  width: number;
+  height: number;
 };
 
 function wrapIndex(index: number, total: number) {
@@ -21,12 +26,95 @@ function getWrappedOffset(index: number, activeIndex: number, total: number) {
   return offset;
 }
 
+function getDisplaySize(
+  intrinsic: Size | undefined,
+  viewport: Size,
+  isMobile: boolean
+) {
+  const maxWidth = viewport.width * (isMobile ? 0.9 : 0.72);
+  const maxHeight = viewport.height * (isMobile ? 0.62 : 0.72);
+
+  if (!intrinsic || intrinsic.width === 0 || intrinsic.height === 0) {
+    return {
+      imageWidth: maxWidth,
+      imageHeight: maxHeight,
+      frameWidth: maxWidth + 24,
+      frameHeight: maxHeight + 56,
+    };
+  }
+
+  const imageRatio = intrinsic.width / intrinsic.height;
+  const viewportRatio = maxWidth / maxHeight;
+
+  let imageWidth = maxWidth;
+  let imageHeight = maxHeight;
+
+  if (imageRatio > viewportRatio) {
+    imageWidth = maxWidth;
+    imageHeight = maxWidth / imageRatio;
+  } else {
+    imageHeight = maxHeight;
+    imageWidth = maxHeight * imageRatio;
+  }
+
+  return {
+    imageWidth,
+    imageHeight,
+    frameWidth: imageWidth + 24,
+    frameHeight: imageHeight + 56,
+  };
+}
+
+function getThumbSize(
+  intrinsic: Size | undefined,
+  viewport: Size,
+  isMobile: boolean,
+  atlas: boolean
+) {
+  const maxWidth = atlas
+    ? viewport.width * (isMobile ? 0.28 : 0.14)
+    : viewport.width * (isMobile ? 0.36 : 0.22);
+
+  const maxHeight = atlas
+    ? viewport.height * (isMobile ? 0.2 : 0.18)
+    : viewport.height * (isMobile ? 0.28 : 0.24);
+
+  if (!intrinsic || intrinsic.width === 0 || intrinsic.height === 0) {
+    return {
+      imageWidth: maxWidth,
+      imageHeight: maxHeight,
+      frameWidth: maxWidth + 22,
+      frameHeight: maxHeight + 50,
+    };
+  }
+
+  const imageRatio = intrinsic.width / intrinsic.height;
+  const viewportRatio = maxWidth / maxHeight;
+
+  let imageWidth = maxWidth;
+  let imageHeight = maxHeight;
+
+  if (imageRatio > viewportRatio) {
+    imageWidth = maxWidth;
+    imageHeight = maxWidth / imageRatio;
+  } else {
+    imageHeight = maxHeight;
+    imageWidth = maxHeight * imageRatio;
+  }
+
+  return {
+    imageWidth,
+    imageHeight,
+    frameWidth: imageWidth + 22,
+    frameHeight: imageHeight + 50,
+  };
+}
+
 function getOrbitState(offset: number, total: number, isMobile: boolean) {
   if (offset === 0) {
     return {
       left: "50%",
-      top: "50%",
-      scale: 1,
+      top: isMobile ? "51%" : "50%",
       opacity: 1,
       rotateY: 0,
       rotateX: 0,
@@ -37,11 +125,10 @@ function getOrbitState(offset: number, total: number, isMobile: boolean) {
 
   if (offset === -1) {
     return {
-      left: total === 2 ? "28%" : "24%",
-      top: isMobile ? "63%" : "60%",
-      scale: isMobile ? 0.8 : 0.82,
-      opacity: 0.58,
-      rotateY: isMobile ? 0 : 56,
+      left: total === 2 ? "26%" : isMobile ? "18%" : "23%",
+      top: isMobile ? "64%" : "60%",
+      opacity: 0.62,
+      rotateY: isMobile ? 0 : 42,
       rotateX: 0,
       rotateZ: -6,
       zIndex: 40,
@@ -50,11 +137,10 @@ function getOrbitState(offset: number, total: number, isMobile: boolean) {
 
   if (offset === 1) {
     return {
-      left: total === 2 ? "72%" : "76%",
-      top: isMobile ? "63%" : "60%",
-      scale: isMobile ? 0.8 : 0.82,
-      opacity: 0.58,
-      rotateY: isMobile ? 0 : -56,
+      left: total === 2 ? "74%" : isMobile ? "82%" : "77%",
+      top: isMobile ? "64%" : "60%",
+      opacity: 0.62,
+      rotateY: isMobile ? 0 : -42,
       rotateX: 0,
       rotateZ: 6,
       zIndex: 40,
@@ -63,21 +149,16 @@ function getOrbitState(offset: number, total: number, isMobile: boolean) {
 
   const distance = Math.abs(offset);
   const direction = offset < 0 ? -1 : 1;
-  const spread = Math.min(44, 22 + distance * 8);
-  const arcLift = Math.min(22, 8 + distance * 3);
-  const left = 50 + direction * spread;
-  const top = 48 - arcLift + distance * 4;
-  const scale = Math.max(0.34, 0.72 - distance * 0.1);
-  const opacity = Math.max(0.1, 0.34 - distance * 0.05);
+  const spread = Math.min(46, 26 + distance * 8);
+  const top = 44 + distance * 5;
 
   return {
-    left: `${left}%`,
+    left: `${50 + direction * spread}%`,
     top: `${top}%`,
-    scale,
-    opacity,
-    rotateY: isMobile ? 0 : direction * (74 + distance * 8),
+    opacity: Math.max(0.12, 0.32 - distance * 0.06),
+    rotateY: isMobile ? 0 : direction * (56 + distance * 8),
     rotateX: 0,
-    rotateZ: direction * (10 + distance * 2),
+    rotateZ: direction * (8 + distance * 2),
     zIndex: 20,
   };
 }
@@ -95,12 +176,9 @@ function getAtlasState(index: number, total: number, isMobile: boolean) {
   const top =
     rows === 1 ? 50 : 28 + (rowIndex * 44) / Math.max(1, rows - 1);
 
-  const scale = isMobile ? 0.48 : total <= 4 ? 0.54 : 0.46;
-
   return {
     left: `${left}%`,
     top: `${top}%`,
-    scale,
     opacity: 1,
     rotateY: 0,
     rotateX: 0,
@@ -121,19 +199,40 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [showAtlas, setShowAtlas] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [viewport, setViewport] = useState<Size>({ width: 1440, height: 900 });
+  const [sizes, setSizes] = useState<Record<string, Size>>({});
   const wheelLockRef = useRef(false);
   const touchStartXRef = useRef<number | null>(null);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 767px)");
-    const update = () => setIsMobile(mediaQuery.matches);
-    update();
 
-    mediaQuery.addEventListener("change", update);
-    return () => mediaQuery.removeEventListener("change", update);
+    const updateMobile = () => setIsMobile(mediaQuery.matches);
+    updateMobile();
+
+    mediaQuery.addEventListener("change", updateMobile);
+    return () => mediaQuery.removeEventListener("change", updateMobile);
+  }, []);
+
+  useEffect(() => {
+    const updateViewport = () => {
+      setViewport({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+
+    return () => window.removeEventListener("resize", updateViewport);
   }, []);
 
   const total = entries.length;
+
+  const activeEntry = entries[activeIndex]!;
+
+  const visibleEntries = useMemo(() => entries, [entries]);
 
   if (total === 0) {
     return (
@@ -153,8 +252,6 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
       </section>
     );
   }
-
-  const activeEntry = entries[activeIndex]!;
 
   function goToIndex(index: number) {
     setActiveIndex(wrapIndex(index, total));
@@ -188,7 +285,7 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
     wheelLockRef.current = true;
     window.setTimeout(() => {
       wheelLockRef.current = false;
-    }, 420);
+    }, 460);
   }
 
   function handleTouchStart(event: React.TouchEvent<HTMLDivElement>) {
@@ -267,7 +364,7 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
             <p className="text-sm leading-7 text-zinc-300">
               {showAtlas
                 ? "All frames are aligned. Choose one to return it to the center."
-                : "One frame at full scale, the rest in orbit."}
+                : "One frame dominates the view while the rest stay in orbit."}
             </p>
           </div>
 
@@ -296,12 +393,15 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
 
         <div
           tabIndex={0}
-          onWheel={handleWheel}
+          onWheelCapture={handleWheel}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           onKeyDown={handleKeyDown}
-          className="relative h-[36rem] overflow-hidden outline-none sm:h-[44rem] lg:h-[52rem]"
-          style={{ perspective: isMobile ? "1200px" : "1800px" }}
+          className="relative h-[40rem] overflow-hidden outline-none overscroll-contain sm:h-[48rem] lg:h-[58rem]"
+          style={{
+            perspective: isMobile ? "1200px" : "1800px",
+            touchAction: showAtlas ? "auto" : "pan-y",
+          }}
         >
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-[76%] w-[132%] -translate-x-1/2 -translate-y-1/2 rounded-[100%] border border-white/[0.06]" />
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-[54%] w-[116%] -translate-x-1/2 -translate-y-1/2 rounded-[100%] border border-white/[0.04]" />
@@ -311,12 +411,22 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
           <div className="pointer-events-none absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-black via-black/85 to-transparent sm:w-28 lg:w-40" />
           <div className="pointer-events-none absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-black via-black/85 to-transparent sm:w-28 lg:w-40" />
 
-          {entries.map((entry, index) => {
+          {visibleEntries.map((entry, index) => {
+            const intrinsic = sizes[entry.id];
+            const displaySize = getDisplaySize(intrinsic, viewport, isMobile);
+            const thumbSize = getThumbSize(intrinsic, viewport, isMobile, showAtlas);
+
+            const isActive = index === activeIndex;
+
+            const frameMetrics = showAtlas
+              ? thumbSize
+              : isActive
+              ? displaySize
+              : thumbSize;
+
             const state = showAtlas
               ? getAtlasState(index, total, isMobile)
               : getOrbitState(getWrappedOffset(index, activeIndex, total), total, isMobile);
-
-            const isActive = index === activeIndex;
 
             return (
               <motion.button
@@ -330,27 +440,28 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
                 className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer"
                 style={{
                   zIndex: state.zIndex,
-                  willChange: "transform, opacity",
+                  willChange: "transform, opacity, width, height",
                   WebkitTapHighlightColor: "transparent",
+                  backfaceVisibility: "hidden",
+                  WebkitBackfaceVisibility: "hidden",
                 }}
                 animate={{
                   left: state.left,
                   top: state.top,
-                  scale: state.scale,
+                  width: frameMetrics.frameWidth,
+                  height: frameMetrics.frameHeight,
                   opacity: state.opacity,
                   rotateY: state.rotateY,
                   rotateX: state.rotateX,
                   rotateZ: state.rotateZ,
                 }}
                 transition={{
-                  type: "spring",
-                  stiffness: isMobile ? 120 : 140,
-                  damping: isMobile ? 26 : 22,
-                  mass: 0.9,
+                  duration: isMobile ? 0.58 : 0.52,
+                  ease: [0.22, 1, 0.36, 1],
                 }}
               >
                 <div
-                  className="relative"
+                  className="relative h-full w-full"
                   style={{
                     transformStyle: isMobile ? "flat" : "preserve-3d",
                     willChange: "transform",
@@ -365,7 +476,7 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
                         WebkitBackfaceVisibility: "hidden",
                       }}
                     >
-                      <div className="flex h-full min-h-[18rem] flex-col justify-between rounded-[1.6rem] p-5 text-left">
+                      <div className="flex h-full flex-col justify-between rounded-[1.6rem] p-5 text-left">
                         <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
                           My Album
                         </p>
@@ -381,25 +492,42 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
                   )}
 
                   <div
-                    className="relative overflow-hidden rounded-[1.6rem] bg-[#f6f1e8] p-3 shadow-[0_30px_80px_rgba(0,0,0,0.45)]"
+                    className="relative flex h-full w-full flex-col overflow-hidden rounded-[1.6rem] bg-[#f6f1e8] p-3 shadow-[0_30px_80px_rgba(0,0,0,0.45)]"
                     style={{
                       backfaceVisibility: "hidden",
                       WebkitBackfaceVisibility: "hidden",
                       transform: "translateZ(0)",
                     }}
                   >
-                    <img
-                      src={entry.image}
-                      alt={entry.alt}
-                      loading={isActive ? "eager" : "lazy"}
-                      className={`block h-auto rounded-[1.2rem] border border-black/5 object-contain ${
-                        showAtlas
-                          ? "w-[min(22vw,11rem)] sm:w-[min(18vw,12rem)] lg:w-[min(14vw,12rem)]"
-                          : isActive
-                          ? "max-h-[74vh] w-auto max-w-[92vw] sm:max-w-[84vw] lg:max-w-[78vw]"
-                          : "w-[min(62vw,18rem)] sm:w-[min(40vw,20rem)] lg:w-[min(24vw,18rem)]"
-                      }`}
-                    />
+                    <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-[1.2rem] border border-black/5 bg-white/40">
+                      <img
+                        src={entry.image}
+                        alt={entry.alt}
+                        loading={isActive ? "eager" : "lazy"}
+                        onLoad={(event) => {
+                          const img = event.currentTarget;
+                          const width = img.naturalWidth;
+                          const height = img.naturalHeight;
+
+                          setSizes((prev) => {
+                            const current = prev[entry.id];
+                            if (current && current.width === width && current.height === height) {
+                              return prev;
+                            }
+
+                            return {
+                              ...prev,
+                              [entry.id]: { width, height },
+                            };
+                          });
+                        }}
+                        className="block max-h-full max-w-full object-contain"
+                        style={{
+                          width: "auto",
+                          height: "auto",
+                        }}
+                      />
+                    </div>
 
                     <div className="mt-3 flex items-center justify-between gap-4 px-1 text-[11px] uppercase tracking-[0.24em] text-zinc-600">
                       <span>{entry.year}</span>

@@ -30,6 +30,8 @@ type SiteSettingsData = {
     title?: string | null;
     body?: string | null;
     secondaryBody?: string | null;
+    focusLabel?: string | null;
+    focusTags?: string[] | null;
   } | null;
   works?: {
     sectionLabel?: string | null;
@@ -65,11 +67,39 @@ type SiteSettingsData = {
   } | null;
 } | null;
 
-type HomePageClientProps = {
-  siteSettings: SiteSettingsData;
+type ProjectTeaser = {
+  _id: string;
+  title: string;
+  slug: string;
+  year?: string;
+  role?: string;
+  description?: string;
+  imageUrl?: string;
+  boardPage?: number;
+  boardOrder?: number;
+  boardLabel?: string;
+  boardCaption?: string;
 };
 
-const skills = [
+type JournalPreviewEntry = {
+  _id: string;
+  title: string;
+  slug: string;
+  kind: "essay" | "note" | "photo" | "video";
+  excerpt?: string;
+  coverImageUrl?: string;
+  tags?: string[];
+  publishedAt?: string;
+  readTime: string;
+};
+
+type HomePageClientProps = {
+  siteSettings: SiteSettingsData;
+  projects: ProjectTeaser[];
+  journalEntries: JournalPreviewEntry[];
+};
+
+const fallbackFocusTags = [
   "Virtual Production",
   "Cinematography",
   "Unreal Engine",
@@ -78,7 +108,11 @@ const skills = [
   "Shot Planning",
 ];
 
-export default function HomePageClient({ siteSettings }: HomePageClientProps) {
+export default function HomePageClient({
+  siteSettings,
+  projects,
+  journalEntries,
+}: HomePageClientProps) {
   const { scrollYProgress } = useScroll();
 
   const profile = {
@@ -120,6 +154,11 @@ export default function HomePageClient({ siteSettings }: HomePageClientProps) {
     secondaryBody:
       siteSettings?.about?.secondaryBody ||
       "The current build is already structured like a system: a motion-led hero, storyboard-style works archive, orbit-based journal rail, a personal album, and long-form project case studies that can keep expanding over time.",
+    focusLabel: siteSettings?.about?.focusLabel || "Focus",
+    focusTags:
+      siteSettings?.about?.focusTags && siteSettings.about.focusTags.length > 0
+        ? siteSettings.about.focusTags
+        : fallbackFocusTags,
   };
 
   const works = {
@@ -129,11 +168,11 @@ export default function HomePageClient({ siteSettings }: HomePageClientProps) {
       "A storyboard archive where finished chapters occupy frames.",
     description:
       siteSettings?.works?.description ||
-      "The home page only shows the opening sheet. Each filled frame leads into a case study. Empty frames stay visible so the archive feels like an active wall rather than a closed list.",
+      "The home page only shows the opening sheet.",
     metaLabel: siteSettings?.works?.metaLabel || "Preview Logic",
     metaBody:
       siteSettings?.works?.metaBody ||
-      "Home only shows the opening sheet. The full archive continues inside the dedicated Works page, where each board grows over time as new projects are published.",
+      "Home only shows the opening sheet.",
     archiveButtonLabel:
       siteSettings?.works?.archiveButtonLabel || "Open Works Archive",
   };
@@ -145,7 +184,7 @@ export default function HomePageClient({ siteSettings }: HomePageClientProps) {
       "A living layer that moves differently from the portfolio.",
     description:
       siteSettings?.journal?.description ||
-      "Instead of showing many posts at once, this section now focuses on one entry at the center and treats the rest as orbiting fragments around it.",
+      "Instead of showing many posts at once, this section now focuses on one entry at the center.",
     ctaLabel: siteSettings?.journal?.ctaLabel || "Open Journal",
     helperText:
       siteSettings?.journal?.helperText ||
@@ -159,7 +198,7 @@ export default function HomePageClient({ siteSettings }: HomePageClientProps) {
       "Enter the album as if stepping into another atmosphere.",
     description:
       siteSettings?.albumGateway?.description ||
-      "This route opens a more intimate image field: no grid, no archive wall, just drifting frames, optional notes, and a slower visual rhythm.",
+      "This route opens a more intimate image field.",
     buttonLabel: siteSettings?.albumGateway?.buttonLabel || "My Album",
     noteLabel:
       siteSettings?.albumGateway?.noteLabel ||
@@ -171,7 +210,7 @@ export default function HomePageClient({ siteSettings }: HomePageClientProps) {
     title: siteSettings?.contact?.title || "Ready for the next build.",
     body:
       siteSettings?.contact?.body ||
-      "The home page now ties together the hero sequence, works archive, journal orbit, personal album, and long-form project case studies into one continuous visual system.",
+      "The home page now ties together the hero sequence and archive system.",
     emailLabel: siteSettings?.contact?.emailLabel || "Email",
     instagramLabel: siteSettings?.contact?.instagramLabel || "Instagram",
     worksLabel: siteSettings?.contact?.worksLabel || "Works",
@@ -236,13 +275,13 @@ export default function HomePageClient({ siteSettings }: HomePageClientProps) {
               transition={{ duration: 0.9, ease: "easeOut", delay: 0.08 }}
             >
               <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-400">
-                Focus
+                {about.focusLabel}
               </p>
 
               <div className="flex flex-wrap gap-3">
-                {skills.map((skill, index) => (
+                {about.focusTags.map((tag, index) => (
                   <motion.span
-                    key={skill}
+                    key={`${tag}-${index}`}
                     className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-200"
                     initial={{ opacity: 0, y: 36, scale: 0.95 }}
                     whileInView={{ opacity: 1, y: 0, scale: 1 }}
@@ -253,7 +292,7 @@ export default function HomePageClient({ siteSettings }: HomePageClientProps) {
                       delay: index * 0.05,
                     }}
                   >
-                    {skill}
+                    {tag}
                   </motion.span>
                 ))}
               </div>
@@ -262,6 +301,7 @@ export default function HomePageClient({ siteSettings }: HomePageClientProps) {
         </section>
 
         <WorksStoryboardTeaser
+          projects={projects}
           sectionLabel={works.sectionLabel}
           title={works.title}
           description={works.description}
@@ -271,6 +311,7 @@ export default function HomePageClient({ siteSettings }: HomePageClientProps) {
         />
 
         <JournalOrbit
+          entries={journalEntries}
           sectionLabel={journal.sectionLabel}
           title={journal.title}
           description={journal.description}
@@ -341,30 +382,21 @@ export default function HomePageClient({ siteSettings }: HomePageClientProps) {
 
                   <div className="flex items-start justify-between gap-4">
                     <span className="text-zinc-500">{contact.worksLabel}</span>
-                    <Link
-                      href="/works"
-                      className="underline decoration-white/20 underline-offset-4"
-                    >
+                    <Link href="/works" className="underline decoration-white/20 underline-offset-4">
                       /works
                     </Link>
                   </div>
 
                   <div className="flex items-start justify-between gap-4">
                     <span className="text-zinc-500">{contact.journalLabel}</span>
-                    <Link
-                      href="/journal"
-                      className="underline decoration-white/20 underline-offset-4"
-                    >
+                    <Link href="/journal" className="underline decoration-white/20 underline-offset-4">
                       /journal
                     </Link>
                   </div>
 
                   <div className="flex items-start justify-between gap-4">
                     <span className="text-zinc-500">{contact.albumLabel}</span>
-                    <Link
-                      href="/my-album"
-                      className="underline decoration-white/20 underline-offset-4"
-                    >
+                    <Link href="/my-album" className="underline decoration-white/20 underline-offset-4">
                       /my-album
                     </Link>
                   </div>

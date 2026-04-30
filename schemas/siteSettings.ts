@@ -120,6 +120,17 @@ export default defineType({
           type: 'text',
           rows: 6,
         }),
+        defineField({
+          name: 'focusLabel',
+          title: 'Focus Label',
+          type: 'string',
+        }),
+        defineField({
+          name: 'focusTags',
+          title: 'Focus Tags',
+          type: 'array',
+          of: [{type: 'string'}],
+        }),
       ],
     }),
 

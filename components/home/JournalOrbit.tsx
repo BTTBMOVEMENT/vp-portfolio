@@ -1,17 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { formatJournalDate, journalEntries } from "../../lib/journal";
-
-const kindLabelMap = {
-  essay: "Essay",
-  note: "Note",
-  photo: "Photo",
-  video: "Video",
-} as const;
 
 function wrapIndex(index: number, total: number) {
   return (index + total) % total;
@@ -28,64 +19,47 @@ function getWrappedOffset(index: number, activeIndex: number, total: number) {
 
 function getOrbitState(offset: number) {
   if (offset === 0) {
-    return {
-      left: "50%",
-      top: "50%",
-      scale: 1,
-      opacity: 1,
-      rotate: 0,
-      zIndex: 40,
-    };
+    return { left: "50%", top: "50%", scale: 1, opacity: 1, rotate: 0, zIndex: 40 };
   }
-
   if (offset === -1) {
-    return {
-      left: "18%",
-      top: "59%",
-      scale: 0.84,
-      opacity: 0.42,
-      rotate: -8,
-      zIndex: 30,
-    };
+    return { left: "18%", top: "59%", scale: 0.84, opacity: 0.42, rotate: -8, zIndex: 30 };
   }
-
   if (offset === 1) {
-    return {
-      left: "82%",
-      top: "59%",
-      scale: 0.84,
-      opacity: 0.42,
-      rotate: 8,
-      zIndex: 30,
-    };
+    return { left: "82%", top: "59%", scale: 0.84, opacity: 0.42, rotate: 8, zIndex: 30 };
   }
-
   if (offset <= -2) {
-    return {
-      left: "-4%",
-      top: "70%",
-      scale: 0.68,
-      opacity: 0.12,
-      rotate: -12,
-      zIndex: 20,
-    };
+    return { left: "-4%", top: "70%", scale: 0.68, opacity: 0.12, rotate: -12, zIndex: 20 };
   }
-
-  return {
-    left: "104%",
-    top: "70%",
-    scale: 0.68,
-    opacity: 0.12,
-    rotate: 12,
-    zIndex: 20,
-  };
+  return { left: "104%", top: "70%", scale: 0.68, opacity: 0.12, rotate: 12, zIndex: 20 };
 }
 
 function formatCounter(index: number, total: number) {
   return `${String(index + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`;
 }
 
+function formatDate(value?: string) {
+  if (!value) return "";
+  try {
+    return new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(new Date(value));
+  } catch {
+    return value;
+  }
+}
+
+type JournalPreviewEntry = {
+  _id: string;
+  title: string;
+  slug: string;
+  kind: "essay" | "note" | "photo" | "video";
+  excerpt?: string;
+  coverImageUrl?: string;
+  tags?: string[];
+  publishedAt?: string;
+  readTime: string;
+};
+
 type JournalOrbitProps = {
+  entries: JournalPreviewEntry[];
   sectionLabel?: string;
   title?: string;
   description?: string;
@@ -94,6 +68,7 @@ type JournalOrbitProps = {
 };
 
 export default function JournalOrbit({
+  entries,
   sectionLabel = "Journal",
   title = "A living layer that moves differently from the portfolio.",
   description = "Instead of showing many posts at once, this section now focuses on one entry at the center and treats the rest as orbiting fragments around it.",
@@ -104,18 +79,33 @@ export default function JournalOrbit({
   const wheelLockRef = useRef(false);
   const touchStartXRef = useRef<number | null>(null);
 
-  const activeEntry = journalEntries[activeIndex]!;
+  if (!entries || entries.length === 0) {
+    return (
+      <section id="journal" className="border-t border-white/10 px-5 py-20 sm:px-8">
+        <div className="mx-auto max-w-[1500px]">
+          <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-400">
+            {sectionLabel}
+          </p>
+          <h2 className="mt-4 text-3xl font-semibold text-zinc-100">
+            No journal entries published yet.
+          </h2>
+        </div>
+      </section>
+    );
+  }
+
+  const activeEntry = entries[activeIndex]!;
 
   function goToIndex(index: number) {
-    setActiveIndex(wrapIndex(index, journalEntries.length));
+    setActiveIndex(wrapIndex(index, entries.length));
   }
 
   function goToPrevious() {
-    setActiveIndex((prev) => wrapIndex(prev - 1, journalEntries.length));
+    setActiveIndex((prev) => wrapIndex(prev - 1, entries.length));
   }
 
   function goToNext() {
-    setActiveIndex((prev) => wrapIndex(prev + 1, journalEntries.length));
+    setActiveIndex((prev) => wrapIndex(prev + 1, entries.length));
   }
 
   function handleWheel(event: React.WheelEvent<HTMLDivElement>) {
@@ -162,28 +152,10 @@ export default function JournalOrbit({
     touchStartXRef.current = null;
   }
 
-  function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-    if (event.key === "ArrowLeft") {
-      event.preventDefault();
-      goToPrevious();
-    }
-
-    if (event.key === "ArrowRight") {
-      event.preventDefault();
-      goToNext();
-    }
-  }
-
   return (
     <section id="journal" className="border-t border-white/10 px-5 py-20 sm:px-8">
       <div className="mx-auto max-w-[1500px]">
-        <motion.div
-          className="mb-14 flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between"
-          initial={{ opacity: 0, y: 70 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ amount: 0.2 }}
-          transition={{ duration: 0.9, ease: "easeOut" }}
-        >
+        <div className="mb-14 flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-3xl space-y-4">
             <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-400">
               {sectionLabel}
@@ -210,77 +182,33 @@ export default function JournalOrbit({
               {ctaLabel}
             </Link>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 80 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ amount: 0.15 }}
-          transition={{ duration: 0.95, ease: "easeOut" }}
-          className="relative overflow-hidden rounded-[2.75rem] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.06),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] px-4 py-5 sm:px-6 sm:py-6 lg:px-10 lg:py-8"
-        >
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-2">
-              <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                Orbit Rail
-              </p>
-              <p className="text-sm leading-7 text-zinc-300">
-                One journal entry stays centered. The others rotate around it.
-              </p>
+        <div className="relative overflow-hidden rounded-[2.75rem] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.06),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] px-4 py-5 sm:px-6 sm:py-6 lg:px-10 lg:py-8">
+          <div className="mb-6 flex items-center justify-between">
+            <div className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
+              Orbit Rail
             </div>
 
-            <div className="flex items-center gap-3">
-              <motion.button
-                type="button"
-                whileTap={{ scale: 0.95 }}
-                onClick={goToPrevious}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 text-zinc-200 transition hover:border-white/30 hover:text-white"
-                aria-label="Previous journal entry"
-              >
-                ←
-              </motion.button>
-
-              <div className="min-w-[5.5rem] text-center text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                {formatCounter(activeIndex, journalEntries.length)}
-              </div>
-
-              <motion.button
-                type="button"
-                whileTap={{ scale: 0.95 }}
-                onClick={goToNext}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 text-zinc-200 transition hover:border-white/30 hover:text-white"
-                aria-label="Next journal entry"
-              >
-                →
-              </motion.button>
+            <div className="min-w-[5.5rem] text-center text-[11px] uppercase tracking-[0.28em] text-zinc-500">
+              {formatCounter(activeIndex, entries.length)}
             </div>
           </div>
 
           <div
-            tabIndex={0}
             onWheel={handleWheel}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
-            onKeyDown={handleKeyDown}
             className="relative h-[32rem] overflow-hidden outline-none sm:h-[36rem] lg:h-[42rem]"
           >
-            <div className="pointer-events-none absolute left-1/2 top-1/2 h-[72%] w-[130%] -translate-x-1/2 -translate-y-1/2 rounded-[100%] border border-white/[0.06]" />
-            <div className="pointer-events-none absolute left-1/2 top-1/2 h-[52%] w-[112%] -translate-x-1/2 -translate-y-1/2 rounded-[100%] border border-white/[0.04]" />
-            <div className="pointer-events-none absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-black via-black/85 to-transparent sm:w-28 lg:w-40" />
-            <div className="pointer-events-none absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-black via-black/85 to-transparent sm:w-28 lg:w-40" />
-
-            {journalEntries.map((entry, index) => {
-              const wrappedOffset = getWrappedOffset(
-                index,
-                activeIndex,
-                journalEntries.length
-              );
+            {entries.map((entry, index) => {
+              const wrappedOffset = getWrappedOffset(index, activeIndex, entries.length);
               const state = getOrbitState(wrappedOffset);
               const isActive = wrappedOffset === 0;
 
               return (
                 <motion.article
-                  key={entry.slug}
+                  key={entry._id}
                   className="absolute w-[84%] -translate-x-1/2 -translate-y-1/2 sm:w-[78%] lg:w-[72%]"
                   style={{ zIndex: state.zIndex }}
                   animate={{
@@ -298,43 +226,27 @@ export default function JournalOrbit({
                   }}
                 >
                   {isActive ? (
-                    <div className="overflow-hidden rounded-[2.25rem] border border-white/10 bg-white/[0.03] shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
+                    <div className="overflow-hidden rounded-[2.25rem] border border-white/10 bg-white/[0.03]">
                       <div className="grid gap-0 lg:grid-cols-[1.05fr_0.95fr]">
                         <div className="relative aspect-[4/5] sm:aspect-[16/10] lg:min-h-[34rem]">
-                          <Image
-                            src={entry.coverImage}
-                            alt={entry.coverAlt}
-                            fill
-                            sizes="(max-width: 1280px) 100vw, 55vw"
-                            className="object-cover"
-                          />
+                          {entry.coverImageUrl ? (
+                            <img
+                              src={entry.coverImageUrl}
+                              alt={entry.title}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 bg-zinc-900" />
+                          )}
 
                           <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/25 to-black/80" />
-
-                          <div className="absolute left-6 top-6 space-y-1">
-                            <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-200">
-                              {kindLabelMap[entry.kind]}
-                            </p>
-                            <p className="text-[11px] uppercase tracking-[0.22em] text-zinc-500">
-                              Featured Entry
-                            </p>
-                          </div>
-
-                          <div className="absolute bottom-6 left-6 right-6">
-                            <div className="space-y-3">
-                              <p className="text-[11px] uppercase tracking-[0.24em] text-zinc-200">
-                                {formatJournalDate(entry.publishedAt)}
-                              </p>
-                              <div className="h-px w-full bg-white/20" />
-                            </div>
-                          </div>
                         </div>
 
                         <div className="flex flex-col justify-between gap-8 p-6 sm:p-8">
                           <div className="space-y-5">
                             <div className="flex flex-wrap items-center gap-3 text-[11px] uppercase tracking-[0.24em] text-zinc-500">
                               <span>{entry.readTime}</span>
-                              <span>{kindLabelMap[entry.kind]}</span>
+                              <span>{entry.kind}</span>
                             </div>
 
                             <h3 className="max-w-[12ch] text-4xl font-semibold leading-[0.95] sm:text-5xl">
@@ -344,11 +256,15 @@ export default function JournalOrbit({
                             <p className="max-w-xl text-sm leading-8 text-zinc-300 sm:text-base">
                               {entry.excerpt}
                             </p>
+
+                            <p className="text-[11px] uppercase tracking-[0.22em] text-zinc-400">
+                              {formatDate(entry.publishedAt)}
+                            </p>
                           </div>
 
                           <div className="space-y-4">
                             <div className="flex flex-wrap gap-3">
-                              {entry.tags.map((tag) => (
+                              {(entry.tags || []).map((tag) => (
                                 <span
                                   key={tag}
                                   className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-200"
@@ -358,18 +274,12 @@ export default function JournalOrbit({
                               ))}
                             </div>
 
-                            <div className="flex items-center justify-between gap-4 text-[11px] uppercase tracking-[0.24em] text-zinc-500">
-                              <Link
-                                href={`/journal/${entry.slug}`}
-                                className="rounded-full border border-white/10 px-4 py-3 text-sm text-zinc-200 transition hover:border-white/30 hover:text-white"
-                              >
-                                Open Entry
-                              </Link>
-
-                              <span>{formatCounter(activeIndex, journalEntries.length)}</span>
-                            </div>
-
-                            <div className="h-px w-full bg-white/10" />
+                            <Link
+                              href={`/journal/${entry.slug}`}
+                              className="inline-flex rounded-full border border-white/10 px-4 py-3 text-sm text-zinc-200 transition hover:border-white/30 hover:text-white"
+                            >
+                              Open Entry
+                            </Link>
                           </div>
                         </div>
                       </div>
@@ -379,28 +289,20 @@ export default function JournalOrbit({
                       type="button"
                       onClick={() => goToIndex(index)}
                       className="block w-full text-left"
-                      aria-label={`Select journal entry ${entry.title}`}
                     >
                       <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-900">
                         <div className="relative min-h-[18rem] aspect-[4/5]">
-                          <Image
-                            src={entry.coverImage}
-                            alt={entry.coverAlt}
-                            fill
-                            sizes="(max-width: 1024px) 50vw, 35vw"
-                            className="object-cover"
-                          />
+                          {entry.coverImageUrl ? (
+                            <img
+                              src={entry.coverImageUrl}
+                              alt={entry.title}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 bg-zinc-900" />
+                          )}
 
                           <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/45 to-black/85" />
-
-                          <div className="absolute left-5 top-5 space-y-1">
-                            <p className="text-[10px] uppercase tracking-[0.28em] text-zinc-200">
-                              {wrappedOffset < 0 ? "Previous" : "Next"}
-                            </p>
-                            <p className="text-[10px] uppercase tracking-[0.22em] text-zinc-500">
-                              {kindLabelMap[entry.kind]}
-                            </p>
-                          </div>
 
                           <div className="absolute bottom-5 left-5 right-5 space-y-3">
                             <h3 className="max-w-[10ch] text-2xl font-semibold leading-tight text-zinc-100">
@@ -408,10 +310,8 @@ export default function JournalOrbit({
                             </h3>
 
                             <p className="text-[11px] uppercase tracking-[0.22em] text-zinc-400">
-                              {formatJournalDate(entry.publishedAt)}
+                              {formatDate(entry.publishedAt)}
                             </p>
-
-                            <div className="h-px w-full bg-white/15" />
                           </div>
                         </div>
                       </div>
@@ -422,41 +322,19 @@ export default function JournalOrbit({
             })}
           </div>
 
-          <div className="mt-6 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="space-y-3">
-              <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                Selected Entry
-              </p>
-
-              <div className="flex flex-wrap gap-3">
-                {activeEntry.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-200"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {journalEntries.map((entry, index) => (
-                <button
-                  key={entry.slug}
-                  type="button"
-                  onClick={() => goToIndex(index)}
-                  aria-label={`Go to journal entry ${index + 1}`}
-                  className={`h-2.5 rounded-full transition ${
-                    index === activeIndex
-                      ? "w-10 bg-white"
-                      : "w-2.5 bg-white/25 hover:bg-white/40"
-                  }`}
-                />
-              ))}
-            </div>
+          <div className="mt-6 flex items-center gap-2">
+            {entries.map((entry, index) => (
+              <button
+                key={entry._id}
+                type="button"
+                onClick={() => goToIndex(index)}
+                className={`h-2.5 rounded-full transition ${
+                  index === activeIndex ? "w-10 bg-white" : "w-2.5 bg-white/25 hover:bg-white/40"
+                }`}
+              />
+            ))}
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

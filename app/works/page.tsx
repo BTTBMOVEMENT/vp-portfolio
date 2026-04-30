@@ -1,14 +1,32 @@
 import Link from "next/link";
 import StoryboardBoard from "../../components/works/StoryboardBoard";
-import { getBoardPages, getProjectsForBoard, projects } from "../../lib/projects";
+import { sanityFetch } from "../../sanity/lib/client";
+import { PROJECTS_QUERY } from "../../sanity/lib/queries";
 
 function pad(value: number) {
   return String(value).padStart(2, "0");
 }
 
-export default function WorksPage() {
-  const boardPages = getBoardPages();
+export const revalidate = 0;
+
+export default async function WorksPage() {
+  const projects =
+    (await sanityFetch({
+      query: PROJECTS_QUERY,
+      revalidate: 0,
+    })) || [];
+
+  const boardPages = Array.from(
+    new Set((projects || []).map((project: any) => project.boardPage || 1))
+  ).sort((a: number, b: number) => a - b);
+
   const totalProjects = projects.length;
+
+  function getProjectsForBoard(boardPage: number) {
+    return projects
+      .filter((project: any) => (project.boardPage || 1) === boardPage)
+      .sort((a: any, b: any) => (a.boardOrder || 9999) - (b.boardOrder || 9999));
+  }
 
   return (
     <main className="min-h-screen bg-black text-white">

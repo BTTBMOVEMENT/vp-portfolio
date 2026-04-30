@@ -1,22 +1,58 @@
 import HomePageClient from "../components/home/HomePageClient";
-import { SITE_SETTINGS_QUERY } from "../sanity/lib/queries";
 import { sanityFetch } from "../sanity/lib/client";
+import {
+  JOURNAL_ENTRIES_QUERY,
+  PROJECTS_QUERY,
+  SITE_SETTINGS_QUERY,
+} from "../sanity/lib/queries";
+import { estimateReadTime } from "../sanity/lib/text";
 
 export const revalidate = 0;
 
-async function getSiteSettings() {
+async function getHomeData() {
   try {
-    return await sanityFetch({
-      query: SITE_SETTINGS_QUERY,
-      revalidate: 0,
-    });
+    const [siteSettings, projects, journalEntries] = await Promise.all([
+      sanityFetch({
+        query: SITE_SETTINGS_QUERY,
+        revalidate: 0,
+      }),
+      sanityFetch({
+        query: PROJECTS_QUERY,
+        revalidate: 0,
+      }),
+      sanityFetch({
+        query: JOURNAL_ENTRIES_QUERY,
+        revalidate: 0,
+      }),
+    ]);
+
+    const normalizedJournalEntries = (journalEntries || []).map((entry: any) => ({
+      ...entry,
+      readTime: estimateReadTime(entry.body),
+    }));
+
+    return {
+      siteSettings: siteSettings || null,
+      projects: projects || [],
+      journalEntries: normalizedJournalEntries,
+    };
   } catch {
-    return null;
+    return {
+      siteSettings: null,
+      projects: [],
+      journalEntries: [],
+    };
   }
 }
 
 export default async function Page() {
-  const siteSettings = await getSiteSettings();
+  const { siteSettings, projects, journalEntries } = await getHomeData();
 
-  return <HomePageClient siteSettings={siteSettings} />;
+  return (
+    <HomePageClient
+      siteSettings={siteSettings}
+      projects={projects}
+      journalEntries={journalEntries}
+    />
+  );
 }

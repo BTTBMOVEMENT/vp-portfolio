@@ -70,10 +70,6 @@ export default function MyAlbumGateway({
                   {sectionLabel}
                 </p>
                 <div className="h-px w-20 bg-white/15" />
-                <p className="max-w-sm text-sm leading-8 text-zinc-400">
-                  A quieter archive for personal photographs, visual memory, and
-                  frames that do not belong to the case-study structure.
-                </p>
               </div>
 
               <div className="space-y-6">
@@ -128,22 +124,6 @@ export default function MyAlbumGateway({
               transition={{ duration: 0.62, ease: [0.22, 1, 0.36, 1] }}
               className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.08),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.08),rgba(0,0,0,0.95))]"
             />
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.92 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.45, ease: "easeOut" }}
-              className="absolute inset-0 flex items-center justify-center"
-            >
-              <div className="space-y-4 text-center">
-                <div className="font-serif text-6xl italic text-zinc-100 sm:text-7xl">
-                  {buttonLabel}
-                </div>
-                <div className="text-[11px] uppercase tracking-[0.32em] text-zinc-400">
-                  Entering the orbital collection
-                </div>
-              </div>
-            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

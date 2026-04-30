@@ -1,61 +1,80 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import PortableTextContent from "../../../components/cms/PortableTextContent";
+import { sanityFetch } from "../../../sanity/lib/client";
 import {
-  formatJournalDate,
-  getJournalEntryBySlug,
-  journalEntries,
-} from "../../../lib/journal";
+  JOURNAL_ENTRIES_QUERY,
+  JOURNAL_ENTRY_BY_SLUG_QUERY,
+} from "../../../sanity/lib/queries";
+import { estimateReadTime } from "../../../sanity/lib/text";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
 };
 
-const kindLabelMap = {
-  essay: "Essay",
-  note: "Note",
-  photo: "Photo",
-  video: "Video",
-} as const;
-
-export async function generateStaticParams() {
-  return journalEntries.map((entry) => ({
-    slug: entry.slug,
-  }));
+function formatDate(value?: string) {
+  if (!value) return "";
+  try {
+    return new Intl.DateTimeFormat("en-US", {
+      dateStyle: "medium",
+    }).format(new Date(value));
+  } catch {
+    return value;
+  }
 }
+
+export const revalidate = 0;
 
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const entry = getJournalEntryBySlug(slug);
+  const entry =
+    (await sanityFetch({
+      query: JOURNAL_ENTRY_BY_SLUG_QUERY,
+      params: { slug },
+      revalidate: 0,
+    })) || null;
 
   if (!entry) {
-    return {
-      title: "Journal entry not found | BTTB Movement",
-      description: "The requested journal entry could not be found.",
-    };
+    return { title: "Journal entry not found" };
   }
 
   return {
-    title: `${entry.title} | Journal | BTTB Movement`,
+    title: entry.title,
     description: entry.excerpt,
   };
 }
 
 export default async function JournalEntryPage({ params }: PageProps) {
   const { slug } = await params;
-  const entry = getJournalEntryBySlug(slug);
+
+  const [entry, rawEntries] = await Promise.all([
+    sanityFetch({
+      query: JOURNAL_ENTRY_BY_SLUG_QUERY,
+      params: { slug },
+      revalidate: 0,
+    }),
+    sanityFetch({
+      query: JOURNAL_ENTRIES_QUERY,
+      revalidate: 0,
+    }),
+  ]);
 
   if (!entry) {
     notFound();
   }
 
-  const entryIndex = journalEntries.findIndex((item) => item.slug === entry.slug);
-  const previousEntry = entryIndex > 0 ? journalEntries[entryIndex - 1] : null;
+  const journalEntries = (rawEntries || []).map((item: any) => ({
+    ...item,
+    readTime: estimateReadTime(item.body),
+  }));
+
+  const currentIndex = journalEntries.findIndex((item: any) => item.slug === entry.slug);
+  const previousEntry = currentIndex > 0 ? journalEntries[currentIndex - 1] : null;
   const nextEntry =
-    entryIndex < journalEntries.length - 1 ? journalEntries[entryIndex + 1] : null;
+    currentIndex < journalEntries.length - 1 ? journalEntries[currentIndex + 1] : null;
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -69,7 +88,7 @@ export default async function JournalEntryPage({ params }: PageProps) {
               Back to Journal
             </Link>
 
-            <span>{kindLabelMap[entry.kind]} / {entry.readTime}</span>
+            <span>{entry.kind} / {estimateReadTime(entry.body)}</span>
           </div>
         </div>
       </section>
@@ -80,7 +99,7 @@ export default async function JournalEntryPage({ params }: PageProps) {
             <div className="space-y-6">
               <div className="space-y-4">
                 <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                  {kindLabelMap[entry.kind]}
+                  {entry.kind}
                 </p>
 
                 <h1 className="max-w-[12ch] text-5xl font-semibold leading-[0.92] sm:text-6xl">
@@ -88,95 +107,53 @@ export default async function JournalEntryPage({ params }: PageProps) {
                 </h1>
 
                 <div className="flex flex-wrap items-center gap-3 text-[11px] uppercase tracking-[0.24em] text-zinc-500">
-                  <span>{formatJournalDate(entry.publishedAt)}</span>
-                  <span>{entry.readTime}</span>
+                  <span>{formatDate(entry.publishedAt)}</span>
+                  <span>{estimateReadTime(entry.body)}</span>
                 </div>
               </div>
 
               <p className="max-w-xl text-sm leading-8 text-zinc-300 sm:text-base">
                 {entry.excerpt}
               </p>
-
-              <div className="flex flex-wrap gap-3">
-                {entry.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-200"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
             </div>
 
             <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-900">
               <div className="relative aspect-[4/5] sm:aspect-[16/10]">
-                <Image
-                  src={entry.coverImage}
-                  alt={entry.coverAlt}
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 55vw"
-                  className="object-cover"
-                />
+                {entry.coverImageUrl ? (
+                  <img
+                    src={entry.coverImageUrl}
+                    alt={entry.title}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-zinc-900" />
+                )}
 
                 <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/25 to-black/80" />
-
-                <div className="absolute bottom-6 left-6 right-6">
-                  <div className="space-y-3">
-                    <p className="text-[11px] uppercase tracking-[0.24em] text-zinc-200">
-                      {kindLabelMap[entry.kind]} Entry
-                    </p>
-                    <div className="h-px w-full bg-white/20" />
-                  </div>
-                </div>
               </div>
             </div>
           </div>
 
-          <section className="rounded-[2rem] border border-white/10 bg-white/[0.03] px-6 py-8 sm:px-8">
-            <div className="grid gap-6 lg:grid-cols-[0.45fr_1.55fr] lg:items-start">
-              <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                Intro
-              </p>
+          {entry.intro && (
+            <section className="rounded-[2rem] border border-white/10 bg-white/[0.03] px-6 py-8 sm:px-8">
+              <div className="grid gap-6 lg:grid-cols-[0.45fr_1.55fr] lg:items-start">
+                <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
+                  Intro
+                </p>
 
-              <p className="max-w-4xl text-xl leading-relaxed text-zinc-100 sm:text-2xl">
-                {entry.intro}
-              </p>
-            </div>
-          </section>
+                <p className="max-w-4xl text-xl leading-relaxed text-zinc-100 sm:text-2xl">
+                  {entry.intro}
+                </p>
+              </div>
+            </section>
+          )}
 
           <div className="grid gap-10 lg:grid-cols-[1fr_0.42fr]">
             <div className="space-y-8">
-              {entry.body.map((paragraph, index) => (
-                <section key={index} className="space-y-4">
-                  <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                    Section {String(index + 1).padStart(2, "0")}
-                  </p>
-                  <p className="max-w-2xl text-sm leading-8 text-zinc-300 sm:text-base">
-                    {paragraph}
-                  </p>
-                </section>
-              ))}
+              <PortableTextContent value={entry.body} />
             </div>
 
             <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
-              <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-6">
-                <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                  Side Notes
-                </p>
-
-                <ul className="mt-5 space-y-4">
-                  {entry.sideNotes.map((note) => (
-                    <li
-                      key={note}
-                      className="border-b border-white/10 pb-4 text-sm leading-7 text-zinc-200 last:border-b-0 last:pb-0"
-                    >
-                      {note}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
               <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-6">
                 <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
                   Actions
@@ -191,7 +168,7 @@ export default async function JournalEntryPage({ params }: PageProps) {
                   </Link>
 
                   <Link
-                    href="/#works"
+                    href="/works"
                     className="block rounded-full border border-white/10 px-4 py-3 text-sm text-zinc-200 transition hover:border-white/30 hover:text-white"
                   >
                     Return to works
@@ -200,6 +177,33 @@ export default async function JournalEntryPage({ params }: PageProps) {
               </div>
             </aside>
           </div>
+
+          {(entry.gallery || []).length > 0 && (
+            <section className="space-y-6">
+              <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
+                Gallery
+              </p>
+
+              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                {(entry.gallery || []).map((image: any, index: number) => (
+                  <div
+                    key={`${image.imageUrl}-${index}`}
+                    className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-zinc-900"
+                  >
+                    {image.imageUrl ? (
+                      <img
+                        src={image.imageUrl}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="aspect-[4/5] bg-zinc-900" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           <section className="space-y-6 border-t border-white/10 pt-12">
             <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
@@ -219,9 +223,6 @@ export default async function JournalEntryPage({ params }: PageProps) {
                     <h3 className="text-3xl font-semibold leading-tight text-zinc-100 transition group-hover:text-white">
                       {previousEntry.title}
                     </h3>
-                    <p className="text-sm leading-7 text-zinc-400">
-                      {previousEntry.excerpt}
-                    </p>
                   </div>
                 </Link>
               ) : (
@@ -249,9 +250,6 @@ export default async function JournalEntryPage({ params }: PageProps) {
                     <h3 className="text-3xl font-semibold leading-tight text-zinc-100 transition group-hover:text-white">
                       {nextEntry.title}
                     </h3>
-                    <p className="text-sm leading-7 text-zinc-400">
-                      {nextEntry.excerpt}
-                    </p>
                   </div>
                 </Link>
               ) : (

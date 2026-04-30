@@ -1,25 +1,23 @@
-import { createClient, type QueryParams } from "next-sanity";
-import { apiVersion, dataset, projectId } from "../env";
+import {createClient} from 'next-sanity'
+import {apiVersion, dataset, projectId} from '../env'
 
 export const client = createClient({
   projectId,
   dataset,
   apiVersion,
   useCdn: false,
-});
+})
 
-export async function sanityFetch<const QueryString extends string>({
+export async function sanityFetch({
   query,
   params = {},
   revalidate = 0,
 }: {
-  query: QueryString;
-  params?: QueryParams;
-  revalidate?: number | false;
+  query: string
+  params?: Record<string, unknown>
+  revalidate?: number | false
 }) {
   return client.fetch(query, params, {
-    next: {
-      revalidate,
-    },
-  });
+    next: revalidate === false ? undefined : {revalidate},
+  })
 }

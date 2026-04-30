@@ -35,84 +35,100 @@ function getRouteLabel(pathname: string) {
   if (pathname === "/journal") return "Journal";
   if (pathname.startsWith("/journal/")) return "Journal Entry";
   if (pathname === "/my-album" || pathname === "/my-vision") return "My Album";
-  if (pathname === "/studio") return "Admin Studio";
+  if (pathname.startsWith("/studio")) return "Admin Studio";
   return "Archive";
 }
 
 export default function SiteNavigation() {
   const pathname = usePathname();
   const routeLabel = getRouteLabel(pathname);
+  const isStudio = pathname.startsWith("/studio");
 
   return (
     <>
-      <motion.header
-        initial={{ opacity: 0, y: -18 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.55, ease: "easeOut" }}
-        className="pointer-events-none fixed inset-x-0 top-4 z-[80] hidden justify-center px-4 md:flex"
-      >
-        <div className="pointer-events-auto">
-          <div className="flex items-center gap-4 rounded-full border border-white/10 bg-black/60 px-4 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl">
-            <Link
-              href="/"
-              className="flex items-center gap-2 rounded-full px-3 py-2 text-[11px] uppercase tracking-[0.28em] text-zinc-200 transition hover:text-white"
-            >
-              <span className="h-2 w-2 rounded-full bg-white/80" />
-              <span>BTTB</span>
-            </Link>
+      {!isStudio && (
+        <motion.header
+          initial={{ opacity: 0, y: -18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, ease: "easeOut" }}
+          className="pointer-events-none fixed inset-x-0 top-4 z-[80] hidden justify-center px-4 md:flex"
+        >
+          <div className="pointer-events-auto">
+            <div className="flex items-center gap-4 rounded-full border border-white/10 bg-black/60 px-4 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+              <Link
+                href="/"
+                className="flex items-center gap-2 rounded-full px-3 py-2 text-[11px] uppercase tracking-[0.28em] text-zinc-200 transition hover:text-white"
+              >
+                <span className="h-2 w-2 rounded-full bg-white/80" />
+                <span>BTTB</span>
+              </Link>
 
-            <div className="h-6 w-px bg-white/10" />
+              <div className="h-6 w-px bg-white/10" />
 
-            <nav className="flex items-center gap-2">
-              {navItems.map((item) => {
-                const active = isActive(pathname, item.href);
+              <nav className="flex items-center gap-2">
+                {navItems.map((item) => {
+                  const active = isActive(pathname, item.href);
 
-                return (
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      aria-current={active ? "page" : undefined}
+                      className={`rounded-full px-4 py-2 text-[11px] uppercase tracking-[0.28em] transition ${
+                        active
+                          ? "border border-white/20 bg-white text-black"
+                          : "border border-transparent text-zinc-300 hover:border-white/10 hover:bg-white/[0.06] hover:text-white"
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </nav>
+
+              {showAdminButton && (
+                <>
+                  <div className="h-6 w-px bg-white/10" />
+
                   <Link
-                    key={item.href}
-                    href={item.href}
-                    aria-current={active ? "page" : undefined}
-                    className={`rounded-full px-4 py-2 text-[11px] uppercase tracking-[0.28em] transition ${
-                      active
-                        ? "border border-white/20 bg-white text-black"
-                        : "border border-transparent text-zinc-300 hover:border-white/10 hover:bg-white/[0.06] hover:text-white"
-                    }`}
+                    href="/studio"
+                    className="rounded-full border border-white/10 px-4 py-2 text-[11px] uppercase tracking-[0.28em] text-zinc-200 transition hover:border-white/30 hover:text-white"
                   >
-                    {item.label}
+                    Admin
                   </Link>
-                );
-              })}
-            </nav>
+                </>
+              )}
 
-            {showAdminButton && (
-              <>
-                <div className="h-6 w-px bg-white/10" />
+              <div className="h-6 w-px bg-white/10" />
 
-                <Link
-                  href="/studio"
-                  className="rounded-full border border-white/10 px-4 py-2 text-[11px] uppercase tracking-[0.28em] text-zinc-200 transition hover:border-white/30 hover:text-white"
-                >
-                  Admin
-                </Link>
-              </>
-            )}
-
-            <div className="h-6 w-px bg-white/10" />
-
-            <div className="rounded-full border border-white/10 px-4 py-2 text-[11px] uppercase tracking-[0.28em] text-zinc-400">
-              {routeLabel}
+              <div className="rounded-full border border-white/10 px-4 py-2 text-[11px] uppercase tracking-[0.28em] text-zinc-400">
+                {routeLabel}
+              </div>
             </div>
           </div>
-        </div>
-      </motion.header>
+        </motion.header>
+      )}
 
       <motion.div
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.55, ease: "easeOut" }}
-        className="pointer-events-none fixed inset-x-0 bottom-4 z-[80] flex justify-center px-4 md:hidden"
+        className={`pointer-events-none fixed inset-x-0 z-[80] flex justify-center md:hidden ${
+          isStudio ? "bottom-0 px-0" : "bottom-4 px-4"
+        }`}
       >
-        <nav className="pointer-events-auto flex w-full max-w-[42rem] items-center justify-between rounded-full border border-white/10 bg-black/70 px-3 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+        <nav
+          className={`pointer-events-auto flex w-full items-center justify-between border border-white/10 bg-black/70 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl ${
+            isStudio
+              ? "rounded-none border-x-0 border-b-0 px-3 py-3"
+              : "max-w-[42rem] rounded-full px-3 py-3"
+          }`}
+          style={
+            isStudio
+              ? { paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }
+              : undefined
+          }
+        >
           {navItems.map((item) => {
             const active = isActive(pathname, item.href);
 

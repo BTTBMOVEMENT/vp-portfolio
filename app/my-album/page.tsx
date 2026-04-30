@@ -1,14 +1,30 @@
 import type { Metadata } from "next";
 import VisionCosmos from "../../components/vision/VisionCosmos";
-import { getVisionEntries } from "../../lib/vision";
+import { sanityFetch } from "../../sanity/lib/client";
+import { ALBUM_ITEMS_QUERY } from "../../sanity/lib/queries";
 
 export const metadata: Metadata = {
   title: "My Album",
   description: "A cinematic photo album of drifting frames.",
 };
 
+export const revalidate = 0;
+
 export default async function MyAlbumPage() {
-  const entries = await getVisionEntries();
+  const rawEntries =
+    (await sanityFetch({
+      query: ALBUM_ITEMS_QUERY,
+      revalidate: 0,
+    })) || [];
+
+  const entries = rawEntries.map((item: any) => ({
+    id: item._id,
+    title: item.title,
+    imageUrl: item.imageUrl,
+    videoUrl: item.videoUrl,
+    capturedAt: item.capturedAt,
+    note: item.note,
+  }));
 
   return (
     <main className="min-h-screen bg-black text-white">

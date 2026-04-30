@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import XTimeline from "../../components/social/XTimeline";
+import { formatSocialDate, getXPosts, getXProfileUrl } from "../../lib/social";
 
 export const metadata: Metadata = {
   title: "Social Media",
-  description: "An embedded X timeline inside the site.",
+  description: "A direct X feed rendered inside the site.",
 };
 
-export default function SocialMediaPage() {
+export default async function SocialMediaPage() {
+  const xResult = await getXPosts();
+
   return (
     <main className="min-h-screen bg-black text-white">
       <section className="border-b border-white/10 px-5 pb-8 pt-6 sm:px-8">
@@ -34,7 +36,7 @@ export default function SocialMediaPage() {
               </p>
               <div className="h-px w-20 bg-white/15" />
               <p className="max-w-sm text-sm leading-7 text-zinc-500">
-                A direct stream from your X account, embedded into the site.
+                A direct stream from your X account, rendered inside the site.
               </p>
             </div>
 
@@ -44,8 +46,8 @@ export default function SocialMediaPage() {
               </h1>
 
               <p className="max-w-3xl text-sm leading-8 text-zinc-300 sm:text-base">
-                This page uses the official embedded timeline route, but mounts it
-                programmatically so the site has more control over how the feed loads.
+                This route no longer depends on the fragile browser widget path. It
+                renders recent X posts directly into the site layout.
               </p>
             </div>
           </div>
@@ -62,7 +64,7 @@ export default function SocialMediaPage() {
               </div>
 
               <a
-                href="https://twitter.com/BTTBMovement"
+                href={getXProfileUrl()}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex rounded-full border border-white/10 px-4 py-3 text-sm text-zinc-200 transition hover:border-white/30 hover:text-white"
@@ -71,7 +73,77 @@ export default function SocialMediaPage() {
               </a>
             </div>
 
-            <XTimeline username="BTTBMovement" height={980} />
+            {xResult.mode !== "live" ? (
+              <div className="rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-8">
+                <div className="space-y-4">
+                  <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
+                    Feed Error
+                  </p>
+
+                  <p className="max-w-2xl text-sm leading-8 text-zinc-300 sm:text-base">
+                    {xResult.message ||
+                      "The X feed could not be rendered from the current response."}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-6 xl:grid-cols-2">
+                {xResult.posts.map((post) => (
+                  <a
+                    key={post.id}
+                    href={post.permalink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] transition hover:border-white/20"
+                  >
+                    <div className="grid gap-0 sm:grid-cols-[0.9fr_1.1fr]">
+                      <div className="relative min-h-[18rem] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_28%)]">
+                        {post.mediaUrl ? (
+                          <img
+                            src={post.mediaUrl}
+                            alt=""
+                            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.06),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))]" />
+                        )}
+
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/20 to-black/80" />
+
+                        <div className="absolute left-5 top-5 space-y-1">
+                          <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-200">
+                            X
+                          </p>
+                          <p className="text-[11px] uppercase tracking-[0.22em] text-zinc-500">
+                            {post.mediaType || "Text Post"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col justify-between gap-6 p-5">
+                        <div className="space-y-4">
+                          <p className="text-[11px] uppercase tracking-[0.24em] text-zinc-500">
+                            {formatSocialDate(post.createdAt)}
+                          </p>
+
+                          <p className="whitespace-pre-wrap text-sm leading-8 text-zinc-200 sm:text-base">
+                            {post.text?.trim() ? post.text : "No text."}
+                          </p>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between gap-4 text-[11px] uppercase tracking-[0.22em] text-zinc-500">
+                            <span>Open Original Post</span>
+                            <span>X</span>
+                          </div>
+                          <div className="h-px w-full bg-white/10" />
+                        </div>
+                      </div>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </section>

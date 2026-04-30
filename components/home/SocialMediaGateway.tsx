@@ -1,9 +1,60 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 
+type SummaryResponse = {
+  x: {
+    mode: "live" | "setup-required" | "error";
+    message?: string;
+    profileUrl: string;
+    latest: null | {
+      id: string;
+      text: string;
+      createdAt?: string;
+      mediaUrl?: string;
+      mediaType?: string;
+      permalink: string;
+    };
+  };
+};
+
+function truncate(value: string, limit: number) {
+  if (value.length <= limit) return value;
+  return `${value.slice(0, limit).trim()}…`;
+}
+
 export default function SocialMediaGateway() {
+  const [data, setData] = useState<SummaryResponse | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function load() {
+      try {
+        const response = await fetch("/api/social-summary", {
+          signal: controller.signal,
+          cache: "no-store",
+        });
+
+        if (!response.ok) return;
+
+        const json = (await response.json()) as SummaryResponse;
+        setData(json);
+      } catch {
+        // ignore teaser fetch errors
+      }
+    }
+
+    void load();
+
+    return () => controller.abort();
+  }, []);
+
+  const latest = data?.x?.latest ?? null;
+  const live = data?.x?.mode === "live";
+
   return (
     <section className="border-t border-white/10 px-5 py-20 sm:px-8">
       <div className="mx-auto max-w-[1500px]">
@@ -20,12 +71,12 @@ export default function SocialMediaGateway() {
             </p>
 
             <h2 className="max-w-[13ch] text-3xl font-semibold leading-tight sm:text-4xl md:text-5xl">
-              A direct stream from X inside the site.
+              A direct X stream rendered inside the site.
             </h2>
 
             <p className="max-w-2xl text-sm leading-8 text-zinc-300 sm:text-base">
-              Instead of depending on API entitlements, this section now points into an
-              embedded X timeline that updates directly from your account.
+              This section now previews your recent X presence as site-native cards
+              instead of relying on the browser widget alone.
             </p>
           </div>
 
@@ -57,7 +108,7 @@ export default function SocialMediaGateway() {
               </p>
               <div className="h-px w-20 bg-white/15" />
               <p className="max-w-sm text-sm leading-8 text-zinc-400">
-                A token-free embed route for your live X posts.
+                A site-native preview of your latest X writing.
               </p>
             </div>
 
@@ -67,8 +118,9 @@ export default function SocialMediaGateway() {
               </h3>
 
               <p className="max-w-2xl text-sm leading-8 text-zinc-300 sm:text-base">
-                Your latest posts can live here as a parallel publishing layer, without
-                needing to keep a separate custom API renderer alive.
+                {live && latest?.text
+                  ? truncate(latest.text, 220)
+                  : "The latest X post will preview here once the feed resolves."}
               </p>
 
               <div className="flex flex-wrap items-center gap-4">
@@ -80,7 +132,7 @@ export default function SocialMediaGateway() {
                 </Link>
 
                 <a
-                  href="https://x.com/BTTBMovement"
+                  href="https://twitter.com/BTTBMovement"
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex rounded-full border border-white/15 px-6 py-4 text-sm text-zinc-200 transition hover:border-white/30 hover:text-white"

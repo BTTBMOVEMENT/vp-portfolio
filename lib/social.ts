@@ -1,6 +1,6 @@
 export type SocialPost = {
   id: string;
-  platform: "x" | "instagram";
+  platform: "x";
   text: string;
   permalink: string;
   createdAt?: string;
@@ -15,165 +15,205 @@ export type SocialFeedResult = {
 };
 
 const X_USERNAME = process.env.X_USERNAME || "BTTBMovement";
-const X_API_BASE_URL = process.env.X_API_BASE_URL || "https://api.x.com/2";
+const X_PROFILE_URL = `https://twitter.com/${X_USERNAME}`;
+const X_SYNDICATION_URL = `https://syndication.twitter.com/srv/timeline-profile/screen-name/${encodeURIComponent(
+  X_USERNAME
+)}`;
 
-const INSTAGRAM_USERNAME = process.env.INSTAGRAM_USERNAME || "24minus0.024";
-const META_GRAPH_BASE_URL =
-  process.env.META_GRAPH_BASE_URL || "https://graph.facebook.com";
-const META_GRAPH_VERSION = process.env.META_GRAPH_VERSION || "v23.0";
+function extractNextDataJson(html: string) {
+  const match = html.match(
+    /<script[^>]*id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i
+  );
 
-function formatXPermalink(username: string, id: string) {
-  return `https://x.com/${username}/status/${id}`;
+  if (!match?.[1]) return null;
+
+  try {
+    return JSON.parse(match[1]);
+  } catch {
+    return null;
+  }
 }
 
-function parseXMedia(
-  includes: any,
-  attachments: any
-): { mediaUrl?: string; mediaType?: string } {
-  const mediaKeys: string[] | undefined = attachments?.media_keys;
-  if (!mediaKeys || !includes?.media) return {};
+function walk(value: unknown, visitor: (node: Record<string, unknown>) => void) {
+  const seen = new WeakSet();
 
-  const first = includes.media.find((item: any) => mediaKeys.includes(item.media_key));
-  if (!first) return {};
+  function inner(node: unknown) {
+    if (!node || typeof node !== "object") return;
+    if (seen.has(node as object)) return;
+
+    seen.add(node as object);
+
+    if (Array.isArray(node)) {
+      for (const item of node) inner(item);
+      return;
+    }
+
+    const record = node as Record<string, unknown>;
+    visitor(record);
+
+    for (const child of Object.values(record)) {
+      inner(child);
+    }
+  }
+
+  inner(value);
+}
+
+function collectTweetLikeObjects(root: unknown) {
+  const candidates: Record<string, unknown>[] = [];
+
+  walk(root, (node) => {
+    const id =
+      typeof node.id_str === "string"
+        ? node.id_str
+        : typeof node.rest_id === "string"
+        ? node.rest_id
+        : typeof node.id === "string"
+        ? node.id
+        : typeof node.id === "number"
+        ? String(node.id)
+        : null;
+
+    const text =
+      typeof node.full_text === "string"
+        ? node.full_text
+        : typeof node.text === "string"
+        ? node.text
+        : null;
+
+    const createdAt =
+      typeof node.created_at === "string" ? node.created_at : null;
+
+    const looksLikeTweet =
+      !!id &&
+      !!text &&
+      (!!createdAt ||
+        "conversation_id_str" in node ||
+        "favorite_count" in node ||
+        "retweet_count" in node ||
+        "entities" in node);
+
+    if (looksLikeTweet) {
+      candidates.push(node);
+    }
+  });
+
+  return candidates;
+}
+
+function normalizeTweet(node: Record<string, unknown>): SocialPost | null {
+  const id =
+    typeof node.id_str === "string"
+      ? node.id_str
+      : typeof node.rest_id === "string"
+      ? node.rest_id
+      : typeof node.id === "string"
+      ? node.id
+      : typeof node.id === "number"
+      ? String(node.id)
+      : null;
+
+  const text =
+    typeof node.full_text === "string"
+      ? node.full_text
+      : typeof node.text === "string"
+      ? node.text
+      : null;
+
+  if (!id || !text) return null;
+
+  const user =
+    typeof (node.user as any)?.screen_name === "string"
+      ? (node.user as any).screen_name
+      : X_USERNAME;
+
+  const media =
+    Array.isArray((node.extended_entities as any)?.media) &&
+    (node.extended_entities as any).media.length > 0
+      ? (node.extended_entities as any).media[0]
+      : Array.isArray((node.entities as any)?.media) &&
+        (node.entities as any).media.length > 0
+      ? (node.entities as any).media[0]
+      : null;
+
+  const mediaUrl =
+    typeof media?.media_url_https === "string"
+      ? media.media_url_https
+      : typeof media?.media_url === "string"
+      ? media.media_url
+      : undefined;
+
+  const mediaType =
+    typeof media?.type === "string" ? media.type : undefined;
 
   return {
-    mediaUrl: first.url || first.preview_image_url,
-    mediaType: first.type,
+    id,
+    platform: "x",
+    text,
+    permalink: `https://twitter.com/${user}/status/${id}`,
+    createdAt:
+      typeof node.created_at === "string" ? node.created_at : undefined,
+    mediaUrl,
+    mediaType,
   };
 }
 
 export async function getXPosts(): Promise<SocialFeedResult> {
-  const token = process.env.X_BEARER_TOKEN;
-
-  if (!token) {
-    return {
-      posts: [],
-      mode: "setup-required",
-      message:
-        "Set X_BEARER_TOKEN in your environment to load your X timeline automatically.",
-    };
-  }
-
   try {
-    const userResponse = await fetch(
-      `${X_API_BASE_URL}/users/by/username/${encodeURIComponent(X_USERNAME)}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        next: { revalidate: 300 },
-      }
-    );
-
-    if (!userResponse.ok) {
-      return {
-        posts: [],
-        mode: "error",
-        message: `X user lookup failed with status ${userResponse.status}.`,
-      };
-    }
-
-    const userJson = await userResponse.json();
-    const userId = userJson?.data?.id;
-
-    if (!userId) {
-      return {
-        posts: [],
-        mode: "error",
-        message: "X user lookup returned no user id.",
-      };
-    }
-
-    const postsResponse = await fetch(
-      `${X_API_BASE_URL}/users/${userId}/tweets?max_results=10&tweet.fields=created_at,attachments&expansions=attachments.media_keys&media.fields=url,preview_image_url,type`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        next: { revalidate: 300 },
-      }
-    );
-
-    if (!postsResponse.ok) {
-      return {
-        posts: [],
-        mode: "error",
-        message: `X timeline request failed with status ${postsResponse.status}.`,
-      };
-    }
-
-    const postsJson = await postsResponse.json();
-
-    const posts: SocialPost[] = (postsJson?.data || []).map((item: any) => {
-      const media = parseXMedia(postsJson?.includes, item.attachments);
-
-      return {
-        id: item.id,
-        platform: "x",
-        text: item.text,
-        permalink: formatXPermalink(X_USERNAME, item.id),
-        createdAt: item.created_at,
-        mediaUrl: media.mediaUrl,
-        mediaType: media.mediaType,
-      };
+    const response = await fetch(X_SYNDICATION_URL, {
+      headers: {
+        "user-agent": "Mozilla/5.0",
+        accept: "text/html,application/xhtml+xml",
+      },
+      next: { revalidate: 300 },
     });
-
-    return {
-      posts,
-      mode: "live",
-    };
-  } catch (error) {
-    return {
-      posts: [],
-      mode: "error",
-      message:
-        error instanceof Error ? error.message : "Unknown X API error.",
-    };
-  }
-}
-
-export async function getInstagramPosts(): Promise<SocialFeedResult> {
-  const accessToken = process.env.INSTAGRAM_ACCESS_TOKEN;
-  const userId = process.env.INSTAGRAM_USER_ID;
-
-  if (!accessToken || !userId) {
-    return {
-      posts: [],
-      mode: "setup-required",
-      message:
-        "Set INSTAGRAM_ACCESS_TOKEN and INSTAGRAM_USER_ID to load Instagram posts automatically.",
-    };
-  }
-
-  try {
-    const response = await fetch(
-      `${META_GRAPH_BASE_URL}/${META_GRAPH_VERSION}/${userId}/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp&access_token=${encodeURIComponent(
-        accessToken
-      )}`,
-      {
-        next: { revalidate: 300 },
-      }
-    );
 
     if (!response.ok) {
       return {
         posts: [],
         mode: "error",
-        message: `Instagram media request failed with status ${response.status}.`,
+        message: `X timeline fetch failed with status ${response.status}.`,
       };
     }
 
-    const json = await response.json();
+    const html = await response.text();
+    const nextData = extractNextDataJson(html);
 
-    const posts: SocialPost[] = (json?.data || []).map((item: any) => ({
-      id: item.id,
-      platform: "instagram",
-      text: item.caption || "",
-      permalink: item.permalink,
-      createdAt: item.timestamp,
-      mediaUrl: item.media_url || item.thumbnail_url,
-      mediaType: item.media_type,
-    }));
+    if (!nextData) {
+      return {
+        posts: [],
+        mode: "error",
+        message: "X timeline data could not be parsed from the embed response.",
+      };
+    }
+
+    const candidates = collectTweetLikeObjects(nextData);
+    const deduped = new Map<string, SocialPost>();
+
+    for (const candidate of candidates) {
+      const normalized = normalizeTweet(candidate);
+      if (!normalized) continue;
+
+      if (!deduped.has(normalized.id)) {
+        deduped.set(normalized.id, normalized);
+      }
+    }
+
+    const posts = Array.from(deduped.values())
+      .sort((a, b) => {
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return bTime - aTime;
+      })
+      .slice(0, 12);
+
+    if (posts.length === 0) {
+      return {
+        posts: [],
+        mode: "error",
+        message: "No X posts were extracted from the timeline response.",
+      };
+    }
 
     return {
       posts,
@@ -184,7 +224,7 @@ export async function getInstagramPosts(): Promise<SocialFeedResult> {
       posts: [],
       mode: "error",
       message:
-        error instanceof Error ? error.message : "Unknown Instagram API error.",
+        error instanceof Error ? error.message : "Unknown X timeline error.",
     };
   }
 }
@@ -201,10 +241,6 @@ export function formatSocialDate(value?: string) {
   }
 }
 
-export function getInstagramProfileUrl() {
-  return `https://instagram.com/${INSTAGRAM_USERNAME}`;
-}
-
 export function getXProfileUrl() {
-  return `https://x.com/${X_USERNAME}`;
+  return X_PROFILE_URL;
 }

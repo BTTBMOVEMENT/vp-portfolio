@@ -31,15 +31,15 @@ function getDisplaySize(
   viewport: Size,
   isMobile: boolean
 ) {
-  const maxWidth = viewport.width * (isMobile ? 0.9 : 0.72);
-  const maxHeight = viewport.height * (isMobile ? 0.62 : 0.72);
+  const maxWidth = viewport.width * (isMobile ? 0.82 : 0.7);
+  const maxHeight = viewport.height * (isMobile ? 0.48 : 0.66);
 
   if (!intrinsic || intrinsic.width === 0 || intrinsic.height === 0) {
     return {
       imageWidth: maxWidth,
       imageHeight: maxHeight,
-      frameWidth: maxWidth + 24,
-      frameHeight: maxHeight + 56,
+      frameWidth: maxWidth + 18,
+      frameHeight: maxHeight + 42,
     };
   }
 
@@ -60,8 +60,8 @@ function getDisplaySize(
   return {
     imageWidth,
     imageHeight,
-    frameWidth: imageWidth + 24,
-    frameHeight: imageHeight + 56,
+    frameWidth: imageWidth + 18,
+    frameHeight: imageHeight + 42,
   };
 }
 
@@ -73,18 +73,18 @@ function getThumbSize(
 ) {
   const maxWidth = atlas
     ? viewport.width * (isMobile ? 0.28 : 0.14)
-    : viewport.width * (isMobile ? 0.36 : 0.22);
+    : viewport.width * (isMobile ? 0.28 : 0.2);
 
   const maxHeight = atlas
-    ? viewport.height * (isMobile ? 0.2 : 0.18)
-    : viewport.height * (isMobile ? 0.28 : 0.24);
+    ? viewport.height * (isMobile ? 0.18 : 0.16)
+    : viewport.height * (isMobile ? 0.18 : 0.22);
 
   if (!intrinsic || intrinsic.width === 0 || intrinsic.height === 0) {
     return {
       imageWidth: maxWidth,
       imageHeight: maxHeight,
-      frameWidth: maxWidth + 22,
-      frameHeight: maxHeight + 50,
+      frameWidth: maxWidth + 16,
+      frameHeight: maxHeight + 34,
     };
   }
 
@@ -105,8 +105,8 @@ function getThumbSize(
   return {
     imageWidth,
     imageHeight,
-    frameWidth: imageWidth + 22,
-    frameHeight: imageHeight + 50,
+    frameWidth: imageWidth + 16,
+    frameHeight: imageHeight + 34,
   };
 }
 
@@ -114,7 +114,7 @@ function getOrbitState(offset: number, total: number, isMobile: boolean) {
   if (offset === 0) {
     return {
       left: "50%",
-      top: isMobile ? "51%" : "50%",
+      top: isMobile ? "52%" : "50%",
       opacity: 1,
       rotateY: 0,
       rotateX: 0,
@@ -125,40 +125,40 @@ function getOrbitState(offset: number, total: number, isMobile: boolean) {
 
   if (offset === -1) {
     return {
-      left: total === 2 ? "26%" : isMobile ? "18%" : "23%",
-      top: isMobile ? "64%" : "60%",
-      opacity: 0.62,
-      rotateY: isMobile ? 0 : 42,
+      left: total === 2 ? "24%" : isMobile ? "18%" : "22%",
+      top: isMobile ? "68%" : "60%",
+      opacity: 0.55,
+      rotateY: isMobile ? 0 : 34,
       rotateX: 0,
-      rotateZ: -6,
+      rotateZ: -4,
       zIndex: 40,
     };
   }
 
   if (offset === 1) {
     return {
-      left: total === 2 ? "74%" : isMobile ? "82%" : "77%",
-      top: isMobile ? "64%" : "60%",
-      opacity: 0.62,
-      rotateY: isMobile ? 0 : -42,
+      left: total === 2 ? "76%" : isMobile ? "82%" : "78%",
+      top: isMobile ? "68%" : "60%",
+      opacity: 0.55,
+      rotateY: isMobile ? 0 : -34,
       rotateX: 0,
-      rotateZ: 6,
+      rotateZ: 4,
       zIndex: 40,
     };
   }
 
   const distance = Math.abs(offset);
   const direction = offset < 0 ? -1 : 1;
-  const spread = Math.min(46, 26 + distance * 8);
+  const spread = Math.min(44, 26 + distance * 8);
   const top = 44 + distance * 5;
 
   return {
     left: `${50 + direction * spread}%`,
     top: `${top}%`,
-    opacity: Math.max(0.12, 0.32 - distance * 0.06),
-    rotateY: isMobile ? 0 : direction * (56 + distance * 8),
+    opacity: Math.max(0.1, 0.24 - distance * 0.06),
+    rotateY: isMobile ? 0 : direction * (40 + distance * 6),
     rotateX: 0,
-    rotateZ: direction * (8 + distance * 2),
+    rotateZ: direction * (6 + distance * 1.5),
     zIndex: 20,
   };
 }
@@ -174,7 +174,7 @@ function getAtlasState(index: number, total: number, isMobile: boolean) {
     columns === 1 ? 50 : 18 + (columnIndex * 64) / (columns - 1);
 
   const top =
-    rows === 1 ? 50 : 28 + (rowIndex * 44) / Math.max(1, rows - 1);
+    rows === 1 ? 50 : 30 + (rowIndex * 40) / Math.max(1, rows - 1);
 
   return {
     left: `${left}%`,
@@ -202,16 +202,16 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
   const [viewport, setViewport] = useState<Size>({ width: 1440, height: 900 });
   const [sizes, setSizes] = useState<Record<string, Size>>({});
   const wheelLockRef = useRef(false);
-  const touchStartXRef = useRef<number | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobile(mediaQuery.matches);
+    update();
 
-    const updateMobile = () => setIsMobile(mediaQuery.matches);
-    updateMobile();
-
-    mediaQuery.addEventListener("change", updateMobile);
-    return () => mediaQuery.removeEventListener("change", updateMobile);
+    mediaQuery.addEventListener("change", update);
+    return () => mediaQuery.removeEventListener("change", update);
   }, []);
 
   useEffect(() => {
@@ -232,7 +232,48 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
 
   const activeEntry = entries[activeIndex]!;
 
-  const visibleEntries = useMemo(() => entries, [entries]);
+  const visibleEntries = useMemo(() => {
+    if (showAtlas) return entries;
+
+    return entries.filter((_, index) => {
+      const offset = Math.abs(getWrappedOffset(index, activeIndex, total));
+      return isMobile ? offset <= 1 : offset <= 2;
+    });
+  }, [entries, showAtlas, activeIndex, total, isMobile]);
+
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    if (isMobile || showAtlas) return;
+
+    function onWheel(event: WheelEvent) {
+      if (wheelLockRef.current) return;
+
+      const dominantDelta =
+        Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
+
+      if (Math.abs(dominantDelta) < 18) return;
+
+      event.preventDefault();
+
+      if (dominantDelta > 0) {
+        setActiveIndex((prev) => wrapIndex(prev + 1, total));
+      } else {
+        setActiveIndex((prev) => wrapIndex(prev - 1, total));
+      }
+
+      wheelLockRef.current = true;
+      window.setTimeout(() => {
+        wheelLockRef.current = false;
+      }, 460);
+    }
+
+    stage.addEventListener("wheel", onWheel, { passive: false });
+
+    return () => {
+      stage.removeEventListener("wheel", onWheel);
+    };
+  }, [isMobile, showAtlas, total]);
 
   if (total === 0) {
     return (
@@ -265,48 +306,34 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
     setActiveIndex((prev) => wrapIndex(prev + 1, total));
   }
 
-  function handleWheel(event: React.WheelEvent<HTMLDivElement>) {
-    if (showAtlas) return;
-    if (wheelLockRef.current) return;
-
-    const dominantDelta =
-      Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
-
-    if (Math.abs(dominantDelta) < 18) return;
-
-    event.preventDefault();
-
-    if (dominantDelta > 0) {
-      goToNext();
-    } else {
-      goToPrevious();
-    }
-
-    wheelLockRef.current = true;
-    window.setTimeout(() => {
-      wheelLockRef.current = false;
-    }, 460);
-  }
-
   function handleTouchStart(event: React.TouchEvent<HTMLDivElement>) {
     if (showAtlas) return;
-    touchStartXRef.current = event.touches[0]?.clientX ?? null;
+
+    touchStartRef.current = {
+      x: event.touches[0]?.clientX ?? 0,
+      y: event.touches[0]?.clientY ?? 0,
+    };
   }
 
   function handleTouchEnd(event: React.TouchEvent<HTMLDivElement>) {
     if (showAtlas) return;
-    if (touchStartXRef.current === null) return;
+    if (!touchStartRef.current) return;
 
-    const endX = event.changedTouches[0]?.clientX ?? touchStartXRef.current;
-    const delta = endX - touchStartXRef.current;
+    const endX = event.changedTouches[0]?.clientX ?? touchStartRef.current.x;
+    const endY = event.changedTouches[0]?.clientY ?? touchStartRef.current.y;
 
-    if (delta > 50) {
-      goToPrevious();
-    } else if (delta < -50) {
-      goToNext();
+    const dx = endX - touchStartRef.current.x;
+    const dy = endY - touchStartRef.current.y;
+
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+      if (dx > 0) {
+        goToPrevious();
+      } else {
+        goToNext();
+      }
     }
 
-    touchStartXRef.current = null;
+    touchStartRef.current = null;
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
@@ -392,15 +419,15 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
         </div>
 
         <div
+          ref={stageRef}
           tabIndex={0}
-          onWheelCapture={handleWheel}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           onKeyDown={handleKeyDown}
-          className="relative h-[40rem] overflow-hidden outline-none overscroll-contain sm:h-[48rem] lg:h-[58rem]"
+          className="relative h-[40rem] overflow-hidden outline-none sm:h-[48rem] lg:h-[58rem]"
           style={{
-            perspective: isMobile ? "1200px" : "1800px",
-            touchAction: showAtlas ? "auto" : "pan-y",
+            perspective: isMobile ? "1100px" : "1800px",
+            touchAction: showAtlas ? "auto" : "pan-y pinch-zoom",
           }}
         >
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-[76%] w-[132%] -translate-x-1/2 -translate-y-1/2 rounded-[100%] border border-white/[0.06]" />
@@ -411,7 +438,8 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
           <div className="pointer-events-none absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-black via-black/85 to-transparent sm:w-28 lg:w-40" />
           <div className="pointer-events-none absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-black via-black/85 to-transparent sm:w-28 lg:w-40" />
 
-          {visibleEntries.map((entry, index) => {
+          {visibleEntries.map((entry) => {
+            const index = entries.findIndex((item) => item.id === entry.id);
             const intrinsic = sizes[entry.id];
             const displaySize = getDisplaySize(intrinsic, viewport, isMobile);
             const thumbSize = getThumbSize(intrinsic, viewport, isMobile, showAtlas);
@@ -456,7 +484,7 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
                   rotateZ: state.rotateZ,
                 }}
                 transition={{
-                  duration: isMobile ? 0.58 : 0.52,
+                  duration: isMobile ? 0.68 : 0.56,
                   ease: [0.22, 1, 0.36, 1],
                 }}
               >

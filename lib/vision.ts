@@ -14,10 +14,6 @@ export type VisionEntry = {
 const VISION_DIR = path.join(process.cwd(), "public", "images", "vision");
 const IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp", ".avif"]);
 
-function formatCounter(index: number) {
-  return String(index + 1).padStart(3, "0");
-}
-
 export async function getVisionEntries(): Promise<VisionEntry[]> {
   try {
     const dirEntries = await fs.readdir(VISION_DIR, { withFileTypes: true });
@@ -35,9 +31,11 @@ export async function getVisionEntries(): Promise<VisionEntry[]> {
 
         return {
           id: path.parse(file.name).name,
-          fileName: file.name,
           image: `/images/vision/${file.name}`,
+          alt: "Album frame",
           year: String(new Date(stats.mtimeMs).getFullYear()),
+          tags: [],
+          note: undefined,
           sortTime: stats.mtimeMs,
         };
       })
@@ -45,15 +43,7 @@ export async function getVisionEntries(): Promise<VisionEntry[]> {
 
     return items
       .sort((a, b) => b.sortTime - a.sortTime)
-      .map((item, index) => ({
-        id: item.id,
-        title: `Vision Frame ${formatCounter(index)}`,
-        image: item.image,
-        alt: `Vision frame ${formatCounter(index)}`,
-        year: item.year,
-        tags: [],
-        note: undefined,
-      }));
+      .map(({ sortTime, ...entry }) => entry);
   } catch {
     return [];
   }

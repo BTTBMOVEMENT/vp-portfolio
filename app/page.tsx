@@ -5,6 +5,7 @@ import { MotionConfig, motion, useScroll } from "motion/react";
 import HeroVideoScrub from "../components/home/HeroVideoScrub";
 import WorksStoryboardTeaser from "../components/home/WorksStoryboardTeaser";
 import JournalOrbit from "../components/home/JournalOrbit";
+import MyAlbumGateway from "../components/home/MyAlbumGateway";
 
 const profile = {
   name: "BTTB Movement",
@@ -18,8 +19,6 @@ const profile = {
 };
 
 const heroMedia = {
-  videoSrc: "/videos/hero/hero-scrub.mp4",
-  posterSrc: "/images/hero/hero-main.jpg",
   sequenceLabel: "03.8s sequence",
 };
 
@@ -48,14 +47,14 @@ export default function Page() {
           role={profile.role}
           headline={profile.headline}
           intro={profile.intro}
-          videoSrc={heroMedia.videoSrc}
-          posterSrc={heroMedia.posterSrc}
           sequenceLabel={heroMedia.sequenceLabel}
         />
 
         <WorksStoryboardTeaser />
 
         <JournalOrbit />
+
+        <MyAlbumGateway />
 
         <section id="about" className="border-t border-white/10 px-5 py-20 sm:px-8">
           <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.1fr_0.9fr]">
@@ -82,8 +81,8 @@ export default function Page() {
 
               <p className="max-w-2xl text-sm leading-7 text-zinc-300 sm:text-base">
                 The current build is already structured like a system: a motion-led hero,
-                storyboard-style works archive, orbit-based journal rail, and long-form
-                project case studies that can keep expanding over time.
+                storyboard-style works archive, orbit-based journal rail, a personal album,
+                and long-form project case studies that can keep expanding over time.
               </p>
             </motion.div>
 
@@ -139,8 +138,8 @@ export default function Page() {
                 </h2>
 
                 <p className="max-w-xl text-sm leading-7 text-zinc-300 sm:text-base">
-                  The home page now combines a motion-led hero, a storyboard archive,
-                  and a publishing layer into one continuous visual system.
+                  The home page now ties together the hero sequence, works archive,
+                  journal orbit, and personal album into one continuous visual system.
                 </p>
               </motion.div>
 
@@ -193,6 +192,16 @@ export default function Page() {
                       /journal
                     </Link>
                   </div>
+
+                  <div className="flex items-start justify-between gap-4">
+                    <span className="text-zinc-500">My Album</span>
+                    <Link
+                      href="/my-album"
+                      className="underline decoration-white/20 underline-offset-4"
+                    >
+                      /my-album
+                    </Link>
+                  </div>
                 </div>
               </motion.div>
             </div>
@@ -204,7 +213,7 @@ export default function Page() {
               viewport={{ amount: 0.4 }}
               transition={{ duration: 0.75, ease: "easeOut" }}
             >
-              {profile.name} / Hero video scrub step
+              {profile.name} / My Album gateway step
             </motion.footer>
           </div>
         </section>

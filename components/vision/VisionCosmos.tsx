@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import type { VisionEntry } from "../../lib/vision";
 
@@ -21,11 +21,11 @@ function getWrappedOffset(index: number, activeIndex: number, total: number) {
   return offset;
 }
 
-function getOrbitState(offset: number, total: number) {
+function getOrbitState(offset: number, total: number, isMobile: boolean) {
   if (offset === 0) {
     return {
       left: "50%",
-      top: "49%",
+      top: "50%",
       scale: 1,
       opacity: 1,
       rotateY: 0,
@@ -37,26 +37,26 @@ function getOrbitState(offset: number, total: number) {
 
   if (offset === -1) {
     return {
-      left: total === 2 ? "30%" : "25%",
-      top: "60%",
-      scale: 0.82,
+      left: total === 2 ? "28%" : "24%",
+      top: isMobile ? "63%" : "60%",
+      scale: isMobile ? 0.8 : 0.82,
       opacity: 0.58,
-      rotateY: 56,
-      rotateX: 5,
-      rotateZ: -8,
+      rotateY: isMobile ? 0 : 56,
+      rotateX: 0,
+      rotateZ: -6,
       zIndex: 40,
     };
   }
 
   if (offset === 1) {
     return {
-      left: total === 2 ? "70%" : "75%",
-      top: "60%",
-      scale: 0.82,
+      left: total === 2 ? "72%" : "76%",
+      top: isMobile ? "63%" : "60%",
+      scale: isMobile ? 0.8 : 0.82,
       opacity: 0.58,
-      rotateY: -56,
-      rotateX: 5,
-      rotateZ: 8,
+      rotateY: isMobile ? 0 : -56,
+      rotateX: 0,
+      rotateZ: 6,
       zIndex: 40,
     };
   }
@@ -69,41 +69,33 @@ function getOrbitState(offset: number, total: number) {
   const top = 48 - arcLift + distance * 4;
   const scale = Math.max(0.34, 0.72 - distance * 0.1);
   const opacity = Math.max(0.1, 0.34 - distance * 0.05);
-  const rotateY = direction * (74 + distance * 8);
-  const rotateX = distance % 2 === 0 ? -6 : 6;
-  const rotateZ = direction * (10 + distance * 2);
 
   return {
     left: `${left}%`,
     top: `${top}%`,
     scale,
     opacity,
-    rotateY,
-    rotateX,
-    rotateZ,
+    rotateY: isMobile ? 0 : direction * (74 + distance * 8),
+    rotateX: 0,
+    rotateZ: direction * (10 + distance * 2),
     zIndex: 20,
   };
 }
 
-function getAtlasState(index: number, total: number) {
-  const columns = total <= 3 ? total : total <= 8 ? 4 : 5;
+function getAtlasState(index: number, total: number, isMobile: boolean) {
+  const columns = isMobile ? Math.min(2, total) : total <= 4 ? total : 4;
   const rows = Math.ceil(total / columns);
 
   const columnIndex = index % columns;
   const rowIndex = Math.floor(index / columns);
 
   const left =
-    columns === 1
-      ? 50
-      : 18 + (columnIndex * 64) / (columns - 1);
+    columns === 1 ? 50 : 18 + (columnIndex * 64) / (columns - 1);
 
   const top =
-    rows === 1
-      ? 50
-      : 24 + (rowIndex * 52) / (rows - 1);
+    rows === 1 ? 50 : 28 + (rowIndex * 44) / Math.max(1, rows - 1);
 
-  const scale =
-    total <= 3 ? 0.62 : total <= 8 ? 0.5 : 0.42;
+  const scale = isMobile ? 0.48 : total <= 4 ? 0.54 : 0.46;
 
   return {
     left: `${left}%`,
@@ -121,27 +113,37 @@ function formatCounter(index: number, total: number) {
   return `${String(index + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`;
 }
 
+function defaultTitle(index: number) {
+  return `Album Frame ${String(index + 1).padStart(3, "0")}`;
+}
+
 export default function VisionCosmos({ entries }: VisionCosmosProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [showAtlas, setShowAtlas] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const wheelLockRef = useRef(false);
   const touchStartXRef = useRef<number | null>(null);
 
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobile(mediaQuery.matches);
+    update();
+
+    mediaQuery.addEventListener("change", update);
+    return () => mediaQuery.removeEventListener("change", update);
+  }, []);
+
   const total = entries.length;
-
-  const activeEntry = entries[activeIndex];
-
-  const visibleEntries = useMemo(() => entries, [entries]);
 
   if (total === 0) {
     return (
       <section className="rounded-[2.75rem] border border-white/10 bg-white/[0.03] px-6 py-10">
         <div className="space-y-4">
           <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-            My Vision
+            My Album
           </p>
           <h3 className="text-3xl font-semibold leading-tight text-zinc-100">
-            No vision images found yet.
+            No album images found yet.
           </h3>
           <p className="max-w-2xl text-sm leading-8 text-zinc-300 sm:text-base">
             Put images inside <code>/public/images/vision</code>. They will be picked
@@ -151,6 +153,8 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
       </section>
     );
   }
+
+  const activeEntry = entries[activeIndex]!;
 
   function goToIndex(index: number) {
     setActiveIndex(wrapIndex(index, total));
@@ -218,11 +222,6 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
       event.preventDefault();
       goToNext();
     }
-
-    if (event.key.toLowerCase() === "i") {
-      event.preventDefault();
-      setShowAtlas((prev) => !prev);
-    }
   }
 
   return (
@@ -230,16 +229,17 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
       <div className="flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
         <div className="max-w-3xl space-y-4">
           <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-            My Vision
+            My Album
           </p>
 
           <h2 className="max-w-[12ch] text-4xl font-semibold leading-[0.95] sm:text-5xl md:text-6xl">
-            A photo field drifting through cinematic space.
+            A drifting field of frames and memories.
           </h2>
 
           <p className="max-w-2xl text-sm leading-8 text-zinc-300 sm:text-base">
-            Scroll or swipe to pull a photograph out of the distance. Open the
-            index to align every frame, then choose one to bring it back to center.
+            Scroll or swipe to pull a photograph into focus. Align every frame when
+            you want to see the whole album at once, then choose one to send it back
+            into orbit.
           </p>
         </div>
 
@@ -266,8 +266,8 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
             </p>
             <p className="text-sm leading-7 text-zinc-300">
               {showAtlas
-                ? "All frames are aligned. Choose one to send it back into orbit."
-                : "Exactly one floating card per image in your folder."}
+                ? "All frames are aligned. Choose one to return it to the center."
+                : "One frame at full scale, the rest in orbit."}
             </p>
           </div>
 
@@ -300,28 +300,22 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           onKeyDown={handleKeyDown}
-          className="relative h-[34rem] overflow-hidden outline-none sm:h-[40rem] lg:h-[48rem]"
-          style={{ perspective: "1800px" }}
+          className="relative h-[36rem] overflow-hidden outline-none sm:h-[44rem] lg:h-[52rem]"
+          style={{ perspective: isMobile ? "1200px" : "1800px" }}
         >
-          <motion.div
-            animate={{ opacity: showAtlas ? 0.65 : 1 }}
-            className="pointer-events-none absolute left-1/2 top-1/2 h-[76%] w-[132%] -translate-x-1/2 -translate-y-1/2 rounded-[100%] border border-white/[0.06]"
-          />
-          <motion.div
-            animate={{ opacity: showAtlas ? 0.3 : 1 }}
-            className="pointer-events-none absolute left-1/2 top-1/2 h-[54%] w-[116%] -translate-x-1/2 -translate-y-1/2 rounded-[100%] border border-white/[0.04]"
-          />
+          <div className="pointer-events-none absolute left-1/2 top-1/2 h-[76%] w-[132%] -translate-x-1/2 -translate-y-1/2 rounded-[100%] border border-white/[0.06]" />
+          <div className="pointer-events-none absolute left-1/2 top-1/2 h-[54%] w-[116%] -translate-x-1/2 -translate-y-1/2 rounded-[100%] border border-white/[0.04]" />
           <div className="pointer-events-none absolute left-[8%] top-[18%] h-24 w-24 rounded-full bg-white/[0.05] blur-3xl" />
           <div className="pointer-events-none absolute right-[10%] top-[24%] h-32 w-32 rounded-full bg-white/[0.04] blur-3xl" />
           <div className="pointer-events-none absolute bottom-[14%] left-[22%] h-28 w-28 rounded-full bg-white/[0.03] blur-3xl" />
           <div className="pointer-events-none absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-black via-black/85 to-transparent sm:w-28 lg:w-40" />
           <div className="pointer-events-none absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-black via-black/85 to-transparent sm:w-28 lg:w-40" />
 
-          {visibleEntries.map((entry, index) => {
-            const orbitOffset = getWrappedOffset(index, activeIndex, total);
+          {entries.map((entry, index) => {
             const state = showAtlas
-              ? getAtlasState(index, total)
-              : getOrbitState(orbitOffset, total);
+              ? getAtlasState(index, total, isMobile)
+              : getOrbitState(getWrappedOffset(index, activeIndex, total), total, isMobile);
+
             const isActive = index === activeIndex;
 
             return (
@@ -332,9 +326,13 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
                   setActiveIndex(index);
                   setShowAtlas(false);
                 }}
-                aria-label={`Select image ${entry.title ?? `Vision Frame ${index + 1}`}`}
+                aria-label={`Select image ${entry.title ?? defaultTitle(index)}`}
                 className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer"
-                style={{ zIndex: state.zIndex }}
+                style={{
+                  zIndex: state.zIndex,
+                  willChange: "transform, opacity",
+                  WebkitTapHighlightColor: "transparent",
+                }}
                 animate={{
                   left: state.left,
                   top: state.top,
@@ -346,48 +344,60 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
                 }}
                 transition={{
                   type: "spring",
-                  stiffness: 140,
-                  damping: 22,
+                  stiffness: isMobile ? 120 : 140,
+                  damping: isMobile ? 26 : 22,
                   mass: 0.9,
                 }}
               >
                 <div
                   className="relative"
-                  style={{ transformStyle: "preserve-3d" }}
+                  style={{
+                    transformStyle: isMobile ? "flat" : "preserve-3d",
+                    willChange: "transform",
+                  }}
                 >
-                  <div
-                    className="absolute inset-0 rounded-[1.6rem] bg-gradient-to-b from-zinc-100 to-zinc-200 shadow-[0_30px_80px_rgba(0,0,0,0.45)]"
-                    style={{
-                      transform: "rotateY(180deg)",
-                      backfaceVisibility: "hidden",
-                    }}
-                  >
-                    <div className="flex h-full min-h-[18rem] flex-col justify-between rounded-[1.6rem] p-5 text-left">
-                      <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                        My Vision
-                      </p>
-
-                      <div className="space-y-2">
-                        <div className="h-px w-full bg-zinc-300" />
-                        <p className="text-[11px] uppercase tracking-[0.24em] text-zinc-500">
-                          Reverse side / matte card
+                  {!isMobile && (
+                    <div
+                      className="absolute inset-0 rounded-[1.6rem] bg-gradient-to-b from-zinc-100 to-zinc-200 shadow-[0_30px_80px_rgba(0,0,0,0.45)]"
+                      style={{
+                        transform: "rotateY(180deg)",
+                        backfaceVisibility: "hidden",
+                        WebkitBackfaceVisibility: "hidden",
+                      }}
+                    >
+                      <div className="flex h-full min-h-[18rem] flex-col justify-between rounded-[1.6rem] p-5 text-left">
+                        <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
+                          My Album
                         </p>
+
+                        <div className="space-y-2">
+                          <div className="h-px w-full bg-zinc-300" />
+                          <p className="text-[11px] uppercase tracking-[0.24em] text-zinc-500">
+                            Reverse side / matte card
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                   <div
                     className="relative overflow-hidden rounded-[1.6rem] bg-[#f6f1e8] p-3 shadow-[0_30px_80px_rgba(0,0,0,0.45)]"
-                    style={{ backfaceVisibility: "hidden" }}
+                    style={{
+                      backfaceVisibility: "hidden",
+                      WebkitBackfaceVisibility: "hidden",
+                      transform: "translateZ(0)",
+                    }}
                   >
                     <img
                       src={entry.image}
                       alt={entry.alt}
                       loading={isActive ? "eager" : "lazy"}
-                      className={`block h-auto max-h-[60vh] rounded-[1.2rem] border border-black/5 object-contain ${
+                      className={`block h-auto rounded-[1.2rem] border border-black/5 object-contain ${
                         showAtlas
                           ? "w-[min(22vw,11rem)] sm:w-[min(18vw,12rem)] lg:w-[min(14vw,12rem)]"
-                          : "w-[min(76vw,22rem)] sm:w-[min(52vw,24rem)] lg:w-[min(34vw,26rem)]"
+                          : isActive
+                          ? "max-h-[74vh] w-auto max-w-[92vw] sm:max-w-[84vw] lg:max-w-[78vw]"
+                          : "w-[min(62vw,18rem)] sm:w-[min(40vw,20rem)] lg:w-[min(24vw,18rem)]"
                       }`}
                     />
 
@@ -416,7 +426,7 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
 
             <div className="space-y-3">
               <h3 className="max-w-[12ch] text-4xl font-semibold leading-[0.95] text-zinc-100 sm:text-5xl">
-                {activeEntry.title ?? `Vision Frame ${String(activeIndex + 1).padStart(3, "0")}`}
+                {activeEntry.title ?? defaultTitle(activeIndex)}
               </h3>
 
               {activeEntry.note ? (
@@ -425,7 +435,8 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
                 </p>
               ) : (
                 <p className="max-w-2xl text-sm leading-8 text-zinc-500 sm:text-base">
-                  Caption and notes can be attached later through CMS.
+                  Titles and notes are intentionally neutral for now so they can be fully
+                  managed later through CMS.
                 </p>
               )}
             </div>

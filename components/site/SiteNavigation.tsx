@@ -8,7 +8,7 @@ const navItems = [
   { label: "Home", href: "/" },
   { label: "Works", href: "/works" },
   { label: "Journal", href: "/journal" },
-  { label: "My Vision", href: "/my-vision" },
+  { label: "My Album", href: "/my-album" },
   { label: "Contact", href: "/#contact" },
 ] as const;
 
@@ -20,8 +20,8 @@ function isActive(pathname: string, href: string) {
   if (href === "/journal") {
     return pathname === "/journal" || pathname.startsWith("/journal/");
   }
-  if (href === "/my-vision") {
-    return pathname === "/my-vision";
+  if (href === "/my-album") {
+    return pathname === "/my-album" || pathname === "/my-vision";
   }
   return false;
 }
@@ -32,7 +32,7 @@ function getRouteLabel(pathname: string) {
   if (pathname.startsWith("/projects/")) return "Project Case Study";
   if (pathname === "/journal") return "Journal";
   if (pathname.startsWith("/journal/")) return "Journal Entry";
-  if (pathname === "/my-vision") return "My Vision";
+  if (pathname === "/my-album" || pathname === "/my-vision") return "My Album";
   return "Archive";
 }
 
@@ -96,7 +96,7 @@ export default function SiteNavigation() {
         transition={{ duration: 0.55, ease: "easeOut" }}
         className="pointer-events-none fixed inset-x-0 bottom-4 z-[80] flex justify-center px-4 md:hidden"
       >
-        <nav className="pointer-events-auto flex w-full max-w-[34rem] items-center justify-between rounded-full border border-white/10 bg-black/70 px-3 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+        <nav className="pointer-events-auto flex w-full max-w-[36rem] items-center justify-between rounded-full border border-white/10 bg-black/70 px-3 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl">
           {navItems.map((item) => {
             const active = isActive(pathname, item.href);
 

@@ -7,8 +7,8 @@ import { motion } from "motion/react";
 const navItems = [
   { label: "Home", href: "/" },
   { label: "Works", href: "/works" },
-  { label: "My Vision", href: "/my-vision" },
   { label: "Journal", href: "/journal" },
+  { label: "My Vision", href: "/my-vision" },
   { label: "Contact", href: "/#contact" },
 ] as const;
 
@@ -17,11 +17,11 @@ function isActive(pathname: string, href: string) {
   if (href === "/works") {
     return pathname === "/works" || pathname.startsWith("/projects/");
   }
-  if (href === "/my-vision") {
-    return pathname === "/my-vision";
-  }
   if (href === "/journal") {
     return pathname === "/journal" || pathname.startsWith("/journal/");
+  }
+  if (href === "/my-vision") {
+    return pathname === "/my-vision";
   }
   return false;
 }
@@ -30,9 +30,9 @@ function getRouteLabel(pathname: string) {
   if (pathname === "/") return "Home";
   if (pathname === "/works") return "Works Archive";
   if (pathname.startsWith("/projects/")) return "Project Case Study";
-  if (pathname === "/my-vision") return "My Vision";
   if (pathname === "/journal") return "Journal";
   if (pathname.startsWith("/journal/")) return "Journal Entry";
+  if (pathname === "/my-vision") return "My Vision";
   return "Archive";
 }
 

@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
-import { motion, useScroll, useTransform } from "motion/react";
+import { motion, useScroll, useSpring, useTransform } from "motion/react";
 
 type HeroVideoScrubProps = {
   name: string;
@@ -11,7 +10,7 @@ type HeroVideoScrubProps = {
   headline: string;
   intro: string;
   videoSrc: string;
-  posterSrc: string;
+  posterSrc?: string;
   sequenceLabel?: string;
 };
 
@@ -21,7 +20,6 @@ export default function HeroVideoScrub({
   headline,
   intro,
   videoSrc,
-  posterSrc,
   sequenceLabel = "03.8s sequence",
 }: HeroVideoScrubProps) {
   const sectionRef = useRef<HTMLElement | null>(null);
@@ -32,34 +30,75 @@ export default function HeroVideoScrub({
   const [duration, setDuration] = useState(0);
   const [videoReady, setVideoReady] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start start", "end end"],
   });
 
-  const mediaScale = useTransform(scrollYProgress, [0, 1], [1, 1.08]);
-  const mediaY = useTransform(scrollYProgress, [0, 1], [0, 36]);
+  const smoothProgress = useSpring(scrollYProgress, {
+    stiffness: 120,
+    damping: 26,
+    mass: 0.3,
+  });
 
-  const heroTitleY = useTransform(scrollYProgress, [0, 1], [0, -150]);
-  const heroMetaY = useTransform(scrollYProgress, [0, 1], [0, -80]);
-  const heroCopyOpacity = useTransform(
-    scrollYProgress,
-    [0, 0.72, 1],
-    [1, 0.68, 0.16]
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+
+    const update = () => setIsMobile(mediaQuery.matches);
+    update();
+
+    mediaQuery.addEventListener("change", update);
+    return () => mediaQuery.removeEventListener("change", update);
+  }, []);
+
+  const mediaScale = useTransform(
+    smoothProgress,
+    [0, 1],
+    isMobile ? [1, 1.01] : [1, 1.06]
+  );
+  const mediaY = useTransform(
+    smoothProgress,
+    [0, 1],
+    isMobile ? [0, 0] : [0, 18]
   );
 
-  const overlayOpacity = useTransform(scrollYProgress, [0, 1], [0.18, 0.62]);
+  const heroTitleY = useTransform(
+    smoothProgress,
+    [0, 1],
+    isMobile ? [0, -80] : [0, -150]
+  );
+  const heroMetaY = useTransform(
+    smoothProgress,
+    [0, 1],
+    isMobile ? [0, -38] : [0, -80]
+  );
+  const heroCopyOpacity = useTransform(
+    smoothProgress,
+    [0, 0.72, 1],
+    [1, 0.7, 0.16]
+  );
 
-  const ghostTextY = useTransform(scrollYProgress, [0, 1], [0, -90]);
+  const overlayOpacity = useTransform(smoothProgress, [0, 1], [0.16, 0.58]);
+
+  const ghostTextY = useTransform(
+    smoothProgress,
+    [0, 1],
+    isMobile ? [0, -50] : [0, -90]
+  );
   const ghostTextOpacity = useTransform(
-    scrollYProgress,
+    smoothProgress,
     [0, 0.7, 1],
     [0.12, 0.08, 0.02]
   );
 
-  const railY = useTransform(scrollYProgress, [0, 1], [0, -28]);
-  const railOpacity = useTransform(scrollYProgress, [0, 1], [1, 0.38]);
+  const railY = useTransform(
+    smoothProgress,
+    [0, 1],
+    isMobile ? [0, -12] : [0, -28]
+  );
+  const railOpacity = useTransform(smoothProgress, [0, 1], [1, 0.38]);
 
   function stopRaf() {
     if (rafRef.current !== null) {
@@ -71,28 +110,28 @@ export default function HeroVideoScrub({
   function scrubTowardTarget() {
     const video = videoRef.current;
 
-    if (!video || !duration) {
-      rafRef.current = null;
+    if (!video || !duration || !videoReady) {
+      stopRaf();
       return;
     }
 
     const current = video.currentTime || 0;
     const delta = targetTimeRef.current - current;
 
-    if (Math.abs(delta) < 0.016) {
+    if (Math.abs(delta) < 1 / 90) {
       try {
         video.currentTime = targetTimeRef.current;
       } catch {
-        // ignore seek edge cases
+        // ignore edge seek issues
       }
-      rafRef.current = null;
+      stopRaf();
       return;
     }
 
     try {
-      video.currentTime = current + delta * 0.22;
+      video.currentTime = current + delta * (isMobile ? 0.22 : 0.28);
     } catch {
-      rafRef.current = null;
+      stopRaf();
       return;
     }
 
@@ -116,11 +155,8 @@ export default function HeroVideoScrub({
         video.pause();
       }
     } catch {
-      // Some browsers may reject programmatic play during preload;
-      // that's okay, we still reveal the video if frames are available.
+      // ignore autoplay/priming rejection
     }
-
-    setVideoReady(true);
   }
 
   function handleLoadedMetadata() {
@@ -139,11 +175,13 @@ export default function HeroVideoScrub({
   }
 
   function handleLoadedData() {
+    setVideoReady(true);
     void primeVideoElement();
   }
 
   function handleCanPlay() {
     if (!videoReady) {
+      setVideoReady(true);
       void primeVideoElement();
     }
   }
@@ -156,7 +194,7 @@ export default function HeroVideoScrub({
   }, [videoSrc]);
 
   useEffect(() => {
-    const unsubscribe = scrollYProgress.on("change", (latest) => {
+    const unsubscribe = smoothProgress.on("change", (latest) => {
       const video = videoRef.current;
       if (!video || !duration || !videoReady) return;
 
@@ -171,7 +209,7 @@ export default function HeroVideoScrub({
       unsubscribe();
       stopRaf();
     };
-  }, [scrollYProgress, duration, videoReady]);
+  }, [smoothProgress, duration, videoReady, isMobile]);
 
   const durationLabel =
     duration > 0 ? `${duration.toFixed(1)}s scrub` : sequenceLabel;
@@ -179,29 +217,21 @@ export default function HeroVideoScrub({
   return (
     <section ref={sectionRef} id="hero" className="relative h-[230vh]">
       <div className="sticky top-0 h-screen overflow-hidden border-b border-white/10 bg-black">
-        <motion.div style={{ scale: mediaScale, y: mediaY }} className="absolute inset-0">
-          <motion.div
-            animate={{ opacity: videoReady && !videoError ? 0 : 1 }}
-            transition={{ duration: 0.35, ease: "easeOut" }}
-            className="absolute inset-0"
-          >
-            <Image
-              src={posterSrc}
-              alt="Hero poster"
-              fill
-              sizes="100vw"
-              priority
-              className="object-cover"
-            />
-          </motion.div>
+        <motion.div
+          style={{ scale: mediaScale, y: mediaY }}
+          className="absolute inset-0"
+        >
+          <div className="absolute inset-0 bg-gradient-to-b from-zinc-950 via-black to-black" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.06),transparent_28%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.04),transparent_22%)]" />
 
           <motion.video
             ref={videoRef}
             src={videoSrc}
-            poster={posterSrc}
             preload="auto"
             muted
             playsInline
+            disableRemotePlayback
             onLoadedMetadata={handleLoadedMetadata}
             onLoadedData={handleLoadedData}
             onCanPlay={handleCanPlay}
@@ -210,14 +240,14 @@ export default function HeroVideoScrub({
               setVideoReady(false);
             }}
             animate={{ opacity: videoReady && !videoError ? 1 : 0 }}
-            transition={{ duration: 0.35, ease: "easeOut" }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             className="absolute inset-0 h-full w-full object-cover"
           />
         </motion.div>
 
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/25 to-black/85" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.12),transparent_28%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.09),transparent_22%)]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/8 via-black/20 to-black/82" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.10),transparent_28%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.08),transparent_22%)]" />
 
         <motion.div
           style={{ opacity: overlayOpacity }}
@@ -239,7 +269,7 @@ export default function HeroVideoScrub({
             <div className="text-right">
               <div>{durationLabel}</div>
               <div className="text-zinc-500">
-                {videoReady && !videoError ? "Video live" : "Poster fallback"}
+                {videoReady && !videoError ? "Video live" : "Loading sequence"}
               </div>
             </div>
           </motion.div>
@@ -296,7 +326,7 @@ export default function HeroVideoScrub({
 
             <div className="overflow-hidden rounded-full bg-white/10">
               <motion.div
-                style={{ scaleX: scrollYProgress }}
+                style={{ scaleX: smoothProgress }}
                 className="h-[3px] origin-left bg-white/90"
               />
             </div>

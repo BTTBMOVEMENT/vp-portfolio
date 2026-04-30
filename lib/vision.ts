@@ -1,3 +1,6 @@
+import { promises as fs } from "node:fs";
+import path from "node:path";
+
 export type VisionEntry = {
   id: string;
   title: string;
@@ -8,115 +11,65 @@ export type VisionEntry = {
   note?: string;
 };
 
-export const visionEntries: VisionEntry[] = [
-  {
-    id: "vision-001",
-    title: "Threshold Light",
-    image: "/images/projects/jesus-is-christ-cover.jpg",
-    alt: "My Vision image 001",
-    year: "2026",
-    tags: ["Night", "Contrast", "Threshold"],
-    note:
-      "A frame about distance and restraint. The image works because it does not explain itself too quickly.",
-  },
-  {
-    id: "vision-002",
-    title: "Parallax Memory",
-    image: "/images/projects/the-king-of-kings-cover.jpg",
-    alt: "My Vision image 002",
-    year: "2026",
-    tags: ["Parallax", "Depth", "Stillness"],
-    note:
-      "The eye lands on the image because the background remains disciplined. Space is felt before it is described.",
-  },
-  {
-    id: "vision-003",
-    title: "Quiet Witness",
-    image: "/images/projects/trinity-cover.jpg",
-    alt: "My Vision image 003",
-    year: "2026",
-    tags: ["Documentary", "Calm", "Portrait"],
-  },
-  {
-    id: "vision-004",
-    title: "Afterimage",
-    image: "/images/projects/jesus-is-christ-cover.jpg",
-    alt: "My Vision image 004",
-    year: "2026",
-    tags: ["Shadow", "Afterglow", "Shape"],
-    note:
-      "I am interested in the moment when the image feels remembered rather than merely seen.",
-  },
-  {
-    id: "vision-005",
-    title: "Surface Tension",
-    image: "/images/projects/the-king-of-kings-cover.jpg",
-    alt: "My Vision image 005",
-    year: "2027",
-    tags: ["Texture", "Surface", "Atmosphere"],
-  },
-  {
-    id: "vision-006",
-    title: "Held Frame",
-    image: "/images/projects/trinity-cover.jpg",
-    alt: "My Vision image 006",
-    year: "2027",
-    tags: ["Frame", "Balance", "Stillness"],
-    note:
-      "The image does not need spectacle if the frame knows exactly where its weight belongs.",
-  },
-  {
-    id: "vision-007",
-    title: "Edge of the Set",
-    image: "/images/projects/jesus-is-christ-cover.jpg",
-    alt: "My Vision image 007",
-    year: "2027",
-    tags: ["Set", "Edge", "Control"],
-  },
-  {
-    id: "vision-008",
-    title: "Signal and Fog",
-    image: "/images/projects/the-king-of-kings-cover.jpg",
-    alt: "My Vision image 008",
-    year: "2027",
-    tags: ["Signal", "Fog", "Transition"],
-    note:
-      "When contrast is low, hierarchy matters even more. Without hierarchy, atmosphere becomes noise.",
-  },
-  {
-    id: "vision-009",
-    title: "Document of Light",
-    image: "/images/projects/trinity-cover.jpg",
-    alt: "My Vision image 009",
-    year: "2027",
-    tags: ["Observation", "Light", "Document"],
-  },
-  {
-    id: "vision-010",
-    title: "Drift Line",
-    image: "/images/projects/jesus-is-christ-cover.jpg",
-    alt: "My Vision image 010",
-    year: "2027",
-    tags: ["Drift", "Line", "Motion"],
-    note:
-      "A useful image is often one that keeps moving after the screen itself has stopped.",
-  },
-  {
-    id: "vision-011",
-    title: "Invisible Axis",
-    image: "/images/projects/the-king-of-kings-cover.jpg",
-    alt: "My Vision image 011",
-    year: "2027",
-    tags: ["Axis", "Composition", "Control"],
-  },
-  {
-    id: "vision-012",
-    title: "Last Reflection",
-    image: "/images/projects/trinity-cover.jpg",
-    alt: "My Vision image 012",
-    year: "2027",
-    tags: ["Reflection", "Ending", "Memory"],
-    note:
-      "The frame should feel like it belongs to a longer sequence, even when it stands alone.",
-  },
-];
+const VISION_DIR = path.join(process.cwd(), "public", "images", "vision");
+const IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp", ".avif"]);
+
+function humanizeFilename(fileName: string) {
+  const name = path.parse(fileName).name;
+
+  return name
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+async function readOptionalNote(baseName: string) {
+  const txtPath = path.join(VISION_DIR, `${baseName}.txt`);
+
+  try {
+    const value = await fs.readFile(txtPath, "utf8");
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export async function getVisionEntries(): Promise<VisionEntry[]> {
+  try {
+    const dirEntries = await fs.readdir(VISION_DIR, { withFileTypes: true });
+
+    const imageFiles = dirEntries.filter((entry) => {
+      if (!entry.isFile()) return false;
+      const ext = path.extname(entry.name).toLowerCase();
+      return IMAGE_EXTENSIONS.has(ext);
+    });
+
+    const items = await Promise.all(
+      imageFiles.map(async (file) => {
+        const absolutePath = path.join(VISION_DIR, file.name);
+        const stats = await fs.stat(absolutePath);
+        const baseName = path.parse(file.name).name;
+        const note = await readOptionalNote(baseName);
+
+        return {
+          id: baseName,
+          title: humanizeFilename(file.name),
+          image: `/images/vision/${file.name}`,
+          alt: humanizeFilename(file.name),
+          year: String(new Date(stats.mtimeMs).getFullYear()),
+          tags: [],
+          note,
+          sortTime: stats.mtimeMs,
+        };
+      })
+    );
+
+    return items
+      .sort((a, b) => b.sortTime - a.sortTime)
+      .map(({ sortTime, ...entry }) => entry);
+  } catch {
+    return [];
+  }
+}

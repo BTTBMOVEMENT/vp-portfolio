@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import VisionCosmos from "../../components/vision/VisionCosmos";
+import { getVisionEntries } from "../../lib/vision";
 
 export const metadata: Metadata = {
   title: "My Vision",
   description: "A cinematic photo atlas of floating frames.",
 };
 
-export default function MyVisionPage() {
+export default async function MyVisionPage() {
+  const entries = await getVisionEntries();
+
   return (
     <main className="min-h-screen bg-black text-white">
       <section className="border-b border-white/10 px-5 pb-8 pt-6 sm:px-8">
@@ -44,15 +47,14 @@ export default function MyVisionPage() {
               </h1>
 
               <p className="max-w-3xl text-sm leading-8 text-zinc-300 sm:text-base">
-                This page is designed as a cinematic photo field rather than a flat
-                grid. One frame moves into focus at a time while the rest stay alive
-                in the distance. Notes are optional, so an image can remain pure if
-                needed or carry its own explanation when you want it to.
+                Every image inside the vision folder is discovered automatically,
+                sorted by file time, and placed into the orbital album. Add an
+                optional text file with the same basename if you want a note to appear.
               </p>
             </div>
           </div>
 
-          <VisionCosmos />
+          <VisionCosmos entries={entries} />
         </div>
       </section>
     </main>

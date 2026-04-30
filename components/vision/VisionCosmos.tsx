@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import Image from "next/image";
+import { useRef, useState } from "react";
 import { motion } from "motion/react";
-import { visionEntries } from "../../lib/vision";
+import type { VisionEntry } from "../../lib/vision";
 
-const NEAR_RANGE = 3;
-const FAR_SAMPLE_COUNT = 16;
+type VisionCosmosProps = {
+  entries: VisionEntry[];
+};
 
 function wrapIndex(index: number, total: number) {
   return (index + total) % total;
@@ -21,12 +21,7 @@ function getWrappedOffset(index: number, activeIndex: number, total: number) {
   return offset;
 }
 
-function seeded(index: number, salt: number) {
-  const x = Math.sin(index * 127.1 + salt * 311.7) * 43758.5453123;
-  return x - Math.floor(x);
-}
-
-function getNearState(offset: number) {
+function getOrbitState(offset: number, total: number) {
   if (offset === 0) {
     return {
       left: "50%",
@@ -42,12 +37,12 @@ function getNearState(offset: number) {
 
   if (offset === -1) {
     return {
-      left: "24%",
+      left: total === 2 ? "30%" : "25%",
       top: "60%",
-      scale: 0.84,
-      opacity: 0.56,
-      rotateY: 58,
-      rotateX: 6,
+      scale: 0.82,
+      opacity: 0.58,
+      rotateY: 56,
+      rotateX: 5,
       rotateZ: -8,
       zIndex: 40,
     };
@@ -55,78 +50,28 @@ function getNearState(offset: number) {
 
   if (offset === 1) {
     return {
-      left: "76%",
+      left: total === 2 ? "70%" : "75%",
       top: "60%",
-      scale: 0.84,
-      opacity: 0.56,
-      rotateY: -58,
-      rotateX: 6,
+      scale: 0.82,
+      opacity: 0.58,
+      rotateY: -56,
+      rotateX: 5,
       rotateZ: 8,
       zIndex: 40,
     };
   }
 
-  if (offset === -2) {
-    return {
-      left: "10%",
-      top: "34%",
-      scale: 0.58,
-      opacity: 0.22,
-      rotateY: 76,
-      rotateX: -4,
-      rotateZ: -12,
-      zIndex: 30,
-    };
-  }
-
-  if (offset === 2) {
-    return {
-      left: "90%",
-      top: "34%",
-      scale: 0.58,
-      opacity: 0.22,
-      rotateY: -76,
-      rotateX: -4,
-      rotateZ: 12,
-      zIndex: 30,
-    };
-  }
-
-  if (offset === -3) {
-    return {
-      left: "-2%",
-      top: "68%",
-      scale: 0.42,
-      opacity: 0.1,
-      rotateY: 108,
-      rotateX: 4,
-      rotateZ: -14,
-      zIndex: 20,
-    };
-  }
-
-  return {
-    left: "102%",
-    top: "68%",
-    scale: 0.42,
-    opacity: 0.1,
-    rotateY: -108,
-    rotateX: 4,
-    rotateZ: 14,
-    zIndex: 20,
-  };
-}
-
-function getFarState(index: number) {
-  const side = seeded(index, 1) > 0.5 ? 1 : -1;
-
-  const left = 50 + side * (24 + seeded(index, 2) * 34);
-  const top = 12 + seeded(index, 3) * 72;
-  const scale = 0.24 + seeded(index, 4) * 0.18;
-  const opacity = 0.08 + seeded(index, 5) * 0.12;
-  const rotateY = side * (108 + seeded(index, 6) * 46);
-  const rotateX = -18 + seeded(index, 7) * 36;
-  const rotateZ = -18 + seeded(index, 8) * 36;
+  const distance = Math.abs(offset);
+  const direction = offset < 0 ? -1 : 1;
+  const spread = Math.min(44, 22 + distance * 8);
+  const arcLift = Math.min(22, 8 + distance * 3);
+  const left = 50 + direction * spread;
+  const top = 48 - arcLift + distance * 4;
+  const scale = Math.max(0.34, 0.72 - distance * 0.1);
+  const opacity = Math.max(0.1, 0.34 - distance * 0.05);
+  const rotateY = direction * (74 + distance * 8);
+  const rotateX = distance % 2 === 0 ? -6 : 6;
+  const rotateZ = direction * (10 + distance * 2);
 
   return {
     left: `${left}%`,
@@ -136,60 +81,41 @@ function getFarState(index: number) {
     rotateY,
     rotateX,
     rotateZ,
-    zIndex: 10,
+    zIndex: 20,
   };
-}
-
-function getFarSampleIndices(total: number, activeIndex: number) {
-  if (total <= FAR_SAMPLE_COUNT + NEAR_RANGE * 2 + 1) {
-    return Array.from({ length: total }, (_, index) => index).filter(
-      (index) => Math.abs(getWrappedOffset(index, activeIndex, total)) > NEAR_RANGE
-    );
-  }
-
-  const set = new Set<number>();
-  const step = total / FAR_SAMPLE_COUNT;
-
-  for (let i = 0; i < FAR_SAMPLE_COUNT; i += 1) {
-    const raw = Math.floor((i * step + activeIndex * 0.37) % total);
-    const index = wrapIndex(raw, total);
-
-    if (Math.abs(getWrappedOffset(index, activeIndex, total)) > NEAR_RANGE) {
-      set.add(index);
-    }
-  }
-
-  return Array.from(set);
 }
 
 function formatCounter(index: number, total: number) {
   return `${String(index + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`;
 }
 
-export default function VisionCosmos() {
+export default function VisionCosmos({ entries }: VisionCosmosProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const wheelLockRef = useRef(false);
   const touchStartXRef = useRef<number | null>(null);
 
-  const activeEntry = visionEntries[activeIndex]!;
-  const total = visionEntries.length;
+  const total = entries.length;
 
-  const farIndices = useMemo(
-    () => getFarSampleIndices(total, activeIndex),
-    [activeIndex, total]
-  );
+  if (total === 0) {
+    return (
+      <section className="rounded-[2.75rem] border border-white/10 bg-white/[0.03] px-6 py-10">
+        <div className="space-y-4">
+          <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
+            My Vision
+          </p>
+          <h3 className="text-3xl font-semibold leading-tight text-zinc-100">
+            No vision images found yet.
+          </h3>
+          <p className="max-w-2xl text-sm leading-8 text-zinc-300 sm:text-base">
+            Put images inside <code>/public/images/vision</code>. They will be picked
+            up automatically and sorted by file time.
+          </p>
+        </div>
+      </section>
+    );
+  }
 
-  const renderIndices = useMemo(() => {
-    const set = new Set<number>();
-
-    for (let offset = -NEAR_RANGE; offset <= NEAR_RANGE; offset += 1) {
-      set.add(wrapIndex(activeIndex + offset, total));
-    }
-
-    farIndices.forEach((index) => set.add(index));
-
-    return Array.from(set);
-  }, [activeIndex, farIndices, total]);
+  const activeEntry = entries[activeIndex]!;
 
   function goToIndex(index: number) {
     setActiveIndex(wrapIndex(index, total));
@@ -209,7 +135,7 @@ export default function VisionCosmos() {
     const dominantDelta =
       Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
 
-    if (Math.abs(dominantDelta) < 20) return;
+    if (Math.abs(dominantDelta) < 18) return;
 
     event.preventDefault();
 
@@ -292,7 +218,7 @@ export default function VisionCosmos() {
               Orbital Album
             </p>
             <p className="text-sm leading-7 text-zinc-300">
-              The focused frame is fully legible. The rest stay distant and suspended.
+              Exactly one floating card per image in your folder.
             </p>
           </div>
 
@@ -330,20 +256,16 @@ export default function VisionCosmos() {
         >
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-[76%] w-[132%] -translate-x-1/2 -translate-y-1/2 rounded-[100%] border border-white/[0.06]" />
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-[54%] w-[116%] -translate-x-1/2 -translate-y-1/2 rounded-[100%] border border-white/[0.04]" />
-          <div className="pointer-events-none absolute left-1/2 top-1/2 h-[34%] w-[96%] -translate-x-1/2 -translate-y-1/2 rounded-[100%] border border-white/[0.03]" />
-
           <div className="pointer-events-none absolute left-[8%] top-[18%] h-24 w-24 rounded-full bg-white/[0.05] blur-3xl" />
           <div className="pointer-events-none absolute right-[10%] top-[24%] h-32 w-32 rounded-full bg-white/[0.04] blur-3xl" />
           <div className="pointer-events-none absolute bottom-[14%] left-[22%] h-28 w-28 rounded-full bg-white/[0.03] blur-3xl" />
           <div className="pointer-events-none absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-black via-black/85 to-transparent sm:w-28 lg:w-40" />
           <div className="pointer-events-none absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-black via-black/85 to-transparent sm:w-28 lg:w-40" />
 
-          {renderIndices.map((index) => {
-            const entry = visionEntries[index];
-            const wrappedOffset = getWrappedOffset(index, activeIndex, total);
-            const isNear = Math.abs(wrappedOffset) <= NEAR_RANGE;
-            const state = isNear ? getNearState(wrappedOffset) : getFarState(index);
-            const isActive = wrappedOffset === 0;
+          {entries.map((entry, index) => {
+            const offset = getWrappedOffset(index, activeIndex, total);
+            const state = getOrbitState(offset, total);
+            const isActive = offset === 0;
 
             return (
               <motion.button
@@ -351,7 +273,7 @@ export default function VisionCosmos() {
                 type="button"
                 onClick={() => goToIndex(index)}
                 aria-label={`Select image ${entry.title}`}
-                className="absolute w-[min(82vw,28rem)] -translate-x-1/2 -translate-y-1/2 cursor-pointer"
+                className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer"
                 style={{ zIndex: state.zIndex }}
                 animate={{
                   left: state.left,
@@ -370,7 +292,7 @@ export default function VisionCosmos() {
                 }}
               >
                 <div
-                  className="relative w-full"
+                  className="relative"
                   style={{ transformStyle: "preserve-3d" }}
                 >
                   <div
@@ -380,7 +302,7 @@ export default function VisionCosmos() {
                       backfaceVisibility: "hidden",
                     }}
                   >
-                    <div className="flex aspect-[3/4] h-full flex-col justify-between rounded-[1.6rem] p-5 text-left">
+                    <div className="flex h-full min-h-[18rem] flex-col justify-between rounded-[1.6rem] p-5 text-left">
                       <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
                         My Vision
                       </p>
@@ -395,20 +317,15 @@ export default function VisionCosmos() {
                   </div>
 
                   <div
-                    className="relative rounded-[1.6rem] bg-[#f6f1e8] p-3 shadow-[0_30px_80px_rgba(0,0,0,0.45)]"
+                    className="relative overflow-hidden rounded-[1.6rem] bg-[#f6f1e8] p-3 shadow-[0_30px_80px_rgba(0,0,0,0.45)]"
                     style={{ backfaceVisibility: "hidden" }}
                   >
-                    <div className="relative aspect-[3/4] overflow-hidden rounded-[1.2rem] border border-black/5 bg-zinc-900">
-                      <Image
-                        src={entry.image}
-                        alt={entry.alt}
-                        fill
-                        sizes="(max-width: 1024px) 70vw, 28rem"
-                        className="object-cover"
-                      />
-
-                      <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/35" />
-                    </div>
+                    <img
+                      src={entry.image}
+                      alt={entry.alt}
+                      loading={isActive ? "eager" : "lazy"}
+                      className="block h-auto max-h-[60vh] w-[min(76vw,22rem)] rounded-[1.2rem] border border-black/5 object-contain sm:w-[min(52vw,24rem)] lg:w-[min(34vw,26rem)]"
+                    />
 
                     <div className="mt-3 flex items-center justify-between gap-4 px-1 text-[11px] uppercase tracking-[0.24em] text-zinc-600">
                       <span>{entry.year}</span>
@@ -451,22 +368,24 @@ export default function VisionCosmos() {
           </div>
 
           <div className="space-y-5">
-            <div className="rounded-[2rem] border border-white/10 bg-black/30 p-5">
-              <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                Frame Metadata
-              </p>
+            {activeEntry.tags.length > 0 && (
+              <div className="rounded-[2rem] border border-white/10 bg-black/30 p-5">
+                <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
+                  Frame Metadata
+                </p>
 
-              <div className="mt-5 flex flex-wrap gap-3">
-                {activeEntry.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-200"
-                  >
-                    {tag}
-                  </span>
-                ))}
+                <div className="mt-5 flex flex-wrap gap-3">
+                  {activeEntry.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-200"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="rounded-[2rem] border border-white/10 bg-black/30 p-5">
               <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">

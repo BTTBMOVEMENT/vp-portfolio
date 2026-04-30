@@ -9,6 +9,7 @@ const navItems = [
   { label: "Works", href: "/works" },
   { label: "Journal", href: "/journal" },
   { label: "My Album", href: "/my-album" },
+  { label: "Social", href: "/social-media" },
   { label: "Contact", href: "/#contact" },
 ] as const;
 
@@ -23,6 +24,9 @@ function isActive(pathname: string, href: string) {
   if (href === "/my-album") {
     return pathname === "/my-album" || pathname === "/my-vision";
   }
+  if (href === "/social-media") {
+    return pathname === "/social-media";
+  }
   return false;
 }
 
@@ -33,6 +37,7 @@ function getRouteLabel(pathname: string) {
   if (pathname === "/journal") return "Journal";
   if (pathname.startsWith("/journal/")) return "Journal Entry";
   if (pathname === "/my-album" || pathname === "/my-vision") return "My Album";
+  if (pathname === "/social-media") return "Social Media";
   return "Archive";
 }
 
@@ -96,7 +101,7 @@ export default function SiteNavigation() {
         transition={{ duration: 0.55, ease: "easeOut" }}
         className="pointer-events-none fixed inset-x-0 bottom-4 z-[80] flex justify-center px-4 md:hidden"
       >
-        <nav className="pointer-events-auto flex w-full max-w-[36rem] items-center justify-between rounded-full border border-white/10 bg-black/70 px-3 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+        <nav className="pointer-events-auto flex w-full max-w-[42rem] items-center justify-between rounded-full border border-white/10 bg-black/70 px-3 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl">
           {navItems.map((item) => {
             const active = isActive(pathname, item.href);
 
@@ -105,7 +110,7 @@ export default function SiteNavigation() {
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`rounded-full px-4 py-2 text-[11px] uppercase tracking-[0.24em] transition ${
+                className={`rounded-full px-3 py-2 text-[10px] uppercase tracking-[0.22em] transition ${
                   active
                     ? "bg-white text-black"
                     : "text-zinc-300 hover:bg-white/[0.06] hover:text-white"

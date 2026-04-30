@@ -7,7 +7,8 @@ import {
 } from "../sanity/lib/queries";
 import { estimateReadTime } from "../sanity/lib/text";
 
-export const revalidate = 0;
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 async function getHomeData() {
   try {

@@ -15,9 +15,11 @@ export async function sanityFetch({
 }: {
   query: string
   params?: Record<string, unknown>
-  revalidate?: number | false
+  revalidate?: number
 }) {
   return client.fetch(query, params, {
-    next: revalidate === false ? undefined : {revalidate},
+    next: {
+      revalidate,
+    },
   })
 }

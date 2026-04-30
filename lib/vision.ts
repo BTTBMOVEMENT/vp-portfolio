@@ -3,7 +3,7 @@ import path from "node:path";
 
 export type VisionEntry = {
   id: string;
-  title: string;
+  title?: string;
   image: string;
   alt: string;
   year: string;
@@ -14,26 +14,8 @@ export type VisionEntry = {
 const VISION_DIR = path.join(process.cwd(), "public", "images", "vision");
 const IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp", ".avif"]);
 
-function humanizeFilename(fileName: string) {
-  const name = path.parse(fileName).name;
-
-  return name
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-async function readOptionalNote(baseName: string) {
-  const txtPath = path.join(VISION_DIR, `${baseName}.txt`);
-
-  try {
-    const value = await fs.readFile(txtPath, "utf8");
-    const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : undefined;
-  } catch {
-    return undefined;
-  }
+function formatCounter(index: number) {
+  return String(index + 1).padStart(3, "0");
 }
 
 export async function getVisionEntries(): Promise<VisionEntry[]> {
@@ -50,17 +32,12 @@ export async function getVisionEntries(): Promise<VisionEntry[]> {
       imageFiles.map(async (file) => {
         const absolutePath = path.join(VISION_DIR, file.name);
         const stats = await fs.stat(absolutePath);
-        const baseName = path.parse(file.name).name;
-        const note = await readOptionalNote(baseName);
 
         return {
-          id: baseName,
-          title: humanizeFilename(file.name),
+          id: path.parse(file.name).name,
+          fileName: file.name,
           image: `/images/vision/${file.name}`,
-          alt: humanizeFilename(file.name),
           year: String(new Date(stats.mtimeMs).getFullYear()),
-          tags: [],
-          note,
           sortTime: stats.mtimeMs,
         };
       })
@@ -68,7 +45,15 @@ export async function getVisionEntries(): Promise<VisionEntry[]> {
 
     return items
       .sort((a, b) => b.sortTime - a.sortTime)
-      .map(({ sortTime, ...entry }) => entry);
+      .map((item, index) => ({
+        id: item.id,
+        title: `Vision Frame ${formatCounter(index)}`,
+        image: item.image,
+        alt: `Vision frame ${formatCounter(index)}`,
+        year: item.year,
+        tags: [],
+        note: undefined,
+      }));
   } catch {
     return [];
   }

@@ -9,27 +9,88 @@ type HeroVideoScrubProps = {
   role: string;
   headline: string;
   intro: string;
-  videoSrc: string;
+  videoSrc?: string;
   posterSrc?: string;
   sequenceLabel?: string;
 };
+
+function drawCoverImage(
+  canvas: HTMLCanvasElement,
+  image: HTMLImageElement,
+  viewportWidth: number,
+  viewportHeight: number
+) {
+  const context = canvas.getContext("2d");
+  if (!context) return;
+
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const width = Math.max(1, Math.floor(viewportWidth));
+  const height = Math.max(1, Math.floor(viewportHeight));
+
+  if (canvas.width !== Math.floor(width * dpr) || canvas.height !== Math.floor(height * dpr)) {
+    canvas.width = Math.floor(width * dpr);
+    canvas.height = Math.floor(height * dpr);
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+  }
+
+  context.setTransform(dpr, 0, 0, dpr, 0, 0);
+  context.clearRect(0, 0, width, height);
+
+  const imageRatio = image.width / image.height;
+  const viewportRatio = width / height;
+
+  let drawWidth = width;
+  let drawHeight = height;
+  let offsetX = 0;
+  let offsetY = 0;
+
+  if (imageRatio > viewportRatio) {
+    drawHeight = height;
+    drawWidth = height * imageRatio;
+    offsetX = (width - drawWidth) / 2;
+  } else {
+    drawWidth = width;
+    drawHeight = width / imageRatio;
+    offsetY = (height - drawHeight) / 2;
+  }
+
+  context.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+}
+
+function findNearestLoadedFrame(
+  images: Array<HTMLImageElement | null>,
+  targetIndex: number
+) {
+  if (images[targetIndex]) return images[targetIndex];
+
+  for (let radius = 1; radius < images.length; radius += 1) {
+    const backward = targetIndex - radius;
+    const forward = targetIndex + radius;
+
+    if (backward >= 0 && images[backward]) return images[backward];
+    if (forward < images.length && images[forward]) return images[forward];
+  }
+
+  return null;
+}
 
 export default function HeroVideoScrub({
   name,
   role,
   headline,
   intro,
-  videoSrc,
-  sequenceLabel = "03.8s sequence",
+  sequenceLabel = "180 frame image sequence",
 }: HeroVideoScrubProps) {
   const sectionRef = useRef<HTMLElement | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const rafRef = useRef<number | null>(null);
-  const targetTimeRef = useRef(0);
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const imagesRef = useRef<Array<HTMLImageElement | null>>([]);
+  const currentFrameRef = useRef(0);
 
-  const [duration, setDuration] = useState(0);
-  const [videoReady, setVideoReady] = useState(false);
-  const [videoError, setVideoError] = useState(false);
+  const [frameUrls, setFrameUrls] = useState<string[]>([]);
+  const [loadedCount, setLoadedCount] = useState(0);
+  const [framesReady, setFramesReady] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   const { scrollYProgress } = useScroll({
@@ -39,7 +100,7 @@ export default function HeroVideoScrub({
 
   const smoothProgress = useSpring(scrollYProgress, {
     stiffness: 120,
-    damping: 26,
+    damping: 28,
     mass: 0.3,
   });
 
@@ -56,12 +117,12 @@ export default function HeroVideoScrub({
   const mediaScale = useTransform(
     smoothProgress,
     [0, 1],
-    isMobile ? [1, 1.01] : [1, 1.06]
+    isMobile ? [1, 1.01] : [1, 1.04]
   );
   const mediaY = useTransform(
     smoothProgress,
     [0, 1],
-    isMobile ? [0, 0] : [0, 18]
+    isMobile ? [0, 0] : [0, 14]
   );
 
   const heroTitleY = useTransform(
@@ -100,119 +161,99 @@ export default function HeroVideoScrub({
   );
   const railOpacity = useTransform(smoothProgress, [0, 1], [1, 0.38]);
 
-  function stopRaf() {
-    if (rafRef.current !== null) {
-      window.cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-  }
+  function redrawFrame(index: number) {
+    const canvas = canvasRef.current;
+    const stage = stageRef.current;
+    if (!canvas || !stage || frameUrls.length === 0) return;
 
-  function scrubTowardTarget() {
-    const video = videoRef.current;
+    const image = findNearestLoadedFrame(imagesRef.current, index);
+    if (!image) return;
 
-    if (!video || !duration || !videoReady) {
-      stopRaf();
-      return;
-    }
-
-    const current = video.currentTime || 0;
-    const delta = targetTimeRef.current - current;
-
-    if (Math.abs(delta) < 1 / 90) {
-      try {
-        video.currentTime = targetTimeRef.current;
-      } catch {
-        // ignore edge seek issues
-      }
-      stopRaf();
-      return;
-    }
-
-    try {
-      video.currentTime = current + delta * (isMobile ? 0.22 : 0.28);
-    } catch {
-      stopRaf();
-      return;
-    }
-
-    rafRef.current = window.requestAnimationFrame(scrubTowardTarget);
-  }
-
-  async function primeVideoElement() {
-    const video = videoRef.current;
-    if (!video) return;
-
-    try {
-      video.muted = true;
-      video.playsInline = true;
-
-      const playPromise = video.play();
-
-      if (playPromise && typeof playPromise.then === "function") {
-        await playPromise;
-        video.pause();
-      } else {
-        video.pause();
-      }
-    } catch {
-      // ignore autoplay/priming rejection
-    }
-  }
-
-  function handleLoadedMetadata() {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const nextDuration = Number.isFinite(video.duration) ? video.duration : 0;
-    setDuration(nextDuration);
-
-    try {
-      video.pause();
-      video.currentTime = 0;
-    } catch {
-      // ignore initial seek issues
-    }
-  }
-
-  function handleLoadedData() {
-    setVideoReady(true);
-    void primeVideoElement();
-  }
-
-  function handleCanPlay() {
-    if (!videoReady) {
-      setVideoReady(true);
-      void primeVideoElement();
-    }
+    const rect = stage.getBoundingClientRect();
+    drawCoverImage(canvas, image, rect.width, rect.height);
   }
 
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
+    let cancelled = false;
 
-    video.load();
-  }, [videoSrc]);
+    async function loadFrames() {
+      try {
+        const response = await fetch("/api/hero-sequence", { cache: "no-store" });
+        const data = (await response.json()) as { frames?: string[] };
+        const frames = Array.isArray(data.frames) ? data.frames : [];
+
+        if (cancelled) return;
+
+        setFrameUrls(frames);
+        setLoadedCount(0);
+        setFramesReady(false);
+        imagesRef.current = new Array(frames.length).fill(null);
+
+        frames.forEach((src, index) => {
+          const image = new window.Image();
+          image.decoding = "async";
+          image.src = src;
+
+          image.onload = () => {
+            if (cancelled) return;
+
+            imagesRef.current[index] = image;
+            setLoadedCount((count) => count + 1);
+
+            if (index === 0) {
+              setFramesReady(true);
+              redrawFrame(currentFrameRef.current);
+            } else {
+              redrawFrame(currentFrameRef.current);
+            }
+          };
+        });
+      } catch {
+        if (!cancelled) {
+          setFrameUrls([]);
+          setLoadedCount(0);
+          setFramesReady(false);
+        }
+      }
+    }
+
+    void loadFrames();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    const observer = new ResizeObserver(() => {
+      redrawFrame(currentFrameRef.current);
+    });
+
+    observer.observe(stage);
+
+    return () => observer.disconnect();
+  }, [frameUrls.length]);
 
   useEffect(() => {
     const unsubscribe = smoothProgress.on("change", (latest) => {
-      const video = videoRef.current;
-      if (!video || !duration || !videoReady) return;
+      if (frameUrls.length === 0) return;
 
-      targetTimeRef.current = Math.min(duration, Math.max(0, latest * duration));
+      const nextIndex = Math.round(latest * Math.max(0, frameUrls.length - 1));
 
-      if (rafRef.current === null) {
-        rafRef.current = window.requestAnimationFrame(scrubTowardTarget);
+      if (nextIndex !== currentFrameRef.current) {
+        currentFrameRef.current = nextIndex;
+        redrawFrame(nextIndex);
       }
     });
 
-    return () => {
-      unsubscribe();
-      stopRaf();
-    };
-  }, [smoothProgress, duration, videoReady, isMobile]);
+    return () => unsubscribe();
+  }, [smoothProgress, frameUrls.length]);
 
-  const durationLabel =
-    duration > 0 ? `${duration.toFixed(1)}s scrub` : sequenceLabel;
+  const loadedLabel =
+    frameUrls.length > 0 ? `${loadedCount} / ${frameUrls.length} loaded` : sequenceLabel;
 
   return (
     <section ref={sectionRef} id="hero" className="relative h-[230vh]">
@@ -225,24 +266,14 @@ export default function HeroVideoScrub({
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.06),transparent_28%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.04),transparent_22%)]" />
 
-          <motion.video
-            ref={videoRef}
-            src={videoSrc}
-            preload="auto"
-            muted
-            playsInline
-            disableRemotePlayback
-            onLoadedMetadata={handleLoadedMetadata}
-            onLoadedData={handleLoadedData}
-            onCanPlay={handleCanPlay}
-            onError={() => {
-              setVideoError(true);
-              setVideoReady(false);
-            }}
-            animate={{ opacity: videoReady && !videoError ? 1 : 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute inset-0 h-full w-full object-cover"
-          />
+          <div ref={stageRef} className="absolute inset-0">
+            <canvas
+              ref={canvasRef}
+              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${
+                framesReady ? "opacity-100" : "opacity-0"
+              }`}
+            />
+          </div>
         </motion.div>
 
         <div className="absolute inset-0 bg-gradient-to-b from-black/8 via-black/20 to-black/82" />
@@ -254,6 +285,14 @@ export default function HeroVideoScrub({
           className="absolute inset-0 bg-black"
         />
 
+        {!framesReady && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <div className="rounded-full border border-white/10 bg-black/40 px-5 py-3 text-[11px] uppercase tracking-[0.28em] text-zinc-400 backdrop-blur-xl">
+              Loading hero sequence...
+            </div>
+          </div>
+        )}
+
         <div className="relative z-10 mx-auto flex h-full max-w-6xl flex-col justify-between px-5 pb-8 pt-24 sm:px-8 md:pt-28">
           <motion.div
             initial={{ opacity: 0, y: -18 }}
@@ -263,14 +302,12 @@ export default function HeroVideoScrub({
           >
             <div className="space-y-1">
               <div>{name}</div>
-              <div className="text-zinc-500">Hero Scrub Sequence</div>
+              <div className="text-zinc-500">Hero Image Sequence</div>
             </div>
 
             <div className="text-right">
-              <div>{durationLabel}</div>
-              <div className="text-zinc-500">
-                {videoReady && !videoError ? "Video live" : "Loading sequence"}
-              </div>
+              <div>{sequenceLabel}</div>
+              <div className="text-zinc-500">{loadedLabel}</div>
             </div>
           </motion.div>
 
@@ -313,12 +350,12 @@ export default function HeroVideoScrub({
             <div className="flex items-center justify-between gap-4 text-[11px] uppercase tracking-[0.24em] text-zinc-300">
               <div className="space-y-1">
                 <div>Sequence 001</div>
-                <div className="text-zinc-500">Typography and motion are decoupled</div>
+                <div className="text-zinc-500">Frames beneath, type above</div>
               </div>
 
               <div className="text-right">
                 <div>Scroll Down / Reverse Up</div>
-                <div className="text-zinc-500">Video beneath, type above</div>
+                <div className="text-zinc-500">180-frame image sequence</div>
               </div>
             </div>
 

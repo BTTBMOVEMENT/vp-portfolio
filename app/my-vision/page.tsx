@@ -37,7 +37,7 @@ export default async function MyVisionPage() {
               </p>
               <div className="h-px w-20 bg-white/15" />
               <p className="max-w-sm text-sm leading-7 text-zinc-500">
-                An image field for personal frames, visual memory, and optional notes.
+                A field of personal frames that can later be fully managed through CMS.
               </p>
             </div>
 
@@ -47,9 +47,10 @@ export default async function MyVisionPage() {
               </h1>
 
               <p className="max-w-3xl text-sm leading-8 text-zinc-300 sm:text-base">
-                Every image inside the vision folder is discovered automatically,
-                sorted by file time, and placed into the orbital album. Add an
-                optional text file with the same basename if you want a note to appear.
+                Every image inside the vision folder is discovered automatically and
+                sorted by file time. Titles and notes are intentionally neutral for now,
+                so later they can be replaced cleanly by CMS-managed content instead of
+                being tied to file names.
               </p>
             </div>
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import type { VisionEntry } from "../../lib/vision";
 
@@ -85,16 +85,53 @@ function getOrbitState(offset: number, total: number) {
   };
 }
 
+function getAtlasState(index: number, total: number) {
+  const columns = total <= 3 ? total : total <= 8 ? 4 : 5;
+  const rows = Math.ceil(total / columns);
+
+  const columnIndex = index % columns;
+  const rowIndex = Math.floor(index / columns);
+
+  const left =
+    columns === 1
+      ? 50
+      : 18 + (columnIndex * 64) / (columns - 1);
+
+  const top =
+    rows === 1
+      ? 50
+      : 24 + (rowIndex * 52) / (rows - 1);
+
+  const scale =
+    total <= 3 ? 0.62 : total <= 8 ? 0.5 : 0.42;
+
+  return {
+    left: `${left}%`,
+    top: `${top}%`,
+    scale,
+    opacity: 1,
+    rotateY: 0,
+    rotateX: 0,
+    rotateZ: 0,
+    zIndex: 30 + rowIndex,
+  };
+}
+
 function formatCounter(index: number, total: number) {
   return `${String(index + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`;
 }
 
 export default function VisionCosmos({ entries }: VisionCosmosProps) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [showAtlas, setShowAtlas] = useState(false);
   const wheelLockRef = useRef(false);
   const touchStartXRef = useRef<number | null>(null);
 
   const total = entries.length;
+
+  const activeEntry = entries[activeIndex];
+
+  const visibleEntries = useMemo(() => entries, [entries]);
 
   if (total === 0) {
     return (
@@ -115,8 +152,6 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
     );
   }
 
-  const activeEntry = entries[activeIndex]!;
-
   function goToIndex(index: number) {
     setActiveIndex(wrapIndex(index, total));
   }
@@ -130,6 +165,7 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
   }
 
   function handleWheel(event: React.WheelEvent<HTMLDivElement>) {
+    if (showAtlas) return;
     if (wheelLockRef.current) return;
 
     const dominantDelta =
@@ -152,10 +188,12 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
   }
 
   function handleTouchStart(event: React.TouchEvent<HTMLDivElement>) {
+    if (showAtlas) return;
     touchStartXRef.current = event.touches[0]?.clientX ?? null;
   }
 
   function handleTouchEnd(event: React.TouchEvent<HTMLDivElement>) {
+    if (showAtlas) return;
     if (touchStartXRef.current === null) return;
 
     const endX = event.changedTouches[0]?.clientX ?? touchStartXRef.current;
@@ -180,6 +218,11 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
       event.preventDefault();
       goToNext();
     }
+
+    if (event.key.toLowerCase() === "i") {
+      event.preventDefault();
+      setShowAtlas((prev) => !prev);
+    }
   }
 
   return (
@@ -195,15 +238,19 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
           </h2>
 
           <p className="max-w-2xl text-sm leading-8 text-zinc-300 sm:text-base">
-            Scroll or swipe to pull a photograph out of the distance. The selected
-            frame comes forward while the others return to the field.
+            Scroll or swipe to pull a photograph out of the distance. Open the
+            index to align every frame, then choose one to bring it back to center.
           </p>
         </div>
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <div className="text-[11px] uppercase tracking-[0.24em] text-zinc-500">
-            Wheel / swipe / arrow keys
-          </div>
+          <button
+            type="button"
+            onClick={() => setShowAtlas((prev) => !prev)}
+            className="rounded-full border border-white/10 px-4 py-3 text-sm text-zinc-200 transition hover:border-white/30 hover:text-white"
+          >
+            {showAtlas ? "Return to Orbit" : "Align Frames"}
+          </button>
 
           <div className="rounded-full border border-white/10 px-4 py-3 text-sm text-zinc-200">
             {formatCounter(activeIndex, total)}
@@ -218,7 +265,9 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
               Orbital Album
             </p>
             <p className="text-sm leading-7 text-zinc-300">
-              Exactly one floating card per image in your folder.
+              {showAtlas
+                ? "All frames are aligned. Choose one to send it back into orbit."
+                : "Exactly one floating card per image in your folder."}
             </p>
           </div>
 
@@ -254,25 +303,36 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
           className="relative h-[34rem] overflow-hidden outline-none sm:h-[40rem] lg:h-[48rem]"
           style={{ perspective: "1800px" }}
         >
-          <div className="pointer-events-none absolute left-1/2 top-1/2 h-[76%] w-[132%] -translate-x-1/2 -translate-y-1/2 rounded-[100%] border border-white/[0.06]" />
-          <div className="pointer-events-none absolute left-1/2 top-1/2 h-[54%] w-[116%] -translate-x-1/2 -translate-y-1/2 rounded-[100%] border border-white/[0.04]" />
+          <motion.div
+            animate={{ opacity: showAtlas ? 0.65 : 1 }}
+            className="pointer-events-none absolute left-1/2 top-1/2 h-[76%] w-[132%] -translate-x-1/2 -translate-y-1/2 rounded-[100%] border border-white/[0.06]"
+          />
+          <motion.div
+            animate={{ opacity: showAtlas ? 0.3 : 1 }}
+            className="pointer-events-none absolute left-1/2 top-1/2 h-[54%] w-[116%] -translate-x-1/2 -translate-y-1/2 rounded-[100%] border border-white/[0.04]"
+          />
           <div className="pointer-events-none absolute left-[8%] top-[18%] h-24 w-24 rounded-full bg-white/[0.05] blur-3xl" />
           <div className="pointer-events-none absolute right-[10%] top-[24%] h-32 w-32 rounded-full bg-white/[0.04] blur-3xl" />
           <div className="pointer-events-none absolute bottom-[14%] left-[22%] h-28 w-28 rounded-full bg-white/[0.03] blur-3xl" />
           <div className="pointer-events-none absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-black via-black/85 to-transparent sm:w-28 lg:w-40" />
           <div className="pointer-events-none absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-black via-black/85 to-transparent sm:w-28 lg:w-40" />
 
-          {entries.map((entry, index) => {
-            const offset = getWrappedOffset(index, activeIndex, total);
-            const state = getOrbitState(offset, total);
-            const isActive = offset === 0;
+          {visibleEntries.map((entry, index) => {
+            const orbitOffset = getWrappedOffset(index, activeIndex, total);
+            const state = showAtlas
+              ? getAtlasState(index, total)
+              : getOrbitState(orbitOffset, total);
+            const isActive = index === activeIndex;
 
             return (
               <motion.button
                 key={entry.id}
                 type="button"
-                onClick={() => goToIndex(index)}
-                aria-label={`Select image ${entry.title}`}
+                onClick={() => {
+                  setActiveIndex(index);
+                  setShowAtlas(false);
+                }}
+                aria-label={`Select image ${entry.title ?? `Vision Frame ${index + 1}`}`}
                 className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer"
                 style={{ zIndex: state.zIndex }}
                 animate={{
@@ -324,7 +384,11 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
                       src={entry.image}
                       alt={entry.alt}
                       loading={isActive ? "eager" : "lazy"}
-                      className="block h-auto max-h-[60vh] w-[min(76vw,22rem)] rounded-[1.2rem] border border-black/5 object-contain sm:w-[min(52vw,24rem)] lg:w-[min(34vw,26rem)]"
+                      className={`block h-auto max-h-[60vh] rounded-[1.2rem] border border-black/5 object-contain ${
+                        showAtlas
+                          ? "w-[min(22vw,11rem)] sm:w-[min(18vw,12rem)] lg:w-[min(14vw,12rem)]"
+                          : "w-[min(76vw,22rem)] sm:w-[min(52vw,24rem)] lg:w-[min(34vw,26rem)]"
+                      }`}
                     />
 
                     <div className="mt-3 flex items-center justify-between gap-4 px-1 text-[11px] uppercase tracking-[0.24em] text-zinc-600">
@@ -335,7 +399,7 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
                     <div className="mt-2 h-px w-full bg-black/10" />
                   </div>
 
-                  {isActive && (
+                  {!showAtlas && isActive && (
                     <div className="pointer-events-none absolute -bottom-4 left-1/2 h-10 w-[72%] -translate-x-1/2 rounded-full bg-black/40 blur-2xl" />
                   )}
                 </div>
@@ -352,7 +416,7 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
 
             <div className="space-y-3">
               <h3 className="max-w-[12ch] text-4xl font-semibold leading-[0.95] text-zinc-100 sm:text-5xl">
-                {activeEntry.title}
+                {activeEntry.title ?? `Vision Frame ${String(activeIndex + 1).padStart(3, "0")}`}
               </h3>
 
               {activeEntry.note ? (
@@ -361,38 +425,19 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
                 </p>
               ) : (
                 <p className="max-w-2xl text-sm leading-8 text-zinc-500 sm:text-base">
-                  No note attached to this frame yet.
+                  Caption and notes can be attached later through CMS.
                 </p>
               )}
             </div>
           </div>
 
           <div className="space-y-5">
-            {activeEntry.tags.length > 0 && (
-              <div className="rounded-[2rem] border border-white/10 bg-black/30 p-5">
-                <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                  Frame Metadata
-                </p>
-
-                <div className="mt-5 flex flex-wrap gap-3">
-                  {activeEntry.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-200"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
             <div className="rounded-[2rem] border border-white/10 bg-black/30 p-5">
               <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
                 Navigation
               </p>
 
-              <div className="mt-5 flex items-center justify-between gap-4 text-sm text-zinc-200">
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <button
                   type="button"
                   onClick={goToPrevious}
@@ -401,9 +446,13 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
                   Previous
                 </button>
 
-                <div className="text-center text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                  {formatCounter(activeIndex, total)}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAtlas((prev) => !prev)}
+                  className="rounded-full border border-white/10 px-4 py-3 transition hover:border-white/30 hover:text-white"
+                >
+                  {showAtlas ? "Return to Orbit" : "Align Frames"}
+                </button>
 
                 <button
                   type="button"
@@ -412,6 +461,10 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
                 >
                   Next
                 </button>
+              </div>
+
+              <div className="mt-4 text-center text-[11px] uppercase tracking-[0.28em] text-zinc-500">
+                {formatCounter(activeIndex, total)}
               </div>
             </div>
           </div>

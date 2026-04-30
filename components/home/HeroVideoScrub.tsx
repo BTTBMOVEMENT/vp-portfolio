@@ -9,9 +9,14 @@ type HeroVideoScrubProps = {
   role: string;
   headline: string;
   intro: string;
-  videoSrc?: string;
-  posterSrc?: string;
   sequenceLabel?: string;
+  topSubLabel?: string;
+  railLeftTitle?: string;
+  railLeftSubtitle?: string;
+  railRightTitle?: string;
+  ctaPrimaryLabel?: string;
+  ctaSecondaryLabel?: string;
+  ctaTertiaryLabel?: string;
 };
 
 function drawCoverImage(
@@ -80,7 +85,14 @@ export default function HeroVideoScrub({
   role,
   headline,
   intro,
-  sequenceLabel = "Image sequence",
+  sequenceLabel = "03.8s sequence",
+  topSubLabel = "Hero Image Sequence",
+  railLeftTitle = "Sequence 001",
+  railLeftSubtitle = "Frames beneath, type above",
+  railRightTitle = "Scroll Down / Reverse Up",
+  ctaPrimaryLabel = "Open Works Archive",
+  ctaSecondaryLabel = "Open Journal",
+  ctaTertiaryLabel = "About Practice",
 }: HeroVideoScrubProps) {
   const sectionRef = useRef<HTMLElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
@@ -341,7 +353,7 @@ export default function HeroVideoScrub({
           >
             <div className="space-y-1">
               <div>{name}</div>
-              <div className="text-zinc-500">Hero Image Sequence</div>
+              <div className="text-zinc-500">{topSubLabel}</div>
             </div>
 
             <div className="text-right">
@@ -388,12 +400,12 @@ export default function HeroVideoScrub({
           >
             <div className="flex items-center justify-between gap-4 text-[11px] uppercase tracking-[0.24em] text-zinc-300">
               <div className="space-y-1">
-                <div>Sequence 001</div>
-                <div className="text-zinc-500">Frames beneath, type above</div>
+                <div>{railLeftTitle}</div>
+                <div className="text-zinc-500">{railLeftSubtitle}</div>
               </div>
 
               <div className="text-right">
-                <div>Scroll Down / Reverse Up</div>
+                <div>{railRightTitle}</div>
                 <div className="text-zinc-500">&nbsp;</div>
               </div>
             </div>
@@ -412,21 +424,21 @@ export default function HeroVideoScrub({
                 href="/works"
                 className="inline-flex rounded-full bg-white px-5 py-3 text-sm text-black transition hover:bg-zinc-200"
               >
-                Open Works Archive
+                {ctaPrimaryLabel}
               </Link>
 
               <Link
                 href="/journal"
                 className="inline-flex rounded-full border border-white/15 px-5 py-3 text-sm text-zinc-200 transition hover:border-white/30 hover:text-white"
               >
-                Open Journal
+                {ctaSecondaryLabel}
               </Link>
 
               <a
                 href="#about"
                 className="inline-flex rounded-full border border-white/15 px-5 py-3 text-sm text-zinc-300 transition hover:border-white/30 hover:text-white"
               >
-                About Practice
+                {ctaTertiaryLabel}
               </a>
             </div>
           </motion.div>

@@ -12,7 +12,23 @@ function pad(value: number) {
   return String(value).padStart(2, "0");
 }
 
-export default function WorksStoryboardTeaser() {
+type WorksStoryboardTeaserProps = {
+  sectionLabel?: string;
+  title?: string;
+  description?: string;
+  metaLabel?: string;
+  metaBody?: string;
+  archiveButtonLabel?: string;
+};
+
+export default function WorksStoryboardTeaser({
+  sectionLabel = "Works",
+  title = "A storyboard archive where finished chapters occupy frames.",
+  description = "The home page only shows the opening sheet. Each filled frame leads into a case study. Empty frames stay visible so the archive feels like an active wall rather than a closed list.",
+  metaLabel = "Preview Logic",
+  metaBody = "Home only shows the opening sheet. The full archive continues inside the dedicated Works page, where each board grows over time as new projects are published.",
+  archiveButtonLabel = "Open Works Archive",
+}: WorksStoryboardTeaserProps) {
   const boardEntries = getProjectsForBoard(TEASER_BOARD_PAGE);
   const teaserEntries = boardEntries.filter(
     (entry) => entry.boardOrder <= TEASER_SLOTS
@@ -34,17 +50,15 @@ export default function WorksStoryboardTeaser() {
         >
           <div className="max-w-3xl space-y-4">
             <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-400">
-              Works
+              {sectionLabel}
             </p>
 
             <h2 className="max-w-[13ch] text-3xl font-semibold leading-tight sm:text-4xl md:text-5xl">
-              A storyboard archive where finished chapters occupy frames.
+              {title}
             </h2>
 
             <p className="max-w-2xl text-sm leading-8 text-zinc-300 sm:text-base">
-              The home page only shows the opening sheet. Each filled frame leads
-              into a case study. Empty frames stay visible so the archive feels like
-              an active wall rather than a closed list.
+              {description}
             </p>
           </div>
 
@@ -57,7 +71,7 @@ export default function WorksStoryboardTeaser() {
               href="/works"
               className="inline-flex rounded-full border border-white/10 px-4 py-3 text-sm text-zinc-200 transition hover:border-white/30 hover:text-white"
             >
-              Open Works Archive
+              {archiveButtonLabel}
             </Link>
           </div>
         </motion.div>
@@ -191,13 +205,11 @@ export default function WorksStoryboardTeaser() {
           <div className="mt-6 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
             <div className="space-y-4">
               <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                Preview Logic
+                {metaLabel}
               </p>
 
               <p className="max-w-2xl text-sm leading-8 text-zinc-300 sm:text-base">
-                Home only shows the opening sheet. The full archive continues inside
-                the dedicated Works page, where each board grows over time as new
-                projects are published.
+                {metaBody}
               </p>
             </div>
 

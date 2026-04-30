@@ -85,7 +85,21 @@ function formatCounter(index: number, total: number) {
   return `${String(index + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`;
 }
 
-export default function JournalOrbit() {
+type JournalOrbitProps = {
+  sectionLabel?: string;
+  title?: string;
+  description?: string;
+  ctaLabel?: string;
+  helperText?: string;
+};
+
+export default function JournalOrbit({
+  sectionLabel = "Journal",
+  title = "A living layer that moves differently from the portfolio.",
+  description = "Instead of showing many posts at once, this section now focuses on one entry at the center and treats the rest as orbiting fragments around it.",
+  ctaLabel = "Open Journal",
+  helperText = "Swipe on mobile · arrows or two-finger horizontal scroll on desktop",
+}: JournalOrbitProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const wheelLockRef = useRef(false);
   const touchStartXRef = useRef<number | null>(null);
@@ -172,29 +186,28 @@ export default function JournalOrbit() {
         >
           <div className="max-w-3xl space-y-4">
             <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-400">
-              Journal
+              {sectionLabel}
             </p>
 
             <h2 className="max-w-[13ch] text-3xl font-semibold leading-tight sm:text-4xl md:text-5xl">
-              A living layer that moves differently from the portfolio.
+              {title}
             </h2>
 
             <p className="max-w-2xl text-sm leading-8 text-zinc-300 sm:text-base">
-              Instead of showing many posts at once, this section now focuses on one
-              entry at the center and treats the rest as orbiting fragments around it.
+              {description}
             </p>
           </div>
 
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <div className="text-[11px] uppercase tracking-[0.24em] text-zinc-500">
-              Swipe on mobile · arrows or two-finger horizontal scroll on desktop
+              {helperText}
             </div>
 
             <Link
               href="/journal"
               className="inline-flex rounded-full border border-white/10 px-4 py-3 text-sm text-zinc-200 transition hover:border-white/30 hover:text-white"
             >
-              Open Journal
+              {ctaLabel}
             </Link>
           </div>
         </motion.div>

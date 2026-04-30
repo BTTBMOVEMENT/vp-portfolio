@@ -1,0 +1,61 @@
+import {defineQuery} from 'next-sanity'
+
+export const SITE_SETTINGS_QUERY = defineQuery(`
+  *[_type == "siteSettings"][0]{
+    siteTitle,
+    email,
+    instagramPrimary,
+    instagramSecondary,
+    hero{
+      roleLine,
+      headline,
+      intro,
+      sequenceLabel,
+      topSubLabel,
+      railLeftTitle,
+      railLeftSubtitle,
+      railRightTitle,
+      ctaPrimaryLabel,
+      ctaSecondaryLabel,
+      ctaTertiaryLabel
+    },
+    about{
+      sectionLabel,
+      title,
+      body,
+      secondaryBody
+    },
+    works{
+      sectionLabel,
+      title,
+      description,
+      metaLabel,
+      metaBody,
+      archiveButtonLabel
+    },
+    journal{
+      sectionLabel,
+      title,
+      description,
+      ctaLabel,
+      helperText
+    },
+    albumGateway{
+      sectionLabel,
+      title,
+      description,
+      buttonLabel,
+      noteLabel
+    },
+    contact{
+      sectionLabel,
+      title,
+      body,
+      emailLabel,
+      instagramLabel,
+      worksLabel,
+      journalLabel,
+      albumLabel
+    }
+  }
+`)

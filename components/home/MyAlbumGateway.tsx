@@ -9,7 +9,21 @@ type SpotlightOrigin = {
   y: number;
 };
 
-export default function MyAlbumGateway() {
+type MyAlbumGatewayProps = {
+  sectionLabel?: string;
+  title?: string;
+  description?: string;
+  buttonLabel?: string;
+  noteLabel?: string;
+};
+
+export default function MyAlbumGateway({
+  sectionLabel = "My Album",
+  title = "Enter the album as if stepping into another atmosphere.",
+  description = "This route opens a more intimate image field: no grid, no archive wall, just drifting frames, optional notes, and a slower visual rhythm.",
+  buttonLabel = "My Album",
+  noteLabel = "Spotlight transition / soft iris reveal",
+}: MyAlbumGatewayProps) {
   const router = useRouter();
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const [transitioning, setTransitioning] = useState(false);
@@ -53,7 +67,7 @@ export default function MyAlbumGateway() {
             <div className="relative z-10 grid gap-10 xl:grid-cols-[0.7fr_1.3fr] xl:items-end">
               <div className="space-y-4">
                 <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                  My Album
+                  {sectionLabel}
                 </p>
                 <div className="h-px w-20 bg-white/15" />
                 <p className="max-w-sm text-sm leading-8 text-zinc-400">
@@ -64,12 +78,11 @@ export default function MyAlbumGateway() {
 
               <div className="space-y-6">
                 <h2 className="max-w-[12ch] font-serif text-5xl italic leading-[0.96] text-zinc-100 sm:text-6xl">
-                  Enter the album as if stepping into another atmosphere.
+                  {title}
                 </h2>
 
                 <p className="max-w-2xl text-sm leading-8 text-zinc-300 sm:text-base">
-                  This route opens a more intimate image field: no grid, no archive wall,
-                  just drifting frames, optional notes, and a slower visual rhythm.
+                  {description}
                 </p>
 
                 <div className="flex flex-wrap items-center gap-4">
@@ -79,14 +92,14 @@ export default function MyAlbumGateway() {
                     onClick={handleEnter}
                     className="group inline-flex items-center gap-4 rounded-full border border-white/15 bg-white/[0.04] px-6 py-4 text-sm text-zinc-100 transition hover:border-white/30 hover:bg-white/[0.08]"
                   >
-                    <span className="font-serif text-2xl italic leading-none">My Album</span>
+                    <span className="font-serif text-2xl italic leading-none">{buttonLabel}</span>
                     <span className="text-[11px] uppercase tracking-[0.28em] text-zinc-400 transition group-hover:text-zinc-200">
                       Enter
                     </span>
                   </button>
 
                   <p className="text-[11px] uppercase tracking-[0.24em] text-zinc-500">
-                    Spotlight transition / soft iris reveal
+                    {noteLabel}
                   </p>
                 </div>
               </div>
@@ -124,7 +137,7 @@ export default function MyAlbumGateway() {
             >
               <div className="space-y-4 text-center">
                 <div className="font-serif text-6xl italic text-zinc-100 sm:text-7xl">
-                  My Album
+                  {buttonLabel}
                 </div>
                 <div className="text-[11px] uppercase tracking-[0.32em] text-zinc-400">
                   Entering the orbital collection

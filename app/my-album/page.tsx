@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import VisionCosmos from "../../components/vision/VisionCosmos";
 import { getVisionEntries } from "../../lib/vision";
 
@@ -13,47 +12,8 @@ export default async function MyAlbumPage() {
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <section className="border-b border-white/10 px-5 pb-8 pt-6 sm:px-8">
+      <section className="px-5 pb-12 pt-28 sm:px-8 md:pt-32">
         <div className="mx-auto max-w-[1500px]">
-          <div className="flex items-center justify-between gap-4 text-[11px] uppercase tracking-[0.28em] text-zinc-400">
-            <Link
-              href="/"
-              className="rounded-full border border-white/10 px-3 py-2 transition hover:border-white/30 hover:text-white"
-            >
-              Back to Home
-            </Link>
-
-            <span>My Album / Orbital Collection</span>
-          </div>
-        </div>
-      </section>
-
-      <section className="px-5 py-12 sm:px-8">
-        <div className="mx-auto max-w-[1500px] space-y-14">
-          <div className="grid gap-8 xl:grid-cols-[0.5fr_1.5fr] xl:items-end">
-            <div className="space-y-4">
-              <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                My Album
-              </p>
-              <div className="h-px w-20 bg-white/15" />
-              <p className="max-w-sm text-sm leading-7 text-zinc-500">
-                A field of personal frames, visual memory, and future captions.
-              </p>
-            </div>
-
-            <div className="space-y-5">
-              <h1 className="max-w-[13ch] text-5xl font-semibold leading-[0.92] sm:text-6xl">
-                A drifting constellation of images.
-              </h1>
-
-              <p className="max-w-3xl text-sm leading-8 text-zinc-300 sm:text-base">
-                Every image inside the album folder is discovered automatically and
-                ordered by file time. Titles and notes are intentionally neutral for
-                now so they can be replaced cleanly by CMS-managed content later.
-              </p>
-            </div>
-          </div>
-
           <VisionCosmos entries={entries} />
         </div>
       </section>

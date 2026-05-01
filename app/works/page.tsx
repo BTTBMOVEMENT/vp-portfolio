@@ -8,11 +8,67 @@ function pad(value: number) {
   return String(value).padStart(2, "0");
 }
 
+type NormalizedProject = ProjectListItem & {
+  boardPage: number;
+  boardOrder: number;
+};
+
+function normalizeArchiveProjects(projects: ProjectListItem[]): NormalizedProject[] {
+  const pages = new Map<number, ProjectListItem[]>();
+
+  for (const project of projects) {
+    const page = project.boardPage ?? 1;
+
+    if (!pages.has(page)) {
+      pages.set(page, []);
+    }
+
+    pages.get(page)!.push(project);
+  }
+
+  const normalized: NormalizedProject[] = [];
+
+  for (const [page, items] of [...pages.entries()].sort((a, b) => a[0] - b[0])) {
+    const used = new Set<number>();
+
+    const sortedItems = [...items].sort((a, b) => {
+      const aOrder = a.boardOrder ?? Number.MAX_SAFE_INTEGER;
+      const bOrder = b.boardOrder ?? Number.MAX_SAFE_INTEGER;
+      return aOrder - bOrder;
+    });
+
+    for (const item of sortedItems) {
+      let slot = item.boardOrder ?? 0;
+
+      if (!slot || slot < 1 || used.has(slot)) {
+        slot = 1;
+        while (used.has(slot)) {
+          slot += 1;
+        }
+      }
+
+      used.add(slot);
+
+      normalized.push({
+        ...item,
+        boardPage: page,
+        boardOrder: slot,
+      });
+    }
+  }
+
+  return normalized.sort(
+    (a, b) =>
+      a.boardPage - b.boardPage ||
+      a.boardOrder - b.boardOrder
+  );
+}
+
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function WorksPage() {
-  const [projects, siteSettings] = await Promise.all([
+  const [rawProjects, siteSettings] = await Promise.all([
     sanityFetch<ProjectListItem[]>({
       query: PROJECTS_QUERY,
       revalidate: 0,
@@ -23,11 +79,12 @@ export default async function WorksPage() {
     }),
   ]);
 
+  const projects = normalizeArchiveProjects(rawProjects || []);
   const boardPages = Array.from(
-    new Set<number>((projects || []).map((project) => project.boardPage ?? 1))
+    new Set<number>(projects.map((project) => project.boardPage))
   ).sort((a, b) => a - b);
 
-  const totalProjects = (projects || []).length;
+  const totalProjects = projects.length;
 
   const copy = {
     pageLabel: siteSettings?.worksPage?.pageLabel || "Works Archive",
@@ -79,10 +136,8 @@ export default async function WorksPage() {
       siteSettings?.worksPage?.boardOpenCaseStudyLabel || "Open Case Study",
   };
 
-  function getProjectsForBoard(boardPage: number): ProjectListItem[] {
-    return (projects || [])
-      .filter((project) => (project.boardPage ?? 1) === boardPage)
-      .sort((a, b) => (a.boardOrder ?? 9999) - (b.boardOrder ?? 9999));
+  function getProjectsForBoard(boardPage: number): NormalizedProject[] {
+    return projects.filter((project) => project.boardPage === boardPage);
   }
 
   return (

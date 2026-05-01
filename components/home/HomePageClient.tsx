@@ -3,9 +3,7 @@
 import Link from "next/link";
 import { MotionConfig, motion, useScroll } from "motion/react";
 import HeroVideoScrub from "./HeroVideoScrub";
-import WorksStoryboardTeaser from "./WorksStoryboardTeaser";
-import JournalOrbit from "./JournalOrbit";
-import MyAlbumGateway from "./MyAlbumGateway";
+import RouteGatewaySection from "../common/RouteGatewaySection";
 
 type SiteSettingsData = {
   siteTitle?: string | null;
@@ -67,36 +65,8 @@ type SiteSettingsData = {
   } | null;
 } | null;
 
-type ProjectTeaser = {
-  _id: string;
-  title: string;
-  slug: string;
-  year?: string;
-  role?: string;
-  description?: string;
-  imageUrl?: string;
-  boardPage?: number;
-  boardOrder?: number;
-  boardLabel?: string;
-  boardCaption?: string;
-};
-
-type JournalPreviewEntry = {
-  _id: string;
-  title: string;
-  slug: string;
-  kind: "essay" | "note" | "photo" | "video";
-  excerpt?: string;
-  coverImageUrl?: string;
-  tags?: string[];
-  publishedAt?: string;
-  readTime: string;
-};
-
 type HomePageClientProps = {
   siteSettings: SiteSettingsData;
-  projects: ProjectTeaser[];
-  journalEntries: JournalPreviewEntry[];
 };
 
 const fallbackFocusTags = [
@@ -108,11 +78,7 @@ const fallbackFocusTags = [
   "Shot Planning",
 ];
 
-export default function HomePageClient({
-  siteSettings,
-  projects,
-  journalEntries,
-}: HomePageClientProps) {
+export default function HomePageClient({ siteSettings }: HomePageClientProps) {
   const { scrollYProgress } = useScroll();
 
   const profile = {
@@ -153,7 +119,7 @@ export default function HomePageClient({
       "This portfolio is being built as a mobile-first experience for Virtual Production and Cinematography. The goal is not just to show finished images, but to present process, workflow, and visual intent in a clear sequence.",
     secondaryBody:
       siteSettings?.about?.secondaryBody ||
-      "The current build is already structured like a system: a motion-led hero, storyboard-style works archive, orbit-based journal rail, a personal album, and long-form project case studies that can keep expanding over time.",
+      "The current build is already structured like a system: a motion-led hero, dedicated archive routes, and long-form project case studies that can keep expanding over time.",
     focusLabel: siteSettings?.about?.focusLabel || "Focus",
     focusTags:
       siteSettings?.about?.focusTags && siteSettings.about.focusTags.length > 0
@@ -165,30 +131,23 @@ export default function HomePageClient({
     sectionLabel: siteSettings?.works?.sectionLabel || "Works",
     title:
       siteSettings?.works?.title ||
-      "A storyboard archive where finished chapters occupy frames.",
+      "Enter the storyboard archive as a separate chapter.",
     description:
       siteSettings?.works?.description ||
-      "The home page only shows the opening sheet.",
-    metaLabel: siteSettings?.works?.metaLabel || "Preview Logic",
-    metaBody:
-      siteSettings?.works?.metaBody ||
-      "Home only shows the opening sheet.",
+      "Instead of previewing all project frames on the home page, this route now opens the dedicated Works archive directly.",
     archiveButtonLabel:
-      siteSettings?.works?.archiveButtonLabel || "Open Works Archive",
+      siteSettings?.works?.archiveButtonLabel || "Works",
   };
 
   const journal = {
     sectionLabel: siteSettings?.journal?.sectionLabel || "Journal",
     title:
       siteSettings?.journal?.title ||
-      "A living layer that moves differently from the portfolio.",
+      "Open the journal as its own publishing layer.",
     description:
       siteSettings?.journal?.description ||
-      "Instead of showing many posts at once, this section now focuses on one entry at the center.",
-    ctaLabel: siteSettings?.journal?.ctaLabel || "Open Journal",
-    helperText:
-      siteSettings?.journal?.helperText ||
-      "Swipe on mobile · arrows or two-finger horizontal scroll on desktop",
+      "The journal now lives as a separate destination so the home page can stay cleaner and more focused.",
+    ctaLabel: siteSettings?.journal?.ctaLabel || "Journal",
   };
 
   const albumGateway = {
@@ -198,11 +157,8 @@ export default function HomePageClient({
       "Enter the album as if stepping into another atmosphere.",
     description:
       siteSettings?.albumGateway?.description ||
-      "This route opens a more intimate image field.",
+      "This route opens a more intimate image field: no grid, no archive wall, just drifting frames, optional notes, and a slower visual rhythm.",
     buttonLabel: siteSettings?.albumGateway?.buttonLabel || "My Album",
-    noteLabel:
-      siteSettings?.albumGateway?.noteLabel ||
-      "Spotlight transition / soft iris reveal",
   };
 
   const contact = {
@@ -210,7 +166,7 @@ export default function HomePageClient({
     title: siteSettings?.contact?.title || "Ready for the next build.",
     body:
       siteSettings?.contact?.body ||
-      "The home page now ties together the hero sequence and archive system.",
+      "The home page now introduces the practice more clearly, while each archive route opens as its own destination.",
     emailLabel: siteSettings?.contact?.emailLabel || "Email",
     instagramLabel: siteSettings?.contact?.instagramLabel || "Instagram",
     worksLabel: siteSettings?.contact?.worksLabel || "Works",
@@ -300,31 +256,37 @@ export default function HomePageClient({
           </div>
         </section>
 
-        <WorksStoryboardTeaser
-          projects={projects}
+        <RouteGatewaySection
           sectionLabel={works.sectionLabel}
           title={works.title}
           description={works.description}
-          metaLabel={works.metaLabel}
-          metaBody={works.metaBody}
-          archiveButtonLabel={works.archiveButtonLabel}
+          buttonLabel={works.archiveButtonLabel}
+          href="/works"
+          overlayTitle="Works"
+          overlaySubtitle="Opening storyboard archive"
+          ghostText="WORKS"
         />
 
-        <JournalOrbit
-          entries={journalEntries}
+        <RouteGatewaySection
           sectionLabel={journal.sectionLabel}
           title={journal.title}
           description={journal.description}
-          ctaLabel={journal.ctaLabel}
-          helperText={journal.helperText}
+          buttonLabel={journal.ctaLabel}
+          href="/journal"
+          overlayTitle="Journal"
+          overlaySubtitle="Opening publishing layer"
+          ghostText="JOURNAL"
         />
 
-        <MyAlbumGateway
+        <RouteGatewaySection
           sectionLabel={albumGateway.sectionLabel}
           title={albumGateway.title}
           description={albumGateway.description}
           buttonLabel={albumGateway.buttonLabel}
-          noteLabel={albumGateway.noteLabel}
+          href="/my-album"
+          overlayTitle="My Album"
+          overlaySubtitle="Entering the orbital collection"
+          ghostText="ALBUM"
         />
 
         <section id="contact" className="border-t border-white/10 px-5 py-20 sm:px-8">
@@ -411,7 +373,7 @@ export default function HomePageClient({
               viewport={{ amount: 0.4 }}
               transition={{ duration: 0.75, ease: "easeOut" }}
             >
-              {profile.name} / CMS connected site settings
+              {profile.name} / gateway-based home
             </motion.footer>
           </div>
         </section>

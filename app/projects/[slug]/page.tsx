@@ -44,12 +44,35 @@ export async function generateMetadata({
     })) ?? null;
 
   if (!project) {
-    return { title: "Project not found" };
+    return {
+      title: "Project not found",
+      description: "This project could not be found.",
+    };
   }
 
+  const title = project.title;
+  const description =
+    project.description ||
+    project.overview ||
+    "A cinematic project case study by BTTB MOVEMENT.";
+
   return {
-    title: project.title,
-    description: project.description,
+    title,
+    description,
+    alternates: {
+      canonical: `/projects/${slug}`,
+    },
+    openGraph: {
+      title: `${title} | BTTB MOVEMENT`,
+      description,
+      url: `/projects/${slug}`,
+      type: "website",
+    },
+    twitter: {
+      card: "summary",
+      title: `${title} | BTTB MOVEMENT`,
+      description,
+    },
   };
 }
 

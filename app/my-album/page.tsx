@@ -4,9 +4,27 @@ import { sanityFetch } from "../../sanity/lib/client";
 import { ALBUM_ITEMS_QUERY, SITE_SETTINGS_QUERY } from "../../sanity/lib/queries";
 import type { AlbumItem, SiteSettings } from "../../sanity/lib/types";
 
+
 export const metadata: Metadata = {
   title: "My Album",
-  description: "A cinematic photo album of drifting frames.",
+  description:
+    "Browse the visual album of BTTB MOVEMENT, featuring drifting images, memory fragments, and cinematic visual studies.",
+  alternates: {
+    canonical: "/my-album",
+  },
+  openGraph: {
+    title: "My Album | BTTB MOVEMENT",
+    description:
+      "Browse the visual album of BTTB MOVEMENT, featuring drifting images, memory fragments, and cinematic visual studies.",
+    url: "/my-album",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "My Album | BTTB MOVEMENT",
+    description:
+      "Browse the visual album of BTTB MOVEMENT, featuring drifting images, memory fragments, and cinematic visual studies.",
+  },
 };
 
 export const dynamic = "force-dynamic";

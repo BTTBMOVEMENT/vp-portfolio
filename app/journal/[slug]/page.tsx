@@ -42,12 +42,35 @@ export async function generateMetadata({
     })) ?? null;
 
   if (!entry) {
-    return { title: "Journal entry not found" };
+    return {
+      title: "Journal entry not found",
+      description: "This journal entry could not be found.",
+    };
   }
 
+  const title = entry.title;
+  const description =
+    entry.excerpt ||
+    entry.intro ||
+    "A journal entry from BTTB MOVEMENT.";
+
   return {
-    title: entry.title,
-    description: entry.excerpt,
+    title,
+    description,
+    alternates: {
+      canonical: `/journal/${slug}`,
+    },
+    openGraph: {
+      title: `${title} | BTTB MOVEMENT`,
+      description,
+      url: `/journal/${slug}`,
+      type: "article",
+    },
+    twitter: {
+      card: "summary",
+      title: `${title} | BTTB MOVEMENT`,
+      description,
+    },
   };
 }
 

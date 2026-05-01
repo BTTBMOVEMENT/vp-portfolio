@@ -3,6 +3,7 @@ import { sanityFetch } from "../../sanity/lib/client";
 import { JOURNAL_ENTRIES_QUERY, SITE_SETTINGS_QUERY } from "../../sanity/lib/queries";
 import { estimateReadTime } from "../../sanity/lib/text";
 import type { JournalListItem, SiteSettings } from "../../sanity/lib/types";
+import type { Metadata } from "next";
 
 function formatDate(value?: string) {
   if (!value) return "";
@@ -14,7 +15,27 @@ function formatDate(value?: string) {
     return value;
   }
 }
-
+export const metadata: Metadata = {
+  title: "Journal",
+  description:
+    "Read visual essays, cinematic notes, process writing, and experimental journal entries from BTTB MOVEMENT.",
+  alternates: {
+    canonical: "/journal",
+  },
+  openGraph: {
+    title: "Journal | BTTB MOVEMENT",
+    description:
+      "Read visual essays, cinematic notes, process writing, and experimental journal entries from BTTB MOVEMENT.",
+    url: "/journal",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Journal | BTTB MOVEMENT",
+    description:
+      "Read visual essays, cinematic notes, process writing, and experimental journal entries from BTTB MOVEMENT.",
+  },
+};
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 

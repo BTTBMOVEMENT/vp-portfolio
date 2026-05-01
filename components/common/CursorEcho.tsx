@@ -1,81 +1,34 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-type StrokePoint = {
+type Blob = {
+  id: number;
   x: number;
   y: number;
-  t: number;
-};
-
-type Stroke = {
-  id: number;
-  points: StrokePoint[];
-  createdAt: number;
+  width: number;
+  height: number;
+  angle: number;
+  tailOffsetX: number;
+  tailOffsetY: number;
 };
 
 type Ripple = {
   id: number;
   x: number;
   y: number;
+  size: number;
 };
 
-type Viewport = {
-  width: number;
-  height: number;
+type Point = {
+  x: number;
+  y: number;
 };
 
-const STROKE_LIFETIME = 1300;
-const STROKE_IDLE_BREAK = 90;
-const MAX_POINTS_PER_STROKE = 32;
-const MIN_DISTANCE = 4;
-
-function distance(a: StrokePoint, b: StrokePoint) {
-  return Math.hypot(a.x - b.x, a.y - b.y);
-}
-
-function simplifyPoints(points: StrokePoint[]) {
-  if (points.length <= 2) return points;
-
-  const next: StrokePoint[] = [points[0]];
-
-  for (let i = 1; i < points.length; i += 1) {
-    const prev = next[next.length - 1];
-    const current = points[i];
-
-    if (distance(prev, current) >= MIN_DISTANCE || i === points.length - 1) {
-      next.push(current);
-    }
-  }
-
-  return next;
-}
-
-function smoothPath(points: StrokePoint[]) {
-  const clean = simplifyPoints(points);
-
-  if (clean.length === 0) return "";
-  if (clean.length === 1) return `M ${clean[0].x} ${clean[0].y}`;
-  if (clean.length === 2) {
-    return `M ${clean[0].x} ${clean[0].y} L ${clean[1].x} ${clean[1].y}`;
-  }
-
-  let d = `M ${clean[0].x} ${clean[0].y}`;
-
-  for (let i = 1; i < clean.length - 1; i += 1) {
-    const current = clean[i];
-    const next = clean[i + 1];
-    const midX = (current.x + next.x) / 2;
-    const midY = (current.y + next.y) / 2;
-    d += ` Q ${current.x} ${current.y} ${midX} ${midY}`;
-  }
-
-  const last = clean[clean.length - 1];
-  d += ` L ${last.x} ${last.y}`;
-
-  return d;
-}
+const BLOB_LIFETIME = 1400;
+const RIPPLE_LIFETIME = 1100;
+const STAMP_STEP = 10;
+const SMOOTHING = 0.16;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -83,15 +36,18 @@ function clamp(value: number, min: number, max: number) {
 
 export default function CursorEcho() {
   const [enabled, setEnabled] = useState(false);
-  const [viewport, setViewport] = useState<Viewport>({ width: 0, height: 0 });
-  const [strokes, setStrokes] = useState<Stroke[]>([]);
+  const [blobs, setBlobs] = useState<Blob[]>([]);
   const [ripples, setRipples] = useState<Ripple[]>([]);
 
-  const currentStrokeRef = useRef<Stroke | null>(null);
-  const lastPointRef = useRef<StrokePoint | null>(null);
-  const strokeIdRef = useRef(0);
+  const targetRef = useRef<Point>({ x: 0, y: 0 });
+  const smoothRef = useRef<Point>({ x: 0, y: 0 });
+  const lastStampRef = useRef<Point | null>(null);
+  const initializedRef = useRef(false);
+
+  const rafRef = useRef<number | null>(null);
+  const blobIdRef = useRef(0);
   const rippleIdRef = useRef(0);
-  const frameRef = useRef<number | null>(null);
+  const timeoutIdsRef = useRef<number[]>([]);
 
   useEffect(() => {
     const media = window.matchMedia("(pointer: fine)");
@@ -100,222 +56,334 @@ export default function CursorEcho() {
     handleMedia();
     media.addEventListener("change", handleMedia);
 
-    const updateViewport = () => {
-      setViewport({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
-    };
-
-    updateViewport();
-    window.addEventListener("resize", updateViewport);
-
     return () => {
       media.removeEventListener("change", handleMedia);
-      window.removeEventListener("resize", updateViewport);
     };
   }, []);
 
   useEffect(() => {
     if (!enabled) return;
 
-    const pushPoint = (x: number, y: number, now: number) => {
-      const nextPoint: StrokePoint = { x, y, t: now };
-      const lastPoint = lastPointRef.current;
-
-      const shouldStartNewStroke =
-        !currentStrokeRef.current ||
-        !lastPoint ||
-        now - lastPoint.t > STROKE_IDLE_BREAK;
-
-      if (shouldStartNewStroke) {
-        const newStroke: Stroke = {
-          id: strokeIdRef.current++,
-          points: [nextPoint],
-          createdAt: now,
-        };
-        currentStrokeRef.current = newStroke;
-        setStrokes((prev) => [...prev, newStroke]);
-        lastPointRef.current = nextPoint;
-        return;
-      }
-
-      if (lastPoint && distance(lastPoint, nextPoint) < 1.5) {
-        return;
-      }
-
-      currentStrokeRef.current = {
-        ...currentStrokeRef.current,
-        points: [...currentStrokeRef.current.points, nextPoint].slice(-MAX_POINTS_PER_STROKE),
+    const handlePointerMove = (event: PointerEvent) => {
+      targetRef.current = {
+        x: event.clientX,
+        y: event.clientY,
       };
 
-      const updated = currentStrokeRef.current;
-
-      setStrokes((prev) =>
-        prev.map((stroke) => (stroke.id === updated.id ? updated : stroke))
-      );
-
-      lastPointRef.current = nextPoint;
-    };
-
-    const handlePointerMove = (event: PointerEvent) => {
-      const now = performance.now();
-      pushPoint(event.clientX, event.clientY, now);
+      if (!initializedRef.current) {
+        smoothRef.current = {
+          x: event.clientX,
+          y: event.clientY,
+        };
+        lastStampRef.current = {
+          x: event.clientX,
+          y: event.clientY,
+        };
+        initializedRef.current = true;
+      }
     };
 
     const handleClick = (event: MouseEvent) => {
       const id = rippleIdRef.current++;
-      const ripple = { id, x: event.clientX, y: event.clientY };
+      const size = 24;
 
-      setRipples((prev) => [...prev, ripple]);
+      setRipples((prev) => [
+        ...prev,
+        {
+          id,
+          x: event.clientX,
+          y: event.clientY,
+          size,
+        },
+      ]);
 
-      window.setTimeout(() => {
+      const timeoutId = window.setTimeout(() => {
         setRipples((prev) => prev.filter((item) => item.id !== id));
-      }, 1000);
-    };
+      }, RIPPLE_LIFETIME);
 
-    const prune = () => {
-      const now = performance.now();
-
-      setStrokes((prev) => {
-        const next = prev.filter((stroke) => now - stroke.createdAt < STROKE_LIFETIME);
-
-        if (
-          currentStrokeRef.current &&
-          !next.some((stroke) => stroke.id === currentStrokeRef.current?.id)
-        ) {
-          currentStrokeRef.current = null;
-        }
-
-        return next;
-      });
-
-      frameRef.current = window.requestAnimationFrame(prune);
+      timeoutIdsRef.current.push(timeoutId);
     };
 
     window.addEventListener("pointermove", handlePointerMove, { passive: true });
     window.addEventListener("click", handleClick);
-    frameRef.current = window.requestAnimationFrame(prune);
 
     return () => {
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("click", handleClick);
-
-      if (frameRef.current !== null) {
-        window.cancelAnimationFrame(frameRef.current);
-      }
     };
   }, [enabled]);
 
-  const renderedStrokes = useMemo(() => {
-    const now = performance.now();
+  useEffect(() => {
+    if (!enabled) return;
 
-    return strokes
-      .map((stroke) => {
-        const age = now - stroke.createdAt;
-        const life = clamp(1 - age / STROKE_LIFETIME, 0, 1);
+    const tick = () => {
+      if (initializedRef.current && lastStampRef.current) {
+        const target = targetRef.current;
+        const smooth = smoothRef.current;
 
-        return {
-          ...stroke,
-          d: smoothPath(stroke.points),
-          opacity: life,
-          blurOpacity: life * 0.75,
-          coreOpacity: life * 0.42,
-          glowOpacity: life * 0.22,
-          blurAmount: 6 + (1 - life) * 16,
-        };
-      })
-      .filter((stroke) => stroke.d.length > 0);
-  }, [strokes]);
+        smooth.x += (target.x - smooth.x) * SMOOTHING;
+        smooth.y += (target.y - smooth.y) * SMOOTHING;
 
-  if (!enabled || viewport.width === 0 || viewport.height === 0) {
-    return null;
-  }
+        const dx = smooth.x - lastStampRef.current.x;
+        const dy = smooth.y - lastStampRef.current.y;
+        const distance = Math.hypot(dx, dy);
+
+        if (distance >= STAMP_STEP) {
+          const steps = Math.floor(distance / STAMP_STEP);
+
+          for (let i = 1; i <= steps; i += 1) {
+            const progress = (i * STAMP_STEP) / distance;
+
+            const x = lastStampRef.current.x + dx * progress;
+            const y = lastStampRef.current.y + dy * progress;
+
+            const speed = clamp(distance, 0, 80);
+            const stretch = 1 + speed / 70;
+            const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+            const width = clamp(26 + speed * 0.55, 28, 86);
+            const height = clamp(18 + speed * 0.18, 20, 40);
+
+            const tailOffsetX = -Math.cos((angle * Math.PI) / 180) * clamp(speed * 0.12, 2, 10);
+            const tailOffsetY = -Math.sin((angle * Math.PI) / 180) * clamp(speed * 0.12, 2, 10);
+
+            const id = blobIdRef.current++;
+
+            const blob: Blob = {
+              id,
+              x,
+              y,
+              width: width * stretch,
+              height,
+              angle,
+              tailOffsetX,
+              tailOffsetY,
+            };
+
+            setBlobs((prev) => [...prev, blob]);
+
+            const timeoutId = window.setTimeout(() => {
+              setBlobs((prev) => prev.filter((item) => item.id !== id));
+            }, BLOB_LIFETIME);
+
+            timeoutIdsRef.current.push(timeoutId);
+          }
+
+          lastStampRef.current = { x: smooth.x, y: smooth.y };
+        }
+      }
+
+      rafRef.current = window.requestAnimationFrame(tick);
+    };
+
+    rafRef.current = window.requestAnimationFrame(tick);
+
+    return () => {
+      if (rafRef.current !== null) {
+        window.cancelAnimationFrame(rafRef.current);
+      }
+
+      timeoutIdsRef.current.forEach((id) => window.clearTimeout(id));
+      timeoutIdsRef.current = [];
+    };
+  }, [enabled]);
+
+  if (!enabled) return null;
 
   return (
     <>
-      <svg
-        className="pointer-events-none fixed inset-0 z-[95]"
-        width="100%"
-        height="100%"
-        viewBox={`0 0 ${viewport.width} ${viewport.height}`}
-        fill="none"
-        style={{ mixBlendMode: "screen" }}
-      >
-        <defs>
-          <filter id="cinematic-trail-blur-xl" x="-200%" y="-200%" width="400%" height="400%">
-            <feGaussianBlur stdDeviation="18" />
-          </filter>
-          <filter id="cinematic-trail-blur-lg" x="-200%" y="-200%" width="400%" height="400%">
-            <feGaussianBlur stdDeviation="10" />
-          </filter>
-          <filter id="cinematic-trail-blur-md" x="-200%" y="-200%" width="400%" height="400%">
-            <feGaussianBlur stdDeviation="5" />
-          </filter>
-        </defs>
-
-        {renderedStrokes.map((stroke) => (
-          <g key={stroke.id}>
-            <path
-              d={stroke.d}
-              stroke="rgba(255,255,255,0.07)"
-              strokeWidth="42"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity={stroke.glowOpacity}
-              filter="url(#cinematic-trail-blur-xl)"
-            />
-            <path
-              d={stroke.d}
-              stroke="rgba(210,230,255,0.13)"
-              strokeWidth="22"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity={stroke.blurOpacity}
-              filter="url(#cinematic-trail-blur-lg)"
-            />
-            <path
-              d={stroke.d}
-              stroke="rgba(248,250,255,0.22)"
-              strokeWidth="10"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity={stroke.coreOpacity}
-              filter="url(#cinematic-trail-blur-md)"
-            />
-            <path
-              d={stroke.d}
-              stroke="rgba(255,255,255,0.22)"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity={stroke.opacity * 0.6}
-            />
-          </g>
-        ))}
-      </svg>
-
-      <AnimatePresence>
-        {ripples.map((ripple) => (
-          <motion.div
-            key={ripple.id}
-            initial={{ opacity: 0.34, scale: 0 }}
-            animate={{ opacity: 0, scale: 9 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.95, ease: "easeOut" }}
-            className="pointer-events-none fixed z-[96] rounded-full border border-white/26"
+      <div className="pointer-events-none fixed inset-0 z-[95] overflow-hidden">
+        {blobs.map((blob) => (
+          <div
+            key={blob.id}
+            className="absolute"
             style={{
-              left: ripple.x - 8,
-              top: ripple.y - 8,
-              width: 16,
-              height: 16,
-              boxShadow:
-                "0 0 24px rgba(255,255,255,0.08), 0 0 60px rgba(210,230,255,0.06)",
-              mixBlendMode: "screen",
+              left: blob.x,
+              top: blob.y,
+              width: blob.width,
+              height: blob.height,
+              transform: `translate(-50%, -50%) rotate(${blob.angle}deg)`,
             }}
-          />
+          >
+            <div
+              className="cinematic-ink-main absolute inset-0 rounded-full"
+              style={{
+                background:
+                  "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.26) 0%, rgba(230,238,255,0.16) 26%, rgba(205,220,255,0.09) 48%, rgba(255,255,255,0.03) 68%, rgba(255,255,255,0) 82%)",
+              }}
+            />
+            <div
+              className="cinematic-ink-tail absolute rounded-full"
+              style={{
+                left: `calc(50% + ${blob.tailOffsetX}px)`,
+                top: `calc(50% + ${blob.tailOffsetY}px)`,
+                width: blob.width * 0.72,
+                height: blob.height * 0.78,
+                transform: "translate(-50%, -50%)",
+                background:
+                  "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.16) 0%, rgba(220,232,255,0.09) 36%, rgba(255,255,255,0.02) 70%, rgba(255,255,255,0) 84%)",
+              }}
+            />
+            <div
+              className="cinematic-ink-core absolute rounded-full"
+              style={{
+                left: "50%",
+                top: "50%",
+                width: blob.width * 0.26,
+                height: blob.height * 0.42,
+                transform: "translate(-50%, -50%)",
+                background:
+                  "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.06) 60%, rgba(255,255,255,0) 84%)",
+              }}
+            />
+          </div>
         ))}
-      </AnimatePresence>
+
+        {ripples.map((ripple) => (
+          <div
+            key={ripple.id}
+            className="absolute"
+            style={{
+              left: ripple.x,
+              top: ripple.y,
+              width: ripple.size,
+              height: ripple.size,
+              transform: "translate(-50%, -50%)",
+            }}
+          >
+            <div className="cinematic-ripple absolute inset-0 rounded-full border border-white/25" />
+            <div className="cinematic-ripple-glow absolute inset-0 rounded-full" />
+          </div>
+        ))}
+      </div>
+
+      <style jsx global>{`
+        .cinematic-ink-main {
+          filter: blur(8px);
+          animation: cinematicInkBloom ${BLOB_LIFETIME}ms ease-out forwards;
+          mix-blend-mode: screen;
+        }
+
+        .cinematic-ink-tail {
+          filter: blur(14px);
+          animation: cinematicInkTail ${BLOB_LIFETIME}ms ease-out forwards;
+          mix-blend-mode: screen;
+        }
+
+        .cinematic-ink-core {
+          filter: blur(3px);
+          animation: cinematicInkCore ${BLOB_LIFETIME}ms ease-out forwards;
+          mix-blend-mode: screen;
+        }
+
+        .cinematic-ripple {
+          animation: cinematicRipple ${RIPPLE_LIFETIME}ms ease-out forwards;
+          mix-blend-mode: screen;
+        }
+
+        .cinematic-ripple-glow {
+          background: radial-gradient(
+            circle,
+            rgba(255, 255, 255, 0.18) 0%,
+            rgba(220, 232, 255, 0.08) 42%,
+            rgba(255, 255, 255, 0) 75%
+          );
+          filter: blur(10px);
+          animation: cinematicRippleGlow ${RIPPLE_LIFETIME}ms ease-out forwards;
+          mix-blend-mode: screen;
+        }
+
+        @keyframes cinematicInkBloom {
+          0% {
+            opacity: 0;
+            transform: scale(0.45);
+            filter: blur(4px);
+          }
+          16% {
+            opacity: 1;
+            transform: scale(1);
+            filter: blur(7px);
+          }
+          58% {
+            opacity: 0.9;
+            transform: scale(1.08);
+            filter: blur(10px);
+          }
+          100% {
+            opacity: 0;
+            transform: scale(1.6);
+            filter: blur(22px);
+          }
+        }
+
+        @keyframes cinematicInkTail {
+          0% {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.3);
+            filter: blur(8px);
+          }
+          18% {
+            opacity: 0.9;
+            transform: translate(-50%, -50%) scale(1);
+            filter: blur(14px);
+          }
+          60% {
+            opacity: 0.65;
+            transform: translate(-50%, -50%) scale(1.18);
+            filter: blur(18px);
+          }
+          100% {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(1.8);
+            filter: blur(30px);
+          }
+        }
+
+        @keyframes cinematicInkCore {
+          0% {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.35);
+          }
+          14% {
+            opacity: 0.55;
+            transform: translate(-50%, -50%) scale(1);
+          }
+          48% {
+            opacity: 0.36;
+            transform: translate(-50%, -50%) scale(1.1);
+          }
+          100% {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(1.55);
+          }
+        }
+
+        @keyframes cinematicRipple {
+          0% {
+            opacity: 0.32;
+            transform: scale(0.2);
+            border-color: rgba(255, 255, 255, 0.32);
+          }
+          100% {
+            opacity: 0;
+            transform: scale(8.2);
+            border-color: rgba(255, 255, 255, 0.02);
+          }
+        }
+
+        @keyframes cinematicRippleGlow {
+          0% {
+            opacity: 0.3;
+            transform: scale(0.4);
+            filter: blur(8px);
+          }
+          100% {
+            opacity: 0;
+            transform: scale(7.8);
+            filter: blur(22px);
+          }
+        }
+      `}</style>
     </>
   );
 }

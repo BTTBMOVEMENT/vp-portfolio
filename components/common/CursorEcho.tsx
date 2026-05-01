@@ -11,13 +11,15 @@ type Blob = {
   angle: number;
   tailOffsetX: number;
   tailOffsetY: number;
+  skew: number;
 };
 
-type Ripple = {
+type InkSplash = {
   id: number;
   x: number;
   y: number;
   size: number;
+  rotation: number;
 };
 
 type Point = {
@@ -25,10 +27,11 @@ type Point = {
   y: number;
 };
 
-const BLOB_LIFETIME = 1400;
-const RIPPLE_LIFETIME = 1100;
-const STAMP_STEP = 10;
-const SMOOTHING = 0.16;
+const BLOB_LIFETIME = 1650;
+const SPLASH_LIFETIME = 1850;
+const STROKE_IDLE_BREAK = 90;
+const STAMP_STEP = 8;
+const SMOOTHING = 0.11;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -37,16 +40,16 @@ function clamp(value: number, min: number, max: number) {
 export default function CursorEcho() {
   const [enabled, setEnabled] = useState(false);
   const [blobs, setBlobs] = useState<Blob[]>([]);
-  const [ripples, setRipples] = useState<Ripple[]>([]);
+  const [splashes, setSplashes] = useState<InkSplash[]>([]);
 
   const targetRef = useRef<Point>({ x: 0, y: 0 });
   const smoothRef = useRef<Point>({ x: 0, y: 0 });
-  const lastStampRef = useRef<Point | null>(null);
+  const lastStampRef = useRef<{ x: number; y: number; t: number } | null>(null);
   const initializedRef = useRef(false);
 
   const rafRef = useRef<number | null>(null);
   const blobIdRef = useRef(0);
-  const rippleIdRef = useRef(0);
+  const splashIdRef = useRef(0);
   const timeoutIdsRef = useRef<number[]>([]);
 
   useEffect(() => {
@@ -78,28 +81,27 @@ export default function CursorEcho() {
         lastStampRef.current = {
           x: event.clientX,
           y: event.clientY,
+          t: performance.now(),
         };
         initializedRef.current = true;
       }
     };
 
     const handleClick = (event: MouseEvent) => {
-      const id = rippleIdRef.current++;
-      const size = 24;
+      const id = splashIdRef.current++;
+      const splash: InkSplash = {
+        id,
+        x: event.clientX,
+        y: event.clientY,
+        size: 168,
+        rotation: Math.random() * 360,
+      };
 
-      setRipples((prev) => [
-        ...prev,
-        {
-          id,
-          x: event.clientX,
-          y: event.clientY,
-          size,
-        },
-      ]);
+      setSplashes((prev) => [...prev, splash]);
 
       const timeoutId = window.setTimeout(() => {
-        setRipples((prev) => prev.filter((item) => item.id !== id));
-      }, RIPPLE_LIFETIME);
+        setSplashes((prev) => prev.filter((item) => item.id !== id));
+      }, SPLASH_LIFETIME);
 
       timeoutIdsRef.current.push(timeoutId);
     };
@@ -127,6 +129,15 @@ export default function CursorEcho() {
         const dx = smooth.x - lastStampRef.current.x;
         const dy = smooth.y - lastStampRef.current.y;
         const distance = Math.hypot(dx, dy);
+        const now = performance.now();
+
+        if (now - lastStampRef.current.t > STROKE_IDLE_BREAK) {
+          lastStampRef.current = {
+            x: smooth.x,
+            y: smooth.y,
+            t: now,
+          };
+        }
 
         if (distance >= STAMP_STEP) {
           const steps = Math.floor(distance / STAMP_STEP);
@@ -137,15 +148,16 @@ export default function CursorEcho() {
             const x = lastStampRef.current.x + dx * progress;
             const y = lastStampRef.current.y + dy * progress;
 
-            const speed = clamp(distance, 0, 80);
-            const stretch = 1 + speed / 70;
+            const speed = clamp(distance, 0, 90);
             const angle = Math.atan2(dy, dx) * (180 / Math.PI);
 
-            const width = clamp(26 + speed * 0.55, 28, 86);
-            const height = clamp(18 + speed * 0.18, 20, 40);
+            const width = clamp(42 + speed * 0.62, 40, 120);
+            const height = clamp(22 + speed * 0.22, 24, 54);
 
-            const tailOffsetX = -Math.cos((angle * Math.PI) / 180) * clamp(speed * 0.12, 2, 10);
-            const tailOffsetY = -Math.sin((angle * Math.PI) / 180) * clamp(speed * 0.12, 2, 10);
+            const tailOffsetX =
+              -Math.cos((angle * Math.PI) / 180) * clamp(speed * 0.16, 3, 16);
+            const tailOffsetY =
+              -Math.sin((angle * Math.PI) / 180) * clamp(speed * 0.16, 3, 16);
 
             const id = blobIdRef.current++;
 
@@ -153,11 +165,12 @@ export default function CursorEcho() {
               id,
               x,
               y,
-              width: width * stretch,
+              width,
               height,
               angle,
               tailOffsetX,
               tailOffsetY,
+              skew: (Math.random() - 0.5) * 12,
             };
 
             setBlobs((prev) => [...prev, blob]);
@@ -169,7 +182,11 @@ export default function CursorEcho() {
             timeoutIdsRef.current.push(timeoutId);
           }
 
-          lastStampRef.current = { x: smooth.x, y: smooth.y };
+          lastStampRef.current = {
+            x: smooth.x,
+            y: smooth.y,
+            t: now,
+          };
         }
       }
 
@@ -202,185 +219,321 @@ export default function CursorEcho() {
               top: blob.y,
               width: blob.width,
               height: blob.height,
-              transform: `translate(-50%, -50%) rotate(${blob.angle}deg)`,
+              transform: `translate(-50%, -50%) rotate(${blob.angle}deg) skewX(${blob.skew}deg)`,
             }}
           >
             <div
-              className="cinematic-ink-main absolute inset-0 rounded-full"
+              className="cinematic-ink-soak absolute inset-0 rounded-[999px]"
               style={{
                 background:
-                  "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.26) 0%, rgba(230,238,255,0.16) 26%, rgba(205,220,255,0.09) 48%, rgba(255,255,255,0.03) 68%, rgba(255,255,255,0) 82%)",
+                  "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.22) 0%, rgba(230,236,255,0.14) 28%, rgba(210,220,255,0.08) 52%, rgba(255,255,255,0.02) 72%, rgba(255,255,255,0) 86%)",
               }}
             />
             <div
-              className="cinematic-ink-tail absolute rounded-full"
+              className="cinematic-ink-bleed absolute rounded-[999px]"
               style={{
                 left: `calc(50% + ${blob.tailOffsetX}px)`,
                 top: `calc(50% + ${blob.tailOffsetY}px)`,
-                width: blob.width * 0.72,
-                height: blob.height * 0.78,
+                width: blob.width * 0.92,
+                height: blob.height * 0.88,
                 transform: "translate(-50%, -50%)",
                 background:
-                  "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.16) 0%, rgba(220,232,255,0.09) 36%, rgba(255,255,255,0.02) 70%, rgba(255,255,255,0) 84%)",
+                  "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.18) 0%, rgba(220,230,255,0.10) 34%, rgba(255,255,255,0.03) 66%, rgba(255,255,255,0) 86%)",
               }}
             />
             <div
-              className="cinematic-ink-core absolute rounded-full"
+              className="cinematic-ink-fracture absolute inset-0 rounded-[999px]"
+              style={{
+                background:
+                  "conic-gradient(from 0deg, rgba(255,255,255,0) 0deg 20deg, rgba(255,255,255,0.14) 20deg 34deg, rgba(255,255,255,0) 34deg 72deg, rgba(255,255,255,0.12) 72deg 92deg, rgba(255,255,255,0) 92deg 140deg, rgba(255,255,255,0.11) 140deg 156deg, rgba(255,255,255,0) 156deg 210deg, rgba(255,255,255,0.13) 210deg 228deg, rgba(255,255,255,0) 228deg 286deg, rgba(255,255,255,0.11) 286deg 306deg, rgba(255,255,255,0) 306deg 360deg)",
+                maskImage:
+                  "radial-gradient(circle at 50% 50%, transparent 0 47%, rgba(0,0,0,0.95) 58%, transparent 82%)",
+                WebkitMaskImage:
+                  "radial-gradient(circle at 50% 50%, transparent 0 47%, rgba(0,0,0,0.95) 58%, transparent 82%)",
+              }}
+            />
+            <div
+              className="cinematic-ink-core absolute rounded-[999px]"
               style={{
                 left: "50%",
                 top: "50%",
-                width: blob.width * 0.26,
-                height: blob.height * 0.42,
+                width: blob.width * 0.34,
+                height: blob.height * 0.54,
                 transform: "translate(-50%, -50%)",
                 background:
-                  "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.06) 60%, rgba(255,255,255,0) 84%)",
+                  "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.24) 0%, rgba(255,255,255,0.08) 56%, rgba(255,255,255,0) 84%)",
               }}
             />
           </div>
         ))}
 
-        {ripples.map((ripple) => (
+        {splashes.map((splash) => (
           <div
-            key={ripple.id}
+            key={splash.id}
             className="absolute"
             style={{
-              left: ripple.x,
-              top: ripple.y,
-              width: ripple.size,
-              height: ripple.size,
-              transform: "translate(-50%, -50%)",
+              left: splash.x,
+              top: splash.y,
+              width: splash.size,
+              height: splash.size,
+              transform: `translate(-50%, -50%) rotate(${splash.rotation}deg)`,
             }}
           >
-            <div className="cinematic-ripple absolute inset-0 rounded-full border border-white/25" />
-            <div className="cinematic-ripple-glow absolute inset-0 rounded-full" />
+            <div
+              className="cinematic-click-soak absolute inset-0 rounded-full"
+              style={{
+                background:
+                  "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.24) 0%, rgba(230,236,255,0.15) 30%, rgba(220,228,255,0.08) 52%, rgba(255,255,255,0.03) 72%, rgba(255,255,255,0) 88%)",
+              }}
+            />
+            <div
+              className="cinematic-click-bleed absolute inset-[8%] rounded-full"
+              style={{
+                background:
+                  "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.20) 0%, rgba(220,230,255,0.11) 34%, rgba(255,255,255,0.04) 68%, rgba(255,255,255,0) 88%)",
+              }}
+            />
+            <div
+              className="cinematic-click-fracture absolute inset-0 rounded-full"
+              style={{
+                background:
+                  "conic-gradient(from 0deg, rgba(255,255,255,0) 0deg 18deg, rgba(255,255,255,0.16) 18deg 34deg, rgba(255,255,255,0) 34deg 68deg, rgba(255,255,255,0.15) 68deg 86deg, rgba(255,255,255,0) 86deg 128deg, rgba(255,255,255,0.13) 128deg 146deg, rgba(255,255,255,0) 146deg 196deg, rgba(255,255,255,0.16) 196deg 214deg, rgba(255,255,255,0) 214deg 268deg, rgba(255,255,255,0.14) 268deg 286deg, rgba(255,255,255,0) 286deg 360deg)",
+                maskImage:
+                  "radial-gradient(circle at 50% 50%, transparent 0 42%, rgba(0,0,0,0.95) 56%, transparent 84%)",
+                WebkitMaskImage:
+                  "radial-gradient(circle at 50% 50%, transparent 0 42%, rgba(0,0,0,0.95) 56%, transparent 84%)",
+              }}
+            />
+            <div
+              className="cinematic-click-core absolute rounded-full"
+              style={{
+                left: "50%",
+                top: "50%",
+                width: "24%",
+                height: "24%",
+                transform: "translate(-50%, -50%)",
+                background:
+                  "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.10) 58%, rgba(255,255,255,0) 88%)",
+              }}
+            />
           </div>
         ))}
       </div>
 
       <style jsx global>{`
-        .cinematic-ink-main {
-          filter: blur(8px);
-          animation: cinematicInkBloom ${BLOB_LIFETIME}ms ease-out forwards;
+        .cinematic-ink-soak {
+          filter: blur(10px);
+          animation: inkSoakBloom ${BLOB_LIFETIME}ms ease-out forwards;
           mix-blend-mode: screen;
         }
 
-        .cinematic-ink-tail {
-          filter: blur(14px);
-          animation: cinematicInkTail ${BLOB_LIFETIME}ms ease-out forwards;
+        .cinematic-ink-bleed {
+          filter: blur(18px);
+          animation: inkBleedSpread ${BLOB_LIFETIME}ms ease-out forwards;
+          mix-blend-mode: screen;
+        }
+
+        .cinematic-ink-fracture {
+          filter: blur(1px);
+          animation: inkFractureFade ${BLOB_LIFETIME}ms ease-out forwards;
           mix-blend-mode: screen;
         }
 
         .cinematic-ink-core {
-          filter: blur(3px);
-          animation: cinematicInkCore ${BLOB_LIFETIME}ms ease-out forwards;
+          filter: blur(4px);
+          animation: inkCorePulse ${BLOB_LIFETIME}ms ease-out forwards;
           mix-blend-mode: screen;
         }
 
-        .cinematic-ripple {
-          animation: cinematicRipple ${RIPPLE_LIFETIME}ms ease-out forwards;
+        .cinematic-click-soak {
+          filter: blur(18px);
+          animation: clickInkSoak ${SPLASH_LIFETIME}ms ease-out forwards;
           mix-blend-mode: screen;
         }
 
-        .cinematic-ripple-glow {
-          background: radial-gradient(
-            circle,
-            rgba(255, 255, 255, 0.18) 0%,
-            rgba(220, 232, 255, 0.08) 42%,
-            rgba(255, 255, 255, 0) 75%
-          );
-          filter: blur(10px);
-          animation: cinematicRippleGlow ${RIPPLE_LIFETIME}ms ease-out forwards;
+        .cinematic-click-bleed {
+          filter: blur(26px);
+          animation: clickInkBleed ${SPLASH_LIFETIME}ms ease-out forwards;
           mix-blend-mode: screen;
         }
 
-        @keyframes cinematicInkBloom {
+        .cinematic-click-fracture {
+          filter: blur(1.5px);
+          animation: clickInkFracture ${SPLASH_LIFETIME}ms ease-out forwards;
+          mix-blend-mode: screen;
+        }
+
+        .cinematic-click-core {
+          filter: blur(5px);
+          animation: clickInkCore ${SPLASH_LIFETIME}ms ease-out forwards;
+          mix-blend-mode: screen;
+        }
+
+        @keyframes inkSoakBloom {
           0% {
             opacity: 0;
-            transform: scale(0.45);
+            transform: scale(0.38);
             filter: blur(4px);
           }
           16% {
             opacity: 1;
             transform: scale(1);
-            filter: blur(7px);
+            filter: blur(8px);
           }
           58% {
-            opacity: 0.9;
-            transform: scale(1.08);
-            filter: blur(10px);
+            opacity: 0.86;
+            transform: scale(1.14);
+            filter: blur(12px);
           }
           100% {
             opacity: 0;
-            transform: scale(1.6);
-            filter: blur(22px);
+            transform: scale(1.82);
+            filter: blur(26px);
           }
         }
 
-        @keyframes cinematicInkTail {
+        @keyframes inkBleedSpread {
           0% {
             opacity: 0;
-            transform: translate(-50%, -50%) scale(0.3);
-            filter: blur(8px);
+            transform: translate(-50%, -50%) scale(0.28);
+            filter: blur(10px);
           }
           18% {
             opacity: 0.9;
             transform: translate(-50%, -50%) scale(1);
+            filter: blur(16px);
+          }
+          62% {
+            opacity: 0.72;
+            transform: translate(-50%, -50%) scale(1.22);
+            filter: blur(22px);
+          }
+          100% {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(1.95);
+            filter: blur(36px);
+          }
+        }
+
+        @keyframes inkFractureFade {
+          0% {
+            opacity: 0;
+            transform: scale(0.52) rotate(-4deg);
+          }
+          20% {
+            opacity: 0.42;
+            transform: scale(1) rotate(0deg);
+          }
+          56% {
+            opacity: 0.28;
+            transform: scale(1.14) rotate(2deg);
+          }
+          100% {
+            opacity: 0;
+            transform: scale(1.42) rotate(5deg);
+          }
+        }
+
+        @keyframes inkCorePulse {
+          0% {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.2);
+          }
+          14% {
+            opacity: 0.62;
+            transform: translate(-50%, -50%) scale(1);
+          }
+          48% {
+            opacity: 0.38;
+            transform: translate(-50%, -50%) scale(1.18);
+          }
+          100% {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(1.74);
+          }
+        }
+
+        @keyframes clickInkSoak {
+          0% {
+            opacity: 0;
+            transform: scale(0.1);
+            filter: blur(8px);
+          }
+          12% {
+            opacity: 1;
+            transform: scale(0.72);
             filter: blur(14px);
           }
-          60% {
-            opacity: 0.65;
-            transform: translate(-50%, -50%) scale(1.18);
+          42% {
+            opacity: 0.9;
+            transform: scale(1.12);
             filter: blur(18px);
           }
           100% {
             opacity: 0;
-            transform: translate(-50%, -50%) scale(1.8);
-            filter: blur(30px);
+            transform: scale(2.15);
+            filter: blur(36px);
           }
         }
 
-        @keyframes cinematicInkCore {
+        @keyframes clickInkBleed {
           0% {
             opacity: 0;
-            transform: translate(-50%, -50%) scale(0.35);
+            transform: scale(0.14);
+            filter: blur(14px);
           }
-          14% {
-            opacity: 0.55;
-            transform: translate(-50%, -50%) scale(1);
+          16% {
+            opacity: 0.95;
+            transform: scale(0.86);
+            filter: blur(20px);
           }
           48% {
-            opacity: 0.36;
-            transform: translate(-50%, -50%) scale(1.1);
+            opacity: 0.78;
+            transform: scale(1.3);
+            filter: blur(28px);
           }
           100% {
             opacity: 0;
-            transform: translate(-50%, -50%) scale(1.55);
+            transform: scale(2.45);
+            filter: blur(48px);
           }
         }
 
-        @keyframes cinematicRipple {
+        @keyframes clickInkFracture {
           0% {
-            opacity: 0.32;
-            transform: scale(0.2);
-            border-color: rgba(255, 255, 255, 0.32);
+            opacity: 0;
+            transform: scale(0.2) rotate(-8deg);
+          }
+          18% {
+            opacity: 0.48;
+            transform: scale(0.92) rotate(0deg);
+          }
+          56% {
+            opacity: 0.34;
+            transform: scale(1.28) rotate(4deg);
           }
           100% {
             opacity: 0;
-            transform: scale(8.2);
-            border-color: rgba(255, 255, 255, 0.02);
+            transform: scale(1.86) rotate(8deg);
           }
         }
 
-        @keyframes cinematicRippleGlow {
+        @keyframes clickInkCore {
           0% {
-            opacity: 0.3;
-            transform: scale(0.4);
-            filter: blur(8px);
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.1);
+          }
+          10% {
+            opacity: 0.78;
+            transform: translate(-50%, -50%) scale(1);
+          }
+          44% {
+            opacity: 0.44;
+            transform: translate(-50%, -50%) scale(1.3);
           }
           100% {
             opacity: 0;
-            transform: scale(7.8);
-            filter: blur(22px);
+            transform: translate(-50%, -50%) scale(1.95);
           }
         }
       `}</style>

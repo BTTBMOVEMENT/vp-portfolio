@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
+import SpotlightRouteButton from "../common/SpotlightRouteButton";
 
 const TEASER_BOARD_PAGE = 1;
 const TEASER_SLOTS = 6;
@@ -78,12 +79,13 @@ export default function WorksStoryboardTeaser({
             </p>
           </div>
 
-          <Link
+          <SpotlightRouteButton
             href="/works"
+            label={archiveButtonLabel}
+            overlayTitle="Works"
+            overlaySubtitle="Opening storyboard archive"
             className="inline-flex rounded-full border border-white/10 px-4 py-3 text-sm text-zinc-200 transition hover:border-white/30 hover:text-white"
-          >
-            {archiveButtonLabel}
-          </Link>
+          />
         </motion.div>
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

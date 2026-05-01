@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
+import SpotlightRouteButton from "../common/SpotlightRouteButton";
 
 function wrapIndex(index: number, total: number) {
   return (index + total) % total;
@@ -175,12 +176,13 @@ export default function JournalOrbit({
               {helperText}
             </div>
 
-            <Link
+            <SpotlightRouteButton
               href="/journal"
+              label={ctaLabel}
+              overlayTitle="Journal"
+              overlaySubtitle="Opening live archive"
               className="inline-flex rounded-full border border-white/10 px-4 py-3 text-sm text-zinc-200 transition hover:border-white/30 hover:text-white"
-            >
-              {ctaLabel}
-            </Link>
+            />
           </div>
         </div>
 

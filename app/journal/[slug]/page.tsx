@@ -8,6 +8,7 @@ import {
   JOURNAL_ENTRY_BY_SLUG_QUERY,
 } from "../../../sanity/lib/queries";
 import { estimateReadTime } from "../../../sanity/lib/text";
+import type { JournalDetail, JournalListItem } from "../../../sanity/lib/types";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -24,18 +25,20 @@ function formatDate(value?: string) {
   }
 }
 
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { slug } = await params;
+
   const entry =
-    (await sanityFetch({
+    (await sanityFetch<JournalDetail | null>({
       query: JOURNAL_ENTRY_BY_SLUG_QUERY,
       params: { slug },
       revalidate: 0,
-    })) || null;
+    })) ?? null;
 
   if (!entry) {
     return { title: "Journal entry not found" };
@@ -51,12 +54,12 @@ export default async function JournalEntryPage({ params }: PageProps) {
   const { slug } = await params;
 
   const [entry, rawEntries] = await Promise.all([
-    sanityFetch({
+    sanityFetch<JournalDetail | null>({
       query: JOURNAL_ENTRY_BY_SLUG_QUERY,
       params: { slug },
       revalidate: 0,
     }),
-    sanityFetch({
+    sanityFetch<JournalListItem[]>({
       query: JOURNAL_ENTRIES_QUERY,
       revalidate: 0,
     }),
@@ -66,12 +69,12 @@ export default async function JournalEntryPage({ params }: PageProps) {
     notFound();
   }
 
-  const journalEntries = (rawEntries || []).map((item: any) => ({
+  const journalEntries = rawEntries.map((item) => ({
     ...item,
     readTime: estimateReadTime(item.body),
   }));
 
-  const currentIndex = journalEntries.findIndex((item: any) => item.slug === entry.slug);
+  const currentIndex = journalEntries.findIndex((item) => item.slug === entry.slug);
   const previousEntry = currentIndex > 0 ? journalEntries[currentIndex - 1] : null;
   const nextEntry =
     currentIndex < journalEntries.length - 1 ? journalEntries[currentIndex + 1] : null;
@@ -185,7 +188,7 @@ export default async function JournalEntryPage({ params }: PageProps) {
               </p>
 
               <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                {(entry.gallery || []).map((image: any, index: number) => (
+                {(entry.gallery || []).map((image, index) => (
                   <div
                     key={`${image.imageUrl}-${index}`}
                     className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-zinc-900"

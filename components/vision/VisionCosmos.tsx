@@ -2,10 +2,19 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
-import type { VisionEntry } from "../../lib/vision";
+import PortableTextContent from "../cms/PortableTextContent";
+
+type AlbumEntry = {
+  id: string;
+  title?: string;
+  imageUrl?: string;
+  videoUrl?: string;
+  capturedAt?: string;
+  note?: any[];
+};
 
 type VisionCosmosProps = {
-  entries: VisionEntry[];
+  entries: AlbumEntry[];
 };
 
 type Size = {
@@ -191,6 +200,15 @@ function formatCounter(index: number, total: number) {
   return `${String(index + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`;
 }
 
+function formatYear(value?: string) {
+  if (!value) return "";
+  try {
+    return String(new Date(value).getFullYear());
+  } catch {
+    return value;
+  }
+}
+
 function defaultTitle(index: number) {
   return `Album Frame ${String(index + 1).padStart(3, "0")}`;
 }
@@ -283,11 +301,10 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
             My Album
           </p>
           <h3 className="text-3xl font-semibold leading-tight text-zinc-100">
-            No album images found yet.
+            No album items published yet.
           </h3>
           <p className="max-w-2xl text-sm leading-8 text-zinc-300 sm:text-base">
-            Put images inside <code>/public/images/vision</code>. They will be picked
-            up automatically and sorted by file time.
+            Add album items in Studio and they will appear here automatically.
           </p>
         </div>
       </section>
@@ -528,37 +545,44 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
                     }}
                   >
                     <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-[1.2rem] border border-black/5 bg-white/40">
-                      <img
-                        src={entry.image}
-                        alt={entry.alt}
-                        loading={isActive ? "eager" : "lazy"}
-                        onLoad={(event) => {
-                          const img = event.currentTarget;
-                          const width = img.naturalWidth;
-                          const height = img.naturalHeight;
+                      {entry.imageUrl ? (
+                        <img
+                          src={entry.imageUrl}
+                          alt={entry.title || defaultTitle(index)}
+                          loading={isActive ? "eager" : "lazy"}
+                          onLoad={(event) => {
+                            const img = event.currentTarget;
+                            const width = img.naturalWidth;
+                            const height = img.naturalHeight;
 
-                          setSizes((prev) => {
-                            const current = prev[entry.id];
-                            if (current && current.width === width && current.height === height) {
-                              return prev;
-                            }
+                            setSizes((prev) => {
+                              const current = prev[entry.id];
+                              if (current && current.width === width && current.height === height) {
+                                return prev;
+                              }
 
-                            return {
-                              ...prev,
-                              [entry.id]: { width, height },
-                            };
-                          });
-                        }}
-                        className="block max-h-full max-w-full object-contain"
-                        style={{
-                          width: "auto",
-                          height: "auto",
-                        }}
-                      />
+                              return {
+                                ...prev,
+                                [entry.id]: { width, height },
+                              };
+                            });
+                          }}
+                          className="block max-h-full max-w-full object-contain"
+                        />
+                      ) : entry.videoUrl ? (
+                        <video
+                          src={entry.videoUrl}
+                          muted
+                          loop
+                          autoPlay
+                          playsInline
+                          className="block max-h-full max-w-full object-contain"
+                        />
+                      ) : null}
                     </div>
 
                     <div className="mt-3 flex items-center justify-between gap-4 px-1 text-[11px] uppercase tracking-[0.24em] text-zinc-600">
-                      <span>{entry.year}</span>
+                      <span>{formatYear(entry.capturedAt)}</span>
                       <span>{String(index + 1).padStart(3, "0")}</span>
                     </div>
 
@@ -586,13 +610,11 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
               </h3>
 
               {activeEntry.note ? (
-                <p className="max-w-2xl text-sm leading-8 text-zinc-300 sm:text-base">
-                  {activeEntry.note}
-                </p>
+                <PortableTextContent value={activeEntry.note} compact />
               ) : (
                 <p className="max-w-2xl text-sm leading-8 text-zinc-500 sm:text-base">
-                  Titles and notes are intentionally neutral for now so they can be fully
-                  managed later through CMS.
+                  Titles and notes are now coming from CMS. Add them in Studio whenever
+                  you want this frame to carry its own text.
                 </p>
               )}
             </div>

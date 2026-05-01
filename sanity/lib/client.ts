@@ -8,7 +8,7 @@ export const client = createClient({
   useCdn: false,
 })
 
-export async function sanityFetch({
+export async function sanityFetch<T>({
   query,
   params = {},
   revalidate = 0,
@@ -16,8 +16,8 @@ export async function sanityFetch({
   query: string
   params?: Record<string, unknown>
   revalidate?: number
-}) {
-  return client.fetch(query, params, {
+}): Promise<T> {
+  return client.fetch<T>(query, params, {
     next: {
       revalidate,
     },

@@ -6,28 +6,29 @@ import {
   PROJECT_BY_SLUG_QUERY,
   PROJECTS_QUERY,
 } from "../../../sanity/lib/queries";
+import type { ProjectDetail, ProjectListItem } from "../../../sanity/lib/types";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
 };
 
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { slug } = await params;
+
   const project =
-    (await sanityFetch({
+    (await sanityFetch<ProjectDetail | null>({
       query: PROJECT_BY_SLUG_QUERY,
       params: { slug },
       revalidate: 0,
-    })) || null;
+    })) ?? null;
 
   if (!project) {
-    return {
-      title: "Project not found",
-    };
+    return { title: "Project not found" };
   }
 
   return {
@@ -40,12 +41,12 @@ export default async function ProjectPage({ params }: PageProps) {
   const { slug } = await params;
 
   const [project, allProjects] = await Promise.all([
-    sanityFetch({
+    sanityFetch<ProjectDetail | null>({
       query: PROJECT_BY_SLUG_QUERY,
       params: { slug },
       revalidate: 0,
     }),
-    sanityFetch({
+    sanityFetch<ProjectListItem[]>({
       query: PROJECTS_QUERY,
       revalidate: 0,
     }),
@@ -55,18 +56,14 @@ export default async function ProjectPage({ params }: PageProps) {
     notFound();
   }
 
-  const sortedProjects = (allProjects || []).sort(
-    (a: any, b: any) =>
-      (a.boardPage || 1) - (b.boardPage || 1) ||
-      (a.boardOrder || 9999) - (b.boardOrder || 9999)
+  const sortedProjects = [...allProjects].sort(
+    (a, b) =>
+      (a.boardPage ?? 1) - (b.boardPage ?? 1) ||
+      (a.boardOrder ?? 9999) - (b.boardOrder ?? 9999)
   );
 
-  const currentIndex = sortedProjects.findIndex(
-    (item: any) => item.slug === project.slug
-  );
-
-  const previousProject =
-    currentIndex > 0 ? sortedProjects[currentIndex - 1] : null;
+  const currentIndex = sortedProjects.findIndex((item) => item.slug === project.slug);
+  const previousProject = currentIndex > 0 ? sortedProjects[currentIndex - 1] : null;
   const nextProject =
     currentIndex < sortedProjects.length - 1
       ? sortedProjects[currentIndex + 1]
@@ -118,7 +115,7 @@ export default async function ProjectPage({ params }: PageProps) {
               </p>
 
               <div className="flex flex-wrap gap-3">
-                {(project.tools || []).map((tool: string) => (
+                {(project.tools || []).map((tool) => (
                   <span
                     key={tool}
                     className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-200"
@@ -172,7 +169,7 @@ export default async function ProjectPage({ params }: PageProps) {
               </div>
 
               <div className="grid gap-6 lg:grid-cols-12">
-                {(project.frameStudy || []).map((frame: any, index: number) => {
+                {(project.frameStudy || []).map((frame, index) => {
                   const colClass =
                     index === 0
                       ? "lg:col-span-7"
@@ -234,7 +231,7 @@ export default async function ProjectPage({ params }: PageProps) {
               </div>
 
               <div className="grid gap-6 lg:grid-cols-3">
-                {project.processNotes.map((note: any, index: number) => (
+                {(project.processNotes || []).map((note, index) => (
                   <article
                     key={`${note.title}-${index}`}
                     className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-6"

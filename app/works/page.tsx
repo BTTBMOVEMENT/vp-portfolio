@@ -2,30 +2,32 @@ import Link from "next/link";
 import StoryboardBoard from "../../components/works/StoryboardBoard";
 import { sanityFetch } from "../../sanity/lib/client";
 import { PROJECTS_QUERY } from "../../sanity/lib/queries";
+import type { ProjectListItem } from "../../sanity/lib/types";
 
 function pad(value: number) {
   return String(value).padStart(2, "0");
 }
 
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function WorksPage() {
   const projects =
-    (await sanityFetch({
+    (await sanityFetch<ProjectListItem[]>({
       query: PROJECTS_QUERY,
       revalidate: 0,
-    })) || [];
+    })) ?? [];
 
   const boardPages = Array.from(
-    new Set((projects || []).map((project: any) => project.boardPage || 1))
-  ).sort((a: number, b: number) => a - b);
+    new Set<number>(projects.map((project) => project.boardPage ?? 1))
+  ).sort((a, b) => a - b);
 
   const totalProjects = projects.length;
 
-  function getProjectsForBoard(boardPage: number) {
+  function getProjectsForBoard(boardPage: number): ProjectListItem[] {
     return projects
-      .filter((project: any) => (project.boardPage || 1) === boardPage)
-      .sort((a: any, b: any) => (a.boardOrder || 9999) - (b.boardOrder || 9999));
+      .filter((project) => (project.boardPage ?? 1) === boardPage)
+      .sort((a, b) => (a.boardOrder ?? 9999) - (b.boardOrder ?? 9999));
   }
 
   return (

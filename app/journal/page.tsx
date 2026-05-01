@@ -2,6 +2,7 @@ import Link from "next/link";
 import { sanityFetch } from "../../sanity/lib/client";
 import { JOURNAL_ENTRIES_QUERY } from "../../sanity/lib/queries";
 import { estimateReadTime } from "../../sanity/lib/text";
+import type { JournalListItem } from "../../sanity/lib/types";
 
 function formatDate(value?: string) {
   if (!value) return "";
@@ -14,16 +15,17 @@ function formatDate(value?: string) {
   }
 }
 
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function JournalPage() {
   const rawEntries =
-    (await sanityFetch({
+    (await sanityFetch<JournalListItem[]>({
       query: JOURNAL_ENTRIES_QUERY,
       revalidate: 0,
-    })) || [];
+    })) ?? [];
 
-  const journalEntries = rawEntries.map((entry: any) => ({
+  const journalEntries = rawEntries.map((entry) => ({
     ...entry,
     readTime: estimateReadTime(entry.body),
   }));
@@ -113,7 +115,7 @@ export default async function JournalPage() {
 
                     <div className="space-y-4">
                       <div className="flex flex-wrap gap-3">
-                        {(featuredEntry.tags || []).map((tag: string) => (
+                        {(featuredEntry.tags || []).map((tag) => (
                           <span
                             key={tag}
                             className="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-200"
@@ -137,7 +139,7 @@ export default async function JournalPage() {
             </p>
 
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {otherEntries.map((entry: any) => (
+              {otherEntries.map((entry) => (
                 <Link
                   key={entry._id}
                   href={`/journal/${entry.slug}`}

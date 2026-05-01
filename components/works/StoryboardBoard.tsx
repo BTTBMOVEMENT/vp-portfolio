@@ -1,6 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
-import { BOARD_SLOTS_PER_PAGE, type Project } from "../../lib/projects";
+import type { ProjectListItem } from "../../sanity/lib/types";
+
+const BOARD_SLOTS_PER_PAGE = 12;
 
 function pad(value: number) {
   return String(value).padStart(2, "0");
@@ -8,14 +9,14 @@ function pad(value: number) {
 
 type StoryboardBoardProps = {
   boardPage: number;
-  entries: Project[];
+  entries: ProjectListItem[];
 };
 
 export default function StoryboardBoard({
   boardPage,
   entries,
 }: StoryboardBoardProps) {
-  const slotMap = new Map(entries.map((entry) => [entry.boardOrder, entry]));
+  const slotMap = new Map(entries.map((entry) => [entry.boardOrder || 0, entry]));
   const slots = Array.from({ length: BOARD_SLOTS_PER_PAGE }, (_, index) => index + 1);
   const filledCount = entries.length;
 
@@ -92,25 +93,27 @@ export default function StoryboardBoard({
               if (project) {
                 return (
                   <Link
-                    key={slot}
+                    key={project._id}
                     href={`/projects/${project.slug}`}
                     className="group block overflow-hidden rounded-[1.65rem] border border-white/10 bg-zinc-950 transition hover:border-white/20"
                   >
                     <div className="relative aspect-[4/3]">
-                      <Image
-                        src={project.image}
-                        alt={project.alt}
-                        fill
-                        sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                        className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-                      />
+                      {project.imageUrl ? (
+                        <img
+                          src={project.imageUrl}
+                          alt={project.title}
+                          className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-zinc-900" />
+                      )}
 
                       <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/30 to-black/85" />
 
                       <div className="absolute left-5 top-5 right-5 flex items-start justify-between gap-4">
                         <div className="space-y-1">
                           <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-200">
-                            {project.boardLabel}
+                            {project.boardLabel || `A${String(slot).padStart(2, "0")}`}
                           </p>
                           <p className="text-[11px] uppercase tracking-[0.22em] text-zinc-500">
                             Story Frame

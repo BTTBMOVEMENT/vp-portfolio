@@ -1,0 +1,128 @@
+export type SiteSettings = {
+  siteTitle?: string | null
+  email?: string | null
+  instagramPrimary?: string | null
+  instagramSecondary?: string | null
+  hero?: {
+    roleLine?: string | null
+    headline?: string | null
+    intro?: string | null
+    sequenceLabel?: string | null
+    topSubLabel?: string | null
+    railLeftTitle?: string | null
+    railLeftSubtitle?: string | null
+    railRightTitle?: string | null
+    ctaPrimaryLabel?: string | null
+    ctaSecondaryLabel?: string | null
+    ctaTertiaryLabel?: string | null
+  } | null
+  about?: {
+    sectionLabel?: string | null
+    title?: string | null
+    body?: string | null
+    secondaryBody?: string | null
+    focusLabel?: string | null
+    focusTags?: string[] | null
+  } | null
+  works?: {
+    sectionLabel?: string | null
+    title?: string | null
+    description?: string | null
+    metaLabel?: string | null
+    metaBody?: string | null
+    archiveButtonLabel?: string | null
+  } | null
+  journal?: {
+    sectionLabel?: string | null
+    title?: string | null
+    description?: string | null
+    ctaLabel?: string | null
+    helperText?: string | null
+  } | null
+  albumGateway?: {
+    sectionLabel?: string | null
+    title?: string | null
+    description?: string | null
+    buttonLabel?: string | null
+    noteLabel?: string | null
+  } | null
+  contact?: {
+    sectionLabel?: string | null
+    title?: string | null
+    body?: string | null
+    emailLabel?: string | null
+    instagramLabel?: string | null
+    worksLabel?: string | null
+    journalLabel?: string | null
+    albumLabel?: string | null
+  } | null
+} | null
+
+export type ProjectListItem = {
+  _id: string
+  title: string
+  slug: string
+  year?: string
+  role?: string
+  description?: string
+  imageUrl?: string
+  format?: string
+  pipeline?: string
+  tools?: string[]
+  boardPage?: number
+  boardOrder?: number
+  boardLabel?: string
+  boardCaption?: string
+  publishedAt?: string
+}
+
+export type ProjectDetail = ProjectListItem & {
+  overview?: string
+  contribution?: string
+  approach?: string
+  quote?: string
+  highlights?: string[]
+  frameStudy?: Array<{
+    label?: string
+    caption?: string
+    imageUrl?: string
+  }>
+  processNotes?: Array<{
+    title?: string
+    body?: string
+  }>
+  credits?: Array<{
+    label?: string
+    value?: string
+  }>
+}
+
+export type JournalKind = "essay" | "note" | "photo" | "video"
+
+export type JournalListItem = {
+  _id: string
+  title: string
+  slug: string
+  kind: JournalKind
+  excerpt?: string
+  coverImageUrl?: string
+  tags?: string[]
+  intro?: string
+  body?: any[]
+  publishedAt?: string
+}
+
+export type JournalDetail = JournalListItem & {
+  gallery?: Array<{
+    imageUrl?: string
+  }>
+}
+
+export type AlbumItem = {
+  _id: string
+  title?: string
+  note?: any[]
+  imageUrl?: string
+  videoUrl?: string
+  capturedAt?: string
+}

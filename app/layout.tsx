@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import SiteNavigation from "../components/site/SiteNavigation";
+import CursorEcho from "../components/common/CursorEcho";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,6 +33,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} bg-black text-white antialiased selection:bg-white selection:text-black`}
       >
         <SiteNavigation />
+        <CursorEcho />
         <div className="pb-24 md:pb-0">{children}</div>
       </body>
     </html>

@@ -114,7 +114,16 @@ export const SITE_SETTINGS_QUERY = `
       detailPreviousEntryLabel,
       detailNextEntryLabel,
       detailStartOfJournalLabel,
-      detailEndOfJournalLabel
+      detailEndOfJournalLabel,
+      orbitLabel,
+      orbitDescription,
+      spreadLabel,
+      mixLabel,
+      selectedEntryLabel,
+      selectedEntryFallback,
+      previousLabel,
+      nextLabel,
+      enterEntryLabel
     },
     albumPage{
       pageLabel,

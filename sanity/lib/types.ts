@@ -122,6 +122,16 @@ export type SiteSettings = {
     detailNextEntryLabel?: string | null
     detailStartOfJournalLabel?: string | null
     detailEndOfJournalLabel?: string | null
+
+    orbitLabel?: string | null
+    orbitDescription?: string | null
+    spreadLabel?: string | null
+    mixLabel?: string | null
+    selectedEntryLabel?: string | null
+    selectedEntryFallback?: string | null
+    previousLabel?: string | null
+    nextLabel?: string | null
+    enterEntryLabel?: string | null
   } | null
 
   albumPage?: {

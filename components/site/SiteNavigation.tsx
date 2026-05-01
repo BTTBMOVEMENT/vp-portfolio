@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useState } from "react";
 
 const showAdminButton = process.env.NEXT_PUBLIC_SHOW_ADMIN_BUTTON === "true";
 
@@ -16,148 +17,120 @@ const navItems = [
 
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
-  if (href === "/works") {
-    return pathname === "/works" || pathname.startsWith("/projects/");
-  }
-  if (href === "/journal") {
-    return pathname === "/journal" || pathname.startsWith("/journal/");
-  }
-  if (href === "/my-album") {
-    return pathname === "/my-album" || pathname === "/my-vision";
-  }
+  if (href === "/works") return pathname === "/works" || pathname.startsWith("/projects/");
+  if (href === "/journal") return pathname === "/journal" || pathname.startsWith("/journal/");
+  if (href === "/my-album") return pathname === "/my-album" || pathname === "/my-vision";
   return false;
-}
-
-function getRouteLabel(pathname: string) {
-  if (pathname === "/") return "Home";
-  if (pathname === "/works") return "Works Archive";
-  if (pathname.startsWith("/projects/")) return "Project Case Study";
-  if (pathname === "/journal") return "Journal";
-  if (pathname.startsWith("/journal/")) return "Journal Entry";
-  if (pathname === "/my-album" || pathname === "/my-vision") return "My Album";
-  if (pathname.startsWith("/studio")) return "Admin Studio";
-  return "Archive";
 }
 
 export default function SiteNavigation() {
   const pathname = usePathname();
-  const routeLabel = getRouteLabel(pathname);
-  const isStudio = pathname.startsWith("/studio");
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  if (pathname.startsWith("/studio")) {
+    return null;
+  }
 
   return (
-    <>
-      {!isStudio && (
-        <motion.header
-          initial={{ opacity: 0, y: -18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, ease: "easeOut" }}
-          className="pointer-events-none fixed inset-x-0 top-4 z-[80] hidden justify-center px-4 md:flex"
+    <div className="pointer-events-none fixed left-4 top-4 z-[90]">
+      <div className="pointer-events-auto flex flex-col items-start gap-3">
+        <motion.button
+          type="button"
+          onClick={() => setOpen((prev) => !prev)}
+          whileTap={{ scale: 0.96 }}
+          className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-black/70 px-4 py-3 text-[11px] uppercase tracking-[0.28em] text-zinc-100 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl"
         >
-          <div className="pointer-events-auto">
-            <div className="flex items-center gap-4 rounded-full border border-white/10 bg-black/60 px-4 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl">
-              <Link
-                href="/"
-                className="flex items-center gap-2 rounded-full px-3 py-2 text-[11px] uppercase tracking-[0.28em] text-zinc-200 transition hover:text-white"
+          <span className="h-2 w-2 rounded-full bg-white/80" />
+          <span>BTTB</span>
+          <span className={`transition-transform duration-300 ${open ? "rotate-45" : "rotate-0"}`}>
+            +
+          </span>
+        </motion.button>
+
+        <AnimatePresence>
+          {open && (
+            <>
+              <motion.div
+                initial={{ opacity: 0, x: -12, scaleX: 0.96 }}
+                animate={{ opacity: 1, x: 0, scaleX: 1 }}
+                exit={{ opacity: 0, x: -12, scaleX: 0.96 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                className="hidden origin-left md:block"
               >
-                <span className="h-2 w-2 rounded-full bg-white/80" />
-                <span>BTTB</span>
-              </Link>
+                <nav className="flex items-center gap-2 rounded-full border border-white/10 bg-black/70 px-3 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+                  {navItems.map((item) => {
+                    const active = isActive(pathname, item.href);
 
-              <div className="h-6 w-px bg-white/10" />
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`rounded-full px-4 py-2 text-[11px] uppercase tracking-[0.24em] transition ${
+                          active
+                            ? "bg-white text-black"
+                            : "text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+                        }`}
+                      >
+                        {item.label}
+                      </Link>
+                    );
+                  })}
 
-              <nav className="flex items-center gap-2">
-                {navItems.map((item) => {
-                  const active = isActive(pathname, item.href);
-
-                  return (
+                  {showAdminButton && (
                     <Link
-                      key={item.href}
-                      href={item.href}
-                      aria-current={active ? "page" : undefined}
-                      className={`rounded-full px-4 py-2 text-[11px] uppercase tracking-[0.28em] transition ${
-                        active
-                          ? "border border-white/20 bg-white text-black"
-                          : "border border-transparent text-zinc-300 hover:border-white/10 hover:bg-white/[0.06] hover:text-white"
-                      }`}
+                      href="/studio"
+                      className="rounded-full border border-white/10 px-4 py-2 text-[11px] uppercase tracking-[0.24em] text-zinc-200 transition hover:border-white/30 hover:text-white"
                     >
-                      {item.label}
+                      Admin
                     </Link>
-                  );
-                })}
-              </nav>
+                  )}
+                </nav>
+              </motion.div>
 
-              {showAdminButton && (
-                <>
-                  <div className="h-6 w-px bg-white/10" />
-
-                  <Link
-                    href="/studio"
-                    className="rounded-full border border-white/10 px-4 py-2 text-[11px] uppercase tracking-[0.28em] text-zinc-200 transition hover:border-white/30 hover:text-white"
-                  >
-                    Admin
-                  </Link>
-                </>
-              )}
-
-              <div className="h-6 w-px bg-white/10" />
-
-              <div className="rounded-full border border-white/10 px-4 py-2 text-[11px] uppercase tracking-[0.28em] text-zinc-400">
-                {routeLabel}
-              </div>
-            </div>
-          </div>
-        </motion.header>
-      )}
-
-      <motion.div
-        initial={{ opacity: 0, y: 18 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.55, ease: "easeOut" }}
-        className={`pointer-events-none fixed inset-x-0 z-[80] flex justify-center md:hidden ${
-          isStudio ? "bottom-0 px-0" : "bottom-4 px-4"
-        }`}
-      >
-        <nav
-          className={`pointer-events-auto flex w-full items-center justify-between border border-white/10 bg-black/70 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl ${
-            isStudio
-              ? "rounded-none border-x-0 border-b-0 px-3 py-3"
-              : "max-w-[42rem] rounded-full px-3 py-3"
-          }`}
-          style={
-            isStudio
-              ? { paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }
-              : undefined
-          }
-        >
-          {navItems.map((item) => {
-            const active = isActive(pathname, item.href);
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={`rounded-full px-3 py-2 text-[10px] uppercase tracking-[0.22em] transition ${
-                  active
-                    ? "bg-white text-black"
-                    : "text-zinc-300 hover:bg-white/[0.06] hover:text-white"
-                }`}
+              <motion.div
+                initial={{ opacity: 0, y: -10, scaleY: 0.96 }}
+                animate={{ opacity: 1, y: 0, scaleY: 1 }}
+                exit={{ opacity: 0, y: -10, scaleY: 0.96 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                className="origin-top md:hidden"
               >
-                {item.label}
-              </Link>
-            );
-          })}
+                <nav className="flex min-w-[15rem] flex-col gap-2 rounded-[1.5rem] border border-white/10 bg-black/80 p-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+                  {navItems.map((item) => {
+                    const active = isActive(pathname, item.href);
 
-          {showAdminButton && (
-            <Link
-              href="/studio"
-              className="rounded-full border border-white/10 px-3 py-2 text-[10px] uppercase tracking-[0.22em] text-zinc-200 transition hover:border-white/30 hover:text-white"
-            >
-              Admin
-            </Link>
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`rounded-full px-4 py-3 text-[11px] uppercase tracking-[0.24em] transition ${
+                          active
+                            ? "bg-white text-black"
+                            : "text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+                        }`}
+                      >
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+
+                  {showAdminButton && (
+                    <Link
+                      href="/studio"
+                      className="rounded-full border border-white/10 px-4 py-3 text-[11px] uppercase tracking-[0.24em] text-zinc-200 transition hover:border-white/30 hover:text-white"
+                    >
+                      Admin
+                    </Link>
+                  )}
+                </nav>
+              </motion.div>
+            </>
           )}
-        </nav>
-      </motion.div>
-    </>
+        </AnimatePresence>
+      </div>
+    </div>
   );
 }

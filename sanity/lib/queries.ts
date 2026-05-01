@@ -152,24 +152,29 @@ export const PROJECT_BY_SLUG_QUERY = `
     format,
     pipeline,
     tools,
+
     overview,
-    contribution,
+    "contribution": coalesce(contribution, contribute),
     approach,
     quote,
     highlights,
+
     frameStudy[]{
       label,
       caption,
       "imageUrl": image.asset->url
     },
+
     processNotes[]{
       title,
       body
     },
+
     credits[]{
       label,
       value
     },
+
     boardPage,
     boardOrder,
     boardLabel,

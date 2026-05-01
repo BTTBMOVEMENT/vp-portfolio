@@ -7,9 +7,9 @@ export default defineType({
   groups: [
     {name: 'global', title: 'Global', default: true},
     {name: 'home', title: 'Home'},
-    {name: 'worksPage', title: 'Works'},
-    {name: 'journalPage', title: 'Journal'},
-    {name: 'albumPage', title: 'My Album'},
+    {name: 'works', title: 'Works'},
+    {name: 'journal', title: 'Journal'},
+    {name: 'album', title: 'My Album'},
     {name: 'contact', title: 'Contact'},
   ],
   fields: [
@@ -123,9 +123,9 @@ export default defineType({
 
     defineField({
       name: 'worksPage',
-      title: 'Works Page',
+      title: 'Works Archive Page',
       type: 'object',
-      group: 'worksPage',
+      group: 'works',
       fields: [
         defineField({name: 'pageLabel', title: 'Page Label', type: 'string'}),
         defineField({name: 'pageIntro', title: 'Page Intro', type: 'text', rows: 3}),
@@ -153,10 +153,44 @@ export default defineType({
     }),
 
     defineField({
+      name: 'projectPage',
+      title: 'Project Detail Page',
+      type: 'object',
+      group: 'works',
+      fields: [
+        defineField({name: 'pageLabel', title: 'Page Label', type: 'string'}),
+        defineField({name: 'overviewLabel', title: 'Overview Label', type: 'string'}),
+        defineField({name: 'overviewTitle', title: 'Overview Title', type: 'string'}),
+        defineField({name: 'contributionLabel', title: 'Contribution Label', type: 'string'}),
+        defineField({name: 'contributionTitle', title: 'Contribution Title', type: 'string'}),
+        defineField({name: 'approachLabel', title: 'Approach Label', type: 'string'}),
+        defineField({name: 'approachTitle', title: 'Approach Title', type: 'string'}),
+        defineField({name: 'quoteLabel', title: 'Quote Label', type: 'string'}),
+        defineField({name: 'highlightsLabel', title: 'Highlights Label', type: 'string'}),
+        defineField({name: 'frameStudyLabel', title: 'Frame Study Label', type: 'string'}),
+        defineField({name: 'frameStudyTitle', title: 'Frame Study Title', type: 'string'}),
+        defineField({name: 'processNotesLabel', title: 'Process Notes Label', type: 'string'}),
+        defineField({name: 'processNotesTitle', title: 'Process Notes Title', type: 'string'}),
+        defineField({name: 'creditsLabel', title: 'Credits Label', type: 'string'}),
+        defineField({name: 'metaLabel', title: 'Meta Label', type: 'string'}),
+        defineField({name: 'boardPageLabel', title: 'Board Page Label', type: 'string'}),
+        defineField({name: 'boardOrderLabel', title: 'Board Order Label', type: 'string'}),
+        defineField({name: 'boardLabelText', title: 'Board Label Label', type: 'string'}),
+        defineField({name: 'boardCaptionLabel', title: 'Board Caption Label', type: 'string'}),
+        defineField({name: 'publishedAtLabel', title: 'Published At Label', type: 'string'}),
+        defineField({name: 'continueReadingLabel', title: 'Continue Reading Label', type: 'string'}),
+        defineField({name: 'previousChapterLabel', title: 'Previous Chapter Label', type: 'string'}),
+        defineField({name: 'nextChapterLabel', title: 'Next Chapter Label', type: 'string'}),
+        defineField({name: 'sequenceStartLabel', title: 'Sequence Start Label', type: 'string'}),
+        defineField({name: 'sequenceEndLabel', title: 'Sequence End Label', type: 'string'}),
+      ],
+    }),
+
+    defineField({
       name: 'journalPage',
       title: 'Journal Page',
       type: 'object',
-      group: 'journalPage',
+      group: 'journal',
       fields: [
         defineField({name: 'pageLabel', title: 'Page Label', type: 'string'}),
         defineField({name: 'pageIntro', title: 'Page Intro', type: 'text', rows: 3}),
@@ -181,7 +215,7 @@ export default defineType({
       name: 'albumPage',
       title: 'My Album Page',
       type: 'object',
-      group: 'albumPage',
+      group: 'album',
       fields: [
         defineField({name: 'pageLabel', title: 'Page Label', type: 'string'}),
         defineField({name: 'title', title: 'Title', type: 'string'}),

@@ -71,6 +71,33 @@ export const SITE_SETTINGS_QUERY = `
       boardStoryFrameLabel,
       boardOpenCaseStudyLabel
     },
+    projectPage{
+      pageLabel,
+      overviewLabel,
+      overviewTitle,
+      contributionLabel,
+      contributionTitle,
+      approachLabel,
+      approachTitle,
+      quoteLabel,
+      highlightsLabel,
+      frameStudyLabel,
+      frameStudyTitle,
+      processNotesLabel,
+      processNotesTitle,
+      creditsLabel,
+      metaLabel,
+      boardPageLabel,
+      boardOrderLabel,
+      boardLabelText,
+      boardCaptionLabel,
+      publishedAtLabel,
+      continueReadingLabel,
+      previousChapterLabel,
+      nextChapterLabel,
+      sequenceStartLabel,
+      sequenceEndLabel
+    },
     journalPage{
       pageLabel,
       pageIntro,
@@ -152,29 +179,24 @@ export const PROJECT_BY_SLUG_QUERY = `
     format,
     pipeline,
     tools,
-
     overview,
     "contribution": coalesce(contribution, contribute),
     approach,
     quote,
     highlights,
-
     frameStudy[]{
       label,
       caption,
       "imageUrl": image.asset->url
     },
-
     processNotes[]{
       title,
       body
     },
-
     credits[]{
       label,
       value
     },
-
     boardPage,
     boardOrder,
     boardLabel,

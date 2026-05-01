@@ -77,6 +77,34 @@ export type SiteSettings = {
     boardOpenCaseStudyLabel?: string | null
   } | null
 
+  projectPage?: {
+    pageLabel?: string | null
+    overviewLabel?: string | null
+    overviewTitle?: string | null
+    contributionLabel?: string | null
+    contributionTitle?: string | null
+    approachLabel?: string | null
+    approachTitle?: string | null
+    quoteLabel?: string | null
+    highlightsLabel?: string | null
+    frameStudyLabel?: string | null
+    frameStudyTitle?: string | null
+    processNotesLabel?: string | null
+    processNotesTitle?: string | null
+    creditsLabel?: string | null
+    metaLabel?: string | null
+    boardPageLabel?: string | null
+    boardOrderLabel?: string | null
+    boardLabelText?: string | null
+    boardCaptionLabel?: string | null
+    publishedAtLabel?: string | null
+    continueReadingLabel?: string | null
+    previousChapterLabel?: string | null
+    nextChapterLabel?: string | null
+    sequenceStartLabel?: string | null
+    sequenceEndLabel?: string | null
+  } | null
+
   journalPage?: {
     pageLabel?: string | null
     pageIntro?: string | null

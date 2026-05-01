@@ -36,8 +36,8 @@ export default function SiteNavigation() {
   }
 
   return (
-    <div className="pointer-events-none fixed left-4 top-4 z-[90]">
-      <div className="pointer-events-auto flex flex-col items-start gap-3">
+    <div className="pointer-events-none fixed inset-x-0 top-4 z-[90] flex justify-center px-4">
+      <div className="pointer-events-auto flex flex-col items-center gap-3">
         <motion.button
           type="button"
           onClick={() => setOpen((prev) => !prev)}
@@ -55,11 +55,11 @@ export default function SiteNavigation() {
           {open && (
             <>
               <motion.div
-                initial={{ opacity: 0, x: -12, scaleX: 0.96 }}
-                animate={{ opacity: 1, x: 0, scaleX: 1 }}
-                exit={{ opacity: 0, x: -12, scaleX: 0.96 }}
-                transition={{ duration: 0.25, ease: "easeOut" }}
-                className="hidden origin-left md:block"
+                initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                transition={{ duration: 0.24, ease: "easeOut" }}
+                className="hidden md:block"
               >
                 <nav className="flex items-center gap-2 rounded-full border border-white/10 bg-black/70 px-3 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl">
                   {navItems.map((item) => {
@@ -92,13 +92,13 @@ export default function SiteNavigation() {
               </motion.div>
 
               <motion.div
-                initial={{ opacity: 0, y: -10, scaleY: 0.96 }}
-                animate={{ opacity: 1, y: 0, scaleY: 1 }}
-                exit={{ opacity: 0, y: -10, scaleY: 0.96 }}
-                transition={{ duration: 0.25, ease: "easeOut" }}
-                className="origin-top md:hidden"
+                initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                transition={{ duration: 0.24, ease: "easeOut" }}
+                className="w-full max-w-[18rem] md:hidden"
               >
-                <nav className="flex min-w-[15rem] flex-col gap-2 rounded-[1.5rem] border border-white/10 bg-black/80 p-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+                <nav className="flex flex-col gap-2 rounded-[1.5rem] border border-white/10 bg-black/80 p-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl">
                   {navItems.map((item) => {
                     const active = isActive(pathname, item.href);
 

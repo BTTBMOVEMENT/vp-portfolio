@@ -5,8 +5,9 @@ import { sanityFetch } from "../../../sanity/lib/client";
 import {
   PROJECT_BY_SLUG_QUERY,
   PROJECTS_QUERY,
+  SITE_SETTINGS_QUERY,
 } from "../../../sanity/lib/queries";
-import type { ProjectDetail, ProjectListItem } from "../../../sanity/lib/types";
+import type { ProjectDetail, ProjectListItem, SiteSettings } from "../../../sanity/lib/types";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -17,6 +18,17 @@ export const revalidate = 0;
 
 function hasText(value?: string | null) {
   return typeof value === "string" && value.trim().length > 0;
+}
+
+function formatDate(value?: string) {
+  if (!value) return "";
+  try {
+    return new Intl.DateTimeFormat("en-US", {
+      dateStyle: "medium",
+    }).format(new Date(value));
+  } catch {
+    return value;
+  }
 }
 
 export async function generateMetadata({
@@ -32,9 +44,7 @@ export async function generateMetadata({
     })) ?? null;
 
   if (!project) {
-    return {
-      title: "Project not found",
-    };
+    return { title: "Project not found" };
   }
 
   return {
@@ -46,7 +56,7 @@ export async function generateMetadata({
 export default async function ProjectPage({ params }: PageProps) {
   const { slug } = await params;
 
-  const [project, allProjects] = await Promise.all([
+  const [project, allProjects, siteSettings] = await Promise.all([
     sanityFetch<ProjectDetail | null>({
       query: PROJECT_BY_SLUG_QUERY,
       params: { slug },
@@ -54,6 +64,10 @@ export default async function ProjectPage({ params }: PageProps) {
     }),
     sanityFetch<ProjectListItem[]>({
       query: PROJECTS_QUERY,
+      revalidate: 0,
+    }),
+    sanityFetch<SiteSettings>({
+      query: SITE_SETTINGS_QUERY,
       revalidate: 0,
     }),
   ]);
@@ -71,14 +85,59 @@ export default async function ProjectPage({ params }: PageProps) {
   const currentIndex = sortedProjects.findIndex((item) => item.slug === project.slug);
   const previousProject = currentIndex > 0 ? sortedProjects[currentIndex - 1] : null;
   const nextProject =
-    currentIndex < sortedProjects.length - 1
-      ? sortedProjects[currentIndex + 1]
-      : null;
+    currentIndex < sortedProjects.length - 1 ? sortedProjects[currentIndex + 1] : null;
+
+  const copy = {
+    pageLabel: siteSettings?.projectPage?.pageLabel || "Project",
+    overviewLabel: siteSettings?.projectPage?.overviewLabel || "Overview",
+    overviewTitle:
+      siteSettings?.projectPage?.overviewTitle || "What this project is trying to prove.",
+    contributionLabel:
+      siteSettings?.projectPage?.contributionLabel || "Contribution",
+    contributionTitle:
+      siteSettings?.projectPage?.contributionTitle ||
+      "Cinematography and workflow role.",
+    approachLabel: siteSettings?.projectPage?.approachLabel || "Approach",
+    approachTitle:
+      siteSettings?.projectPage?.approachTitle || "How the visual system was framed.",
+    quoteLabel: siteSettings?.projectPage?.quoteLabel || "Quote",
+    highlightsLabel:
+      siteSettings?.projectPage?.highlightsLabel || "Highlights",
+    frameStudyLabel:
+      siteSettings?.projectPage?.frameStudyLabel || "Frame Study",
+    frameStudyTitle:
+      siteSettings?.projectPage?.frameStudyTitle ||
+      "Three frames that define the chapter.",
+    processNotesLabel:
+      siteSettings?.projectPage?.processNotesLabel || "Process Notes",
+    processNotesTitle:
+      siteSettings?.projectPage?.processNotesTitle ||
+      "The chapter beneath the images.",
+    creditsLabel: siteSettings?.projectPage?.creditsLabel || "Credits",
+    metaLabel: siteSettings?.projectPage?.metaLabel || "Project Metadata",
+    boardPageLabel: siteSettings?.projectPage?.boardPageLabel || "Board Page",
+    boardOrderLabel:
+      siteSettings?.projectPage?.boardOrderLabel || "Board Order",
+    boardLabelText:
+      siteSettings?.projectPage?.boardLabelText || "Board Label",
+    boardCaptionLabel:
+      siteSettings?.projectPage?.boardCaptionLabel || "Board Caption",
+    publishedAtLabel:
+      siteSettings?.projectPage?.publishedAtLabel || "Published At",
+    continueReadingLabel:
+      siteSettings?.projectPage?.continueReadingLabel || "Continue Reading",
+    previousChapterLabel:
+      siteSettings?.projectPage?.previousChapterLabel || "Previous Chapter",
+    nextChapterLabel:
+      siteSettings?.projectPage?.nextChapterLabel || "Next Chapter",
+    sequenceStartLabel:
+      siteSettings?.projectPage?.sequenceStartLabel || "Start of sequence",
+    sequenceEndLabel:
+      siteSettings?.projectPage?.sequenceEndLabel || "End of sequence",
+  };
 
   const overview = hasText(project.overview) ? project.overview!.trim() : "";
-  const contribution = hasText(project.contribution)
-    ? project.contribution!.trim()
-    : "";
+  const contribution = hasText(project.contribution) ? project.contribution!.trim() : "";
   const approach = hasText(project.approach) ? project.approach!.trim() : "";
 
   return (
@@ -94,7 +153,7 @@ export default async function ProjectPage({ params }: PageProps) {
             </Link>
 
             <span>
-              Chapter {project.boardLabel || project.boardOrder} / {project.year}
+              {copy.pageLabel} {project.boardLabel || project.boardOrder} / {project.year}
             </span>
           </div>
         </div>
@@ -110,7 +169,7 @@ export default async function ProjectPage({ params }: PageProps) {
 
               <div className="relative z-10 space-y-4">
                 <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                  Project / {project.boardLabel || project.boardOrder}
+                  {copy.pageLabel} / {project.boardLabel || project.boardOrder}
                 </p>
 
                 <h1 className="max-w-[12ch] text-5xl font-semibold leading-[0.92] sm:text-6xl">
@@ -155,11 +214,54 @@ export default async function ProjectPage({ params }: PageProps) {
             </div>
           </div>
 
+          <section className="space-y-6">
+            <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
+              {copy.metaLabel}
+            </p>
+
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
+                  {copy.boardPageLabel}
+                </p>
+                <p className="mt-3 text-base text-zinc-200">{project.boardPage ?? "-"}</p>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
+                  {copy.boardOrderLabel}
+                </p>
+                <p className="mt-3 text-base text-zinc-200">{project.boardOrder ?? "-"}</p>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
+                  {copy.boardLabelText}
+                </p>
+                <p className="mt-3 text-base text-zinc-200">{project.boardLabel || "-"}</p>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
+                  {copy.boardCaptionLabel}
+                </p>
+                <p className="mt-3 text-base text-zinc-200">{project.boardCaption || "-"}</p>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
+                  {copy.publishedAtLabel}
+                </p>
+                <p className="mt-3 text-base text-zinc-200">{formatDate(project.publishedAt)}</p>
+              </div>
+            </div>
+          </section>
+
           {project.quote && (
             <section className="rounded-[2rem] border border-white/10 bg-white/[0.03] px-6 py-8 sm:px-8">
               <div className="grid gap-6 lg:grid-cols-[0.45fr_1.55fr] lg:items-start">
                 <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                  Pull Quote
+                  {copy.quoteLabel}
                 </p>
 
                 <blockquote className="max-w-4xl text-2xl font-medium leading-relaxed text-zinc-100 sm:text-3xl">
@@ -174,10 +276,10 @@ export default async function ProjectPage({ params }: PageProps) {
               {overview && (
                 <section className="space-y-4">
                   <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                    Overview
+                    {copy.overviewLabel}
                   </p>
                   <h2 className="text-3xl font-semibold leading-tight sm:text-4xl">
-                    What this project is trying to prove.
+                    {copy.overviewTitle}
                   </h2>
                   <p className="whitespace-pre-line max-w-2xl text-sm leading-8 text-zinc-300 sm:text-base">
                     {overview}
@@ -188,10 +290,10 @@ export default async function ProjectPage({ params }: PageProps) {
               {contribution && (
                 <section className="space-y-4">
                   <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                    Contribution
+                    {copy.contributionLabel}
                   </p>
                   <h2 className="text-3xl font-semibold leading-tight sm:text-4xl">
-                    Cinematography and workflow role.
+                    {copy.contributionTitle}
                   </h2>
                   <p className="whitespace-pre-line max-w-2xl text-sm leading-8 text-zinc-300 sm:text-base">
                     {contribution}
@@ -202,10 +304,10 @@ export default async function ProjectPage({ params }: PageProps) {
               {approach && (
                 <section className="space-y-4">
                   <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                    Approach
+                    {copy.approachLabel}
                   </p>
                   <h2 className="text-3xl font-semibold leading-tight sm:text-4xl">
-                    How the visual system was framed.
+                    {copy.approachTitle}
                   </h2>
                   <p className="whitespace-pre-line max-w-2xl text-sm leading-8 text-zinc-300 sm:text-base">
                     {approach}
@@ -218,7 +320,7 @@ export default async function ProjectPage({ params }: PageProps) {
               {(project.highlights || []).length > 0 && (
                 <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-6">
                   <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                    Highlights
+                    {copy.highlightsLabel}
                   </p>
 
                   <ul className="mt-5 space-y-4">
@@ -237,7 +339,7 @@ export default async function ProjectPage({ params }: PageProps) {
               {(project.credits || []).length > 0 && (
                 <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-6">
                   <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                    Credits
+                    {copy.creditsLabel}
                   </p>
 
                   <div className="mt-5 space-y-4">
@@ -264,10 +366,10 @@ export default async function ProjectPage({ params }: PageProps) {
             <section className="space-y-6">
               <div className="space-y-3">
                 <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                  Frame Study
+                  {copy.frameStudyLabel}
                 </p>
                 <h2 className="text-3xl font-semibold leading-tight sm:text-4xl">
-                  Three frames that define the chapter.
+                  {copy.frameStudyTitle}
                 </h2>
               </div>
 
@@ -326,10 +428,10 @@ export default async function ProjectPage({ params }: PageProps) {
             <section className="space-y-6">
               <div className="space-y-3">
                 <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                  Process Notes
+                  {copy.processNotesLabel}
                 </p>
                 <h2 className="text-3xl font-semibold leading-tight sm:text-4xl">
-                  The chapter beneath the images.
+                  {copy.processNotesTitle}
                 </h2>
               </div>
 
@@ -356,7 +458,7 @@ export default async function ProjectPage({ params }: PageProps) {
 
           <section className="space-y-6 border-t border-white/10 pt-12">
             <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-              Continue Reading
+              {copy.continueReadingLabel}
             </p>
 
             <div className="grid gap-6 md:grid-cols-2">
@@ -367,7 +469,7 @@ export default async function ProjectPage({ params }: PageProps) {
                 >
                   <div className="space-y-3">
                     <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                      Previous Chapter
+                      {copy.previousChapterLabel}
                     </p>
                     <h3 className="text-3xl font-semibold leading-tight text-zinc-100 transition group-hover:text-white">
                       {previousProject.title}
@@ -378,10 +480,10 @@ export default async function ProjectPage({ params }: PageProps) {
                 <div className="rounded-[2rem] border border-white/10 bg-white/[0.02] p-6 opacity-50">
                   <div className="space-y-3">
                     <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                      Previous Chapter
+                      {copy.previousChapterLabel}
                     </p>
                     <h3 className="text-3xl font-semibold leading-tight text-zinc-500">
-                      Start of sequence
+                      {copy.sequenceStartLabel}
                     </h3>
                   </div>
                 </div>
@@ -394,7 +496,7 @@ export default async function ProjectPage({ params }: PageProps) {
                 >
                   <div className="space-y-3">
                     <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                      Next Chapter
+                      {copy.nextChapterLabel}
                     </p>
                     <h3 className="text-3xl font-semibold leading-tight text-zinc-100 transition group-hover:text-white">
                       {nextProject.title}
@@ -405,10 +507,10 @@ export default async function ProjectPage({ params }: PageProps) {
                 <div className="rounded-[2rem] border border-white/10 bg-white/[0.02] p-6 opacity-50">
                   <div className="space-y-3">
                     <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                      Next Chapter
+                      {copy.nextChapterLabel}
                     </p>
                     <h3 className="text-3xl font-semibold leading-tight text-zinc-500">
-                      End of sequence
+                      {copy.sequenceEndLabel}
                     </h3>
                   </div>
                 </div>

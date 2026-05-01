@@ -3,6 +3,7 @@ export type SiteSettings = {
   email?: string | null
   instagramPrimary?: string | null
   instagramSecondary?: string | null
+
   hero?: {
     roleLine?: string | null
     headline?: string | null
@@ -16,6 +17,7 @@ export type SiteSettings = {
     ctaSecondaryLabel?: string | null
     ctaTertiaryLabel?: string | null
   } | null
+
   about?: {
     sectionLabel?: string | null
     title?: string | null
@@ -24,6 +26,7 @@ export type SiteSettings = {
     focusLabel?: string | null
     focusTags?: string[] | null
   } | null
+
   works?: {
     sectionLabel?: string | null
     title?: string | null
@@ -32,6 +35,7 @@ export type SiteSettings = {
     metaBody?: string | null
     archiveButtonLabel?: string | null
   } | null
+
   journal?: {
     sectionLabel?: string | null
     title?: string | null
@@ -39,6 +43,7 @@ export type SiteSettings = {
     ctaLabel?: string | null
     helperText?: string | null
   } | null
+
   albumGateway?: {
     sectionLabel?: string | null
     title?: string | null
@@ -46,6 +51,69 @@ export type SiteSettings = {
     buttonLabel?: string | null
     noteLabel?: string | null
   } | null
+
+  worksPage?: {
+    pageLabel?: string | null
+    pageIntro?: string | null
+    title?: string | null
+    description?: string | null
+    statsBoardsLabel?: string | null
+    statsPublishedLabel?: string | null
+    statsNavigationLabel?: string | null
+    statsNavigationValue?: string | null
+    boardEyebrow?: string | null
+    boardDescription?: string | null
+    boardSheetTypeLabel?: string | null
+    boardSheetTypeValue?: string | null
+    boardLoadedFramesLabel?: string | null
+    boardStatusLabel?: string | null
+    boardStatusValue?: string | null
+    boardNextFillLabel?: string | null
+    boardStorySheetLabel?: string | null
+    boardClickHint?: string | null
+    boardEmptyFrameLabel?: string | null
+    boardEmptyFrameDescription?: string | null
+    boardStoryFrameLabel?: string | null
+    boardOpenCaseStudyLabel?: string | null
+  } | null
+
+  journalPage?: {
+    pageLabel?: string | null
+    pageIntro?: string | null
+    title?: string | null
+    description?: string | null
+    featuredEntryLabel?: string | null
+    allEntriesLabel?: string | null
+    detailIntroLabel?: string | null
+    detailActionsLabel?: string | null
+    detailReturnToJournalLabel?: string | null
+    detailReturnToWorksLabel?: string | null
+    detailGalleryLabel?: string | null
+    detailContinueReadingLabel?: string | null
+    detailPreviousEntryLabel?: string | null
+    detailNextEntryLabel?: string | null
+    detailStartOfJournalLabel?: string | null
+    detailEndOfJournalLabel?: string | null
+  } | null
+
+  albumPage?: {
+    pageLabel?: string | null
+    title?: string | null
+    description?: string | null
+    emptyStateLabel?: string | null
+    emptyStateTitle?: string | null
+    emptyStateDescription?: string | null
+    orbitalLabel?: string | null
+    orbitalDescription?: string | null
+    alignFramesLabel?: string | null
+    returnToOrbitLabel?: string | null
+    selectedFrameLabel?: string | null
+    selectedFrameFallback?: string | null
+    navigationLabel?: string | null
+    previousLabel?: string | null
+    nextLabel?: string | null
+  } | null
+
   contact?: {
     sectionLabel?: string | null
     title?: string | null

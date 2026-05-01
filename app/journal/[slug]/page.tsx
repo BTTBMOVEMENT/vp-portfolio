@@ -6,9 +6,10 @@ import { sanityFetch } from "../../../sanity/lib/client";
 import {
   JOURNAL_ENTRIES_QUERY,
   JOURNAL_ENTRY_BY_SLUG_QUERY,
+  SITE_SETTINGS_QUERY,
 } from "../../../sanity/lib/queries";
 import { estimateReadTime } from "../../../sanity/lib/text";
-import type { JournalDetail, JournalListItem } from "../../../sanity/lib/types";
+import type { JournalDetail, JournalListItem, SiteSettings } from "../../../sanity/lib/types";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -53,7 +54,7 @@ export async function generateMetadata({
 export default async function JournalEntryPage({ params }: PageProps) {
   const { slug } = await params;
 
-  const [entry, rawEntries] = await Promise.all([
+  const [entry, rawEntries, siteSettings] = await Promise.all([
     sanityFetch<JournalDetail | null>({
       query: JOURNAL_ENTRY_BY_SLUG_QUERY,
       params: { slug },
@@ -63,13 +64,17 @@ export default async function JournalEntryPage({ params }: PageProps) {
       query: JOURNAL_ENTRIES_QUERY,
       revalidate: 0,
     }),
+    sanityFetch<SiteSettings>({
+      query: SITE_SETTINGS_QUERY,
+      revalidate: 0,
+    }),
   ]);
 
   if (!entry) {
     notFound();
   }
 
-  const journalEntries = rawEntries.map((item) => ({
+  const journalEntries = (rawEntries || []).map((item) => ({
     ...item,
     readTime: estimateReadTime(item.body),
   }));
@@ -78,6 +83,26 @@ export default async function JournalEntryPage({ params }: PageProps) {
   const previousEntry = currentIndex > 0 ? journalEntries[currentIndex - 1] : null;
   const nextEntry =
     currentIndex < journalEntries.length - 1 ? journalEntries[currentIndex + 1] : null;
+
+  const copy = {
+    introLabel: siteSettings?.journalPage?.detailIntroLabel || "Intro",
+    actionsLabel: siteSettings?.journalPage?.detailActionsLabel || "Actions",
+    returnToJournalLabel:
+      siteSettings?.journalPage?.detailReturnToJournalLabel || "Return to journal list",
+    returnToWorksLabel:
+      siteSettings?.journalPage?.detailReturnToWorksLabel || "Return to works",
+    galleryLabel: siteSettings?.journalPage?.detailGalleryLabel || "Gallery",
+    continueReadingLabel:
+      siteSettings?.journalPage?.detailContinueReadingLabel || "Continue Reading",
+    previousEntryLabel:
+      siteSettings?.journalPage?.detailPreviousEntryLabel || "Previous Entry",
+    nextEntryLabel:
+      siteSettings?.journalPage?.detailNextEntryLabel || "Next Entry",
+    startOfJournalLabel:
+      siteSettings?.journalPage?.detailStartOfJournalLabel || "Start of journal",
+    endOfJournalLabel:
+      siteSettings?.journalPage?.detailEndOfJournalLabel || "End of journal",
+  };
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -141,7 +166,7 @@ export default async function JournalEntryPage({ params }: PageProps) {
             <section className="rounded-[2rem] border border-white/10 bg-white/[0.03] px-6 py-8 sm:px-8">
               <div className="grid gap-6 lg:grid-cols-[0.45fr_1.55fr] lg:items-start">
                 <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                  Intro
+                  {copy.introLabel}
                 </p>
 
                 <p className="max-w-4xl text-xl leading-relaxed text-zinc-100 sm:text-2xl">
@@ -159,7 +184,7 @@ export default async function JournalEntryPage({ params }: PageProps) {
             <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
               <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-6">
                 <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                  Actions
+                  {copy.actionsLabel}
                 </p>
 
                 <div className="mt-5 space-y-3">
@@ -167,14 +192,14 @@ export default async function JournalEntryPage({ params }: PageProps) {
                     href="/journal"
                     className="block rounded-full border border-white/10 px-4 py-3 text-sm text-zinc-200 transition hover:border-white/30 hover:text-white"
                   >
-                    Return to journal list
+                    {copy.returnToJournalLabel}
                   </Link>
 
                   <Link
                     href="/works"
                     className="block rounded-full border border-white/10 px-4 py-3 text-sm text-zinc-200 transition hover:border-white/30 hover:text-white"
                   >
-                    Return to works
+                    {copy.returnToWorksLabel}
                   </Link>
                 </div>
               </div>
@@ -184,7 +209,7 @@ export default async function JournalEntryPage({ params }: PageProps) {
           {(entry.gallery || []).length > 0 && (
             <section className="space-y-6">
               <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                Gallery
+                {copy.galleryLabel}
               </p>
 
               <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -210,7 +235,7 @@ export default async function JournalEntryPage({ params }: PageProps) {
 
           <section className="space-y-6 border-t border-white/10 pt-12">
             <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-              Continue Reading
+              {copy.continueReadingLabel}
             </p>
 
             <div className="grid gap-6 md:grid-cols-2">
@@ -221,7 +246,7 @@ export default async function JournalEntryPage({ params }: PageProps) {
                 >
                   <div className="space-y-3">
                     <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                      Previous Entry
+                      {copy.previousEntryLabel}
                     </p>
                     <h3 className="text-3xl font-semibold leading-tight text-zinc-100 transition group-hover:text-white">
                       {previousEntry.title}
@@ -232,10 +257,10 @@ export default async function JournalEntryPage({ params }: PageProps) {
                 <div className="rounded-[2rem] border border-white/10 bg-white/[0.02] p-6 opacity-50">
                   <div className="space-y-3">
                     <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                      Previous Entry
+                      {copy.previousEntryLabel}
                     </p>
                     <h3 className="text-3xl font-semibold leading-tight text-zinc-500">
-                      Start of journal
+                      {copy.startOfJournalLabel}
                     </h3>
                   </div>
                 </div>
@@ -248,7 +273,7 @@ export default async function JournalEntryPage({ params }: PageProps) {
                 >
                   <div className="space-y-3">
                     <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                      Next Entry
+                      {copy.nextEntryLabel}
                     </p>
                     <h3 className="text-3xl font-semibold leading-tight text-zinc-100 transition group-hover:text-white">
                       {nextEntry.title}
@@ -259,10 +284,10 @@ export default async function JournalEntryPage({ params }: PageProps) {
                 <div className="rounded-[2rem] border border-white/10 bg-white/[0.02] p-6 opacity-50">
                   <div className="space-y-3">
                     <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                      Next Entry
+                      {copy.nextEntryLabel}
                     </p>
                     <h3 className="text-3xl font-semibold leading-tight text-zinc-500">
-                      End of journal
+                      {copy.endOfJournalLabel}
                     </h3>
                   </div>
                 </div>

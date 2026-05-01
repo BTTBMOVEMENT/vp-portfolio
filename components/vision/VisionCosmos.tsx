@@ -13,8 +13,27 @@ type AlbumEntry = {
   note?: any[];
 };
 
+type VisionCosmosCopy = {
+  pageLabel?: string;
+  title?: string;
+  description?: string;
+  emptyStateLabel?: string;
+  emptyStateTitle?: string;
+  emptyStateDescription?: string;
+  orbitalLabel?: string;
+  orbitalDescription?: string;
+  alignFramesLabel?: string;
+  returnToOrbitLabel?: string;
+  selectedFrameLabel?: string;
+  selectedFrameFallback?: string;
+  navigationLabel?: string;
+  previousLabel?: string;
+  nextLabel?: string;
+};
+
 type VisionCosmosProps = {
   entries: AlbumEntry[];
+  copy?: VisionCosmosCopy;
 };
 
 type Size = {
@@ -28,10 +47,8 @@ function wrapIndex(index: number, total: number) {
 
 function getWrappedOffset(index: number, activeIndex: number, total: number) {
   let offset = index - activeIndex;
-
   if (offset > total / 2) offset -= total;
   if (offset < -total / 2) offset += total;
-
   return offset;
 }
 
@@ -213,7 +230,7 @@ function defaultTitle(index: number) {
   return `Album Frame ${String(index + 1).padStart(3, "0")}`;
 }
 
-export default function VisionCosmos({ entries }: VisionCosmosProps) {
+export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [showAtlas, setShowAtlas] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -247,7 +264,6 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
   }, []);
 
   const total = entries.length;
-
   const activeEntry = entries[activeIndex]!;
 
   const visibleEntries = useMemo(() => {
@@ -298,13 +314,13 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
       <section className="rounded-[2.75rem] border border-white/10 bg-white/[0.03] px-6 py-10">
         <div className="space-y-4">
           <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-            My Album
+            {copy?.emptyStateLabel || "My Album"}
           </p>
           <h3 className="text-3xl font-semibold leading-tight text-zinc-100">
-            No album items published yet.
+            {copy?.emptyStateTitle || "No album items published yet."}
           </h3>
           <p className="max-w-2xl text-sm leading-8 text-zinc-300 sm:text-base">
-            Add album items in Studio and they will appear here automatically.
+            {copy?.emptyStateDescription || "Add album items in Studio and they will appear here automatically."}
           </p>
         </div>
       </section>
@@ -370,17 +386,15 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
       <div className="flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
         <div className="max-w-3xl space-y-4">
           <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-            My Album
+            {copy?.pageLabel || "My Album"}
           </p>
 
           <h2 className="max-w-[12ch] text-4xl font-semibold leading-[0.95] sm:text-5xl md:text-6xl">
-            A drifting field of frames and memories.
+            {copy?.title || "A drifting field of frames and memories."}
           </h2>
 
           <p className="max-w-2xl text-sm leading-8 text-zinc-300 sm:text-base">
-            Scroll or swipe to pull a photograph into focus. Align every frame when
-            you want to see the whole album at once, then choose one to send it back
-            into orbit.
+            {copy?.description || "Scroll or swipe to pull a photograph into focus."}
           </p>
         </div>
 
@@ -390,7 +404,9 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
             onClick={() => setShowAtlas((prev) => !prev)}
             className="rounded-full border border-white/10 px-4 py-3 text-sm text-zinc-200 transition hover:border-white/30 hover:text-white"
           >
-            {showAtlas ? "Return to Orbit" : "Align Frames"}
+            {showAtlas
+              ? copy?.returnToOrbitLabel || "Return to Orbit"
+              : copy?.alignFramesLabel || "Align Frames"}
           </button>
 
           <div className="rounded-full border border-white/10 px-4 py-3 text-sm text-zinc-200">
@@ -403,12 +419,13 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-2">
             <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-              Orbital Album
+              {copy?.orbitalLabel || "Orbital Album"}
             </p>
             <p className="text-sm leading-7 text-zinc-300">
-              {showAtlas
-                ? "All frames are aligned. Choose one to return it to the center."
-                : "One frame dominates the view while the rest stay in orbit."}
+              {copy?.orbitalDescription ||
+                (showAtlas
+                  ? "All frames are aligned. Choose one to return it to the center."
+                  : "One frame dominates the view while the rest stay in orbit.")}
             </p>
           </div>
 
@@ -449,11 +466,6 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
         >
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-[76%] w-[132%] -translate-x-1/2 -translate-y-1/2 rounded-[100%] border border-white/[0.06]" />
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-[54%] w-[116%] -translate-x-1/2 -translate-y-1/2 rounded-[100%] border border-white/[0.04]" />
-          <div className="pointer-events-none absolute left-[8%] top-[18%] h-24 w-24 rounded-full bg-white/[0.05] blur-3xl" />
-          <div className="pointer-events-none absolute right-[10%] top-[24%] h-32 w-32 rounded-full bg-white/[0.04] blur-3xl" />
-          <div className="pointer-events-none absolute bottom-[14%] left-[22%] h-28 w-28 rounded-full bg-white/[0.03] blur-3xl" />
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-black via-black/85 to-transparent sm:w-28 lg:w-40" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-black via-black/85 to-transparent sm:w-28 lg:w-40" />
 
           {visibleEntries.map((entry) => {
             const index = entries.findIndex((item) => item.id === entry.id);
@@ -481,14 +493,10 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
                   setActiveIndex(index);
                   setShowAtlas(false);
                 }}
-                aria-label={`Select image ${entry.title ?? defaultTitle(index)}`}
                 className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer"
                 style={{
                   zIndex: state.zIndex,
                   willChange: "transform, opacity, width, height",
-                  WebkitTapHighlightColor: "transparent",
-                  backfaceVisibility: "hidden",
-                  WebkitBackfaceVisibility: "hidden",
                 }}
                 animate={{
                   left: state.left,
@@ -505,45 +513,8 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
                   ease: [0.22, 1, 0.36, 1],
                 }}
               >
-                <div
-                  className="relative h-full w-full"
-                  style={{
-                    transformStyle: isMobile ? "flat" : "preserve-3d",
-                    willChange: "transform",
-                  }}
-                >
-                  {!isMobile && (
-                    <div
-                      className="absolute inset-0 rounded-[1.6rem] bg-gradient-to-b from-zinc-100 to-zinc-200 shadow-[0_30px_80px_rgba(0,0,0,0.45)]"
-                      style={{
-                        transform: "rotateY(180deg)",
-                        backfaceVisibility: "hidden",
-                        WebkitBackfaceVisibility: "hidden",
-                      }}
-                    >
-                      <div className="flex h-full flex-col justify-between rounded-[1.6rem] p-5 text-left">
-                        <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                          My Album
-                        </p>
-
-                        <div className="space-y-2">
-                          <div className="h-px w-full bg-zinc-300" />
-                          <p className="text-[11px] uppercase tracking-[0.24em] text-zinc-500">
-                            Reverse side / matte card
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div
-                    className="relative flex h-full w-full flex-col overflow-hidden rounded-[1.6rem] bg-[#f6f1e8] p-3 shadow-[0_30px_80px_rgba(0,0,0,0.45)]"
-                    style={{
-                      backfaceVisibility: "hidden",
-                      WebkitBackfaceVisibility: "hidden",
-                      transform: "translateZ(0)",
-                    }}
-                  >
+                <div className="relative h-full w-full">
+                  <div className="relative flex h-full w-full flex-col overflow-hidden rounded-[1.6rem] bg-[#f6f1e8] p-3 shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
                     <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-[1.2rem] border border-black/5 bg-white/40">
                       {entry.imageUrl ? (
                         <img
@@ -588,10 +559,6 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
 
                     <div className="mt-2 h-px w-full bg-black/10" />
                   </div>
-
-                  {!showAtlas && isActive && (
-                    <div className="pointer-events-none absolute -bottom-4 left-1/2 h-10 w-[72%] -translate-x-1/2 rounded-full bg-black/40 blur-2xl" />
-                  )}
                 </div>
               </motion.button>
             );
@@ -601,7 +568,7 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
         <div className="mt-6 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
           <div className="space-y-4">
             <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-              Selected Frame
+              {copy?.selectedFrameLabel || "Selected Frame"}
             </p>
 
             <div className="space-y-3">
@@ -613,8 +580,8 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
                 <PortableTextContent value={activeEntry.note} compact />
               ) : (
                 <p className="max-w-2xl text-sm leading-8 text-zinc-500 sm:text-base">
-                  Titles and notes are now coming from CMS. Add them in Studio whenever
-                  you want this frame to carry its own text.
+                  {copy?.selectedFrameFallback ||
+                    "Titles and notes are now coming from CMS. Add them in Studio whenever you want this frame to carry its own text."}
                 </p>
               )}
             </div>
@@ -623,7 +590,7 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
           <div className="space-y-5">
             <div className="rounded-[2rem] border border-white/10 bg-black/30 p-5">
               <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                Navigation
+                {copy?.navigationLabel || "Navigation"}
               </p>
 
               <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -632,7 +599,7 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
                   onClick={goToPrevious}
                   className="rounded-full border border-white/10 px-4 py-3 transition hover:border-white/30 hover:text-white"
                 >
-                  Previous
+                  {copy?.previousLabel || "Previous"}
                 </button>
 
                 <button
@@ -640,7 +607,9 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
                   onClick={() => setShowAtlas((prev) => !prev)}
                   className="rounded-full border border-white/10 px-4 py-3 transition hover:border-white/30 hover:text-white"
                 >
-                  {showAtlas ? "Return to Orbit" : "Align Frames"}
+                  {showAtlas
+                    ? copy?.returnToOrbitLabel || "Return to Orbit"
+                    : copy?.alignFramesLabel || "Align Frames"}
                 </button>
 
                 <button
@@ -648,7 +617,7 @@ export default function VisionCosmos({ entries }: VisionCosmosProps) {
                   onClick={goToNext}
                   className="rounded-full border border-white/10 px-4 py-3 transition hover:border-white/30 hover:text-white"
                 >
-                  Next
+                  {copy?.nextLabel || "Next"}
                 </button>
               </div>
 

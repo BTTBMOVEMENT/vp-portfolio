@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { sanityFetch } from "../../sanity/lib/client";
-import { JOURNAL_ENTRIES_QUERY } from "../../sanity/lib/queries";
+import { JOURNAL_ENTRIES_QUERY, SITE_SETTINGS_QUERY } from "../../sanity/lib/queries";
 import { estimateReadTime } from "../../sanity/lib/text";
-import type { JournalListItem } from "../../sanity/lib/types";
+import type { JournalListItem, SiteSettings } from "../../sanity/lib/types";
 
 function formatDate(value?: string) {
   if (!value) return "";
@@ -19,18 +19,41 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function JournalPage() {
-  const rawEntries =
-    (await sanityFetch<JournalListItem[]>({
+  const [rawEntries, siteSettings] = await Promise.all([
+    sanityFetch<JournalListItem[]>({
       query: JOURNAL_ENTRIES_QUERY,
       revalidate: 0,
-    })) ?? [];
+    }),
+    sanityFetch<SiteSettings>({
+      query: SITE_SETTINGS_QUERY,
+      revalidate: 0,
+    }),
+  ]);
 
-  const journalEntries = rawEntries.map((entry) => ({
+  const journalEntries = (rawEntries || []).map((entry) => ({
     ...entry,
     readTime: estimateReadTime(entry.body),
   }));
 
-  const [featuredEntry, ...otherEntries] = journalEntries;
+  const featuredEntry = journalEntries[0];
+  const otherEntries = journalEntries.slice(1);
+
+  const copy = {
+    pageLabel: siteSettings?.journalPage?.pageLabel || "Journal",
+    pageIntro:
+      siteSettings?.journalPage?.pageIntro ||
+      "Notes, essays, visual logs, and process writing.",
+    title:
+      siteSettings?.journalPage?.title ||
+      "A living layer beside the portfolio.",
+    description:
+      siteSettings?.journalPage?.description ||
+      "This section is the foundation for a creator-managed journal.",
+    featuredEntryLabel:
+      siteSettings?.journalPage?.featuredEntryLabel || "Featured Entry",
+    allEntriesLabel:
+      siteSettings?.journalPage?.allEntriesLabel || "All Entries",
+  };
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -44,7 +67,7 @@ export default async function JournalPage() {
               Back to Home
             </Link>
 
-            <span>Journal / 01</span>
+            <span>{copy.pageLabel} / 01</span>
           </div>
         </div>
       </section>
@@ -54,20 +77,20 @@ export default async function JournalPage() {
           <div className="grid gap-8 lg:grid-cols-[0.5fr_1.5fr] lg:items-end">
             <div className="space-y-3">
               <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                Journal
+                {copy.pageLabel}
               </p>
               <div className="h-px w-20 bg-white/15" />
               <p className="text-sm leading-7 text-zinc-500">
-                Notes, essays, visual logs, and process writing.
+                {copy.pageIntro}
               </p>
             </div>
 
             <div className="space-y-4">
               <h1 className="max-w-[12ch] text-5xl font-semibold leading-[0.92] sm:text-6xl">
-                A living layer beside the portfolio.
+                {copy.title}
               </h1>
               <p className="max-w-2xl text-sm leading-8 text-zinc-300 sm:text-base">
-                This section is the foundation for a creator-managed journal.
+                {copy.description}
               </p>
             </div>
           </div>
@@ -75,7 +98,7 @@ export default async function JournalPage() {
           {featuredEntry && (
             <section className="space-y-6">
               <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                Featured Entry
+                {copy.featuredEntryLabel}
               </p>
 
               <Link
@@ -135,7 +158,7 @@ export default async function JournalPage() {
 
           <section className="space-y-6">
             <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-              All Entries
+              {copy.allEntriesLabel}
             </p>
 
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">

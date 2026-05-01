@@ -7,14 +7,33 @@ function pad(value: number) {
   return String(value).padStart(2, "0");
 }
 
+type StoryboardBoardCopy = {
+  eyebrow?: string;
+  description?: string;
+  sheetTypeLabel?: string;
+  sheetTypeValue?: string;
+  loadedFramesLabel?: string;
+  statusLabel?: string;
+  statusValue?: string;
+  nextFillLabel?: string;
+  storySheetLabel?: string;
+  clickHint?: string;
+  emptyFrameLabel?: string;
+  emptyFrameDescription?: string;
+  storyFrameLabel?: string;
+  openCaseStudyLabel?: string;
+};
+
 type StoryboardBoardProps = {
   boardPage: number;
   entries: ProjectListItem[];
+  copy?: StoryboardBoardCopy;
 };
 
 export default function StoryboardBoard({
   boardPage,
   entries,
+  copy,
 }: StoryboardBoardProps) {
   const slotMap = new Map(entries.map((entry) => [entry.boardOrder || 0, entry]));
   const slots = Array.from({ length: BOARD_SLOTS_PER_PAGE }, (_, index) => index + 1);
@@ -30,25 +49,27 @@ export default function StoryboardBoard({
         <div className="mb-8 grid gap-6 lg:grid-cols-[0.42fr_1.58fr] lg:items-end">
           <div className="space-y-3">
             <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-              Board {pad(boardPage)}
+              {copy?.eyebrow || `Board ${pad(boardPage)}`}
             </p>
             <div className="h-px w-20 bg-white/15" />
             <p className="max-w-sm text-sm leading-7 text-zinc-400">
-              A storyboard sheet that fills as more projects are published.
+              {copy?.description || "A storyboard sheet that fills as more projects are published."}
             </p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
               <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                Sheet Type
+                {copy?.sheetTypeLabel || "Sheet Type"}
               </p>
-              <p className="mt-3 text-base text-zinc-200">Storyboard Archive</p>
+              <p className="mt-3 text-base text-zinc-200">
+                {copy?.sheetTypeValue || "Storyboard Archive"}
+              </p>
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
               <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                Loaded Frames
+                {copy?.loadedFramesLabel || "Loaded Frames"}
               </p>
               <p className="mt-3 text-base text-zinc-200">
                 {pad(filledCount)} / {pad(BOARD_SLOTS_PER_PAGE)}
@@ -57,14 +78,16 @@ export default function StoryboardBoard({
 
             <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
               <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                Status
+                {copy?.statusLabel || "Status"}
               </p>
-              <p className="mt-3 text-base text-zinc-200">Active Sheet</p>
+              <p className="mt-3 text-base text-zinc-200">
+                {copy?.statusValue || "Active Sheet"}
+              </p>
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
               <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                Next Fill
+                {copy?.nextFillLabel || "Next Fill"}
               </p>
               <p className="mt-3 text-base text-zinc-200">
                 Slot {pad(filledCount + 1 <= BOARD_SLOTS_PER_PAGE ? filledCount + 1 : BOARD_SLOTS_PER_PAGE)}
@@ -76,13 +99,13 @@ export default function StoryboardBoard({
         <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-black/40 p-4 sm:p-5 lg:p-6">
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-3 text-[11px] uppercase tracking-[0.24em] text-zinc-500">
-              <span>Story Sheet</span>
+              <span>{copy?.storySheetLabel || "Story Sheet"}</span>
               <span>Board {pad(boardPage)}</span>
               <span>{pad(filledCount)} Frames Loaded</span>
             </div>
 
             <div className="text-[11px] uppercase tracking-[0.24em] text-zinc-500">
-              Click a filled frame to open its case study
+              {copy?.clickHint || "Click a filled frame to open its case study"}
             </div>
           </div>
 
@@ -116,7 +139,7 @@ export default function StoryboardBoard({
                             {project.boardLabel || `A${String(slot).padStart(2, "0")}`}
                           </p>
                           <p className="text-[11px] uppercase tracking-[0.22em] text-zinc-500">
-                            Story Frame
+                            {copy?.storyFrameLabel || "Story Frame"}
                           </p>
                         </div>
 
@@ -137,7 +160,7 @@ export default function StoryboardBoard({
 
                         <div className="flex items-center justify-between gap-4 text-[11px] uppercase tracking-[0.22em] text-zinc-400">
                           <span>{project.year}</span>
-                          <span>Open Case Study</span>
+                          <span>{copy?.openCaseStudyLabel || "Open Case Study"}</span>
                         </div>
 
                         <div className="h-px w-full bg-white/15" />
@@ -158,7 +181,7 @@ export default function StoryboardBoard({
 
                     <div className="absolute left-5 top-5 space-y-1">
                       <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                        Empty Frame
+                        {copy?.emptyFrameLabel || "Empty Frame"}
                       </p>
                       <p className="text-[11px] uppercase tracking-[0.22em] text-zinc-600">
                         Slot {pad(slot)}
@@ -174,7 +197,7 @@ export default function StoryboardBoard({
 
                     <div className="absolute bottom-5 left-5 right-5 space-y-3">
                       <p className="max-w-[14ch] text-sm leading-6 text-zinc-500">
-                        Awaiting the next published chapter.
+                        {copy?.emptyFrameDescription || "Awaiting the next published chapter."}
                       </p>
                       <div className="h-px w-full bg-white/10" />
                     </div>

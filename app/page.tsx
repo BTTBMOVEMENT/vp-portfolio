@@ -1,5 +1,6 @@
 import HomePageClient from "../components/home/HomePageClient";
 import OrganizationJsonLd from "../components/seo/OrganizationJsonLd";
+import WebSiteJsonLd from "../components/seo/WebSiteJsonLd";
 import { sanityFetch } from "../sanity/lib/client";
 import { SITE_SETTINGS_QUERY } from "../sanity/lib/queries";
 import type { SiteSettings } from "../sanity/lib/types";
@@ -17,6 +18,7 @@ export default async function Page() {
   return (
     <>
       <OrganizationJsonLd />
+      <WebSiteJsonLd />
       <HomePageClient siteSettings={siteSettings} />
     </>
   );

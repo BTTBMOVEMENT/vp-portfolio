@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import BreadcrumbJsonLd from "../../../components/seo/BreadcrumbJsonLd";
+import ArticleJsonLd from "../../../components/seo/ArticleJsonLd";
 import { notFound } from "next/navigation";
 import PortableTextContent from "../../../components/cms/PortableTextContent";
 import { sanityFetch } from "../../../sanity/lib/client";
@@ -129,6 +131,24 @@ export default async function JournalEntryPage({ params }: PageProps) {
 
   return (
     <main className="min-h-screen bg-black text-white">
+            <BreadcrumbJsonLd
+        items={[
+          { name: "Home", url: "https://bttbmovement.com/" },
+          { name: "Journal", url: "https://bttbmovement.com/journal" },
+          {
+            name: entry.title,
+            url: `https://bttbmovement.com/journal/${entry.slug}`,
+          },
+        ]}
+      />
+
+      <ArticleJsonLd
+        headline={entry.title}
+        description={entry.excerpt || entry.intro || "Journal entry by BTTB MOVEMENT"}
+        url={`https://bttbmovement.com/journal/${entry.slug}`}
+        image={entry.coverImageUrl}
+        datePublished={entry.publishedAt}
+      />
       <section className="border-b border-white/10 px-5 pb-8 pt-6 sm:px-8">
         <div className="mx-auto max-w-6xl">
           <div className="flex items-center justify-between gap-4 text-[11px] uppercase tracking-[0.28em] text-zinc-400">

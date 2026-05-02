@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import BreadcrumbJsonLd from "../../../components/seo/BreadcrumbJsonLd";
 import { sanityFetch } from "../../../sanity/lib/client";
 import {
   PROJECT_BY_SLUG_QUERY,
@@ -165,6 +166,16 @@ export default async function ProjectPage({ params }: PageProps) {
 
   return (
     <main className="min-h-screen bg-black text-white">
+            <BreadcrumbJsonLd
+        items={[
+          { name: "Home", url: "https://bttbmovement.com/" },
+          { name: "Works", url: "https://bttbmovement.com/works" },
+          {
+            name: project.title,
+            url: `https://bttbmovement.com/projects/${project.slug}`,
+          },
+        ]}
+      />
       <section className="border-b border-white/10 px-5 pb-8 pt-6 sm:px-8">
         <div className="mx-auto max-w-6xl">
           <div className="flex items-center justify-between gap-4 text-[11px] uppercase tracking-[0.28em] text-zinc-400">

@@ -24,8 +24,6 @@ type JournalCosmosCopy = {
   orbitDescription?: string;
   spreadLabel?: string;
   mixLabel?: string;
-  selectedEntryLabel?: string;
-  selectedEntryFallback?: string;
   previousLabel?: string;
   nextLabel?: string;
   enterEntryLabel?: string;
@@ -180,7 +178,6 @@ export default function JournalCosmos({ entries, copy }: JournalCosmosProps) {
   }, []);
 
   const total = entries.length;
-  const activeEntry = entries[activeIndex]!;
 
   const visibleEntries = useMemo(() => {
     if (showAtlas) return entries;
@@ -474,68 +471,42 @@ export default function JournalCosmos({ entries, copy }: JournalCosmosProps) {
           })}
         </div>
 
-        <div className="mt-6 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-          <div className="space-y-4">
+        <div className="mt-6">
+          <div className="mx-auto max-w-xl rounded-[2rem] border border-white/10 bg-black/30 p-5">
             <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-              {copy?.selectedEntryLabel || "Selected Entry"}
+              Navigation
             </p>
 
-            <div className="space-y-3">
-              <h3 className="max-w-[12ch] text-4xl font-semibold leading-[0.95] text-zinc-100 sm:text-5xl">
-                {activeEntry.title}
-              </h3>
-
-              <p className="max-w-2xl text-sm leading-8 text-zinc-300 sm:text-base">
-                {activeEntry.excerpt || copy?.selectedEntryFallback || "Open the selected entry to continue reading."}
-              </p>
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <button
+                type="button"
+                onClick={goToPrevious}
+                className="rounded-full border border-white/10 px-4 py-3 transition hover:border-white/30 hover:text-white"
+              >
+                {copy?.previousLabel || "Previous"}
+              </button>
 
               <button
                 type="button"
-                onClick={() => router.push(`/journal/${activeEntry.slug}`)}
-                className="inline-flex rounded-full border border-white/10 px-4 py-3 text-sm text-zinc-200 transition hover:border-white/30 hover:text-white"
+                onClick={() => setShowAtlas((prev) => !prev)}
+                className="rounded-full border border-white/10 px-4 py-3 transition hover:border-white/30 hover:text-white"
               >
-                {copy?.enterEntryLabel || "Open Entry"}
+                {showAtlas
+                  ? copy?.mixLabel || "Mix Again"
+                  : copy?.spreadLabel || "Spread Entries"}
+              </button>
+
+              <button
+                type="button"
+                onClick={goToNext}
+                className="rounded-full border border-white/10 px-4 py-3 transition hover:border-white/30 hover:text-white"
+              >
+                {copy?.nextLabel || "Next"}
               </button>
             </div>
-          </div>
 
-          <div className="space-y-5">
-            <div className="rounded-[2rem] border border-white/10 bg-black/30 p-5">
-              <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
-                Navigation
-              </p>
-
-              <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <button
-                  type="button"
-                  onClick={goToPrevious}
-                  className="rounded-full border border-white/10 px-4 py-3 transition hover:border-white/30 hover:text-white"
-                >
-                  {copy?.previousLabel || "Previous"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setShowAtlas((prev) => !prev)}
-                  className="rounded-full border border-white/10 px-4 py-3 transition hover:border-white/30 hover:text-white"
-                >
-                  {showAtlas
-                    ? copy?.mixLabel || "Mix Again"
-                    : copy?.spreadLabel || "Spread Entries"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={goToNext}
-                  className="rounded-full border border-white/10 px-4 py-3 transition hover:border-white/30 hover:text-white"
-                >
-                  {copy?.nextLabel || "Next"}
-                </button>
-              </div>
-
-              <div className="mt-4 text-center text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                {formatCounter(activeIndex, total)}
-              </div>
+            <div className="mt-4 text-center text-[11px] uppercase tracking-[0.28em] text-zinc-500">
+              {formatCounter(activeIndex, total)}
             </div>
           </div>
         </div>

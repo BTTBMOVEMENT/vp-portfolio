@@ -372,8 +372,14 @@ export default function HomePageClient({ siteSettings }: HomePageClientProps) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ amount: 0.4 }}
               transition={{ duration: 0.75, ease: "easeOut" }}
-            >
-              {profile.name} / gateway-based home
+>
+              <div className="flex flex-col gap-3 border-t border-white/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
+                <p>© 2026 BTTB MOVEMENT. ALL RIGHTS RESERVED.</p>
+
+                <p className="text-zinc-700">
+                  BACK TO THE BIBLE MOVEMENT
+                </p>
+              </div>
             </motion.footer>
           </div>
         </section>

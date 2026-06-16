@@ -45,10 +45,16 @@ function wrapIndex(index: number, total: number) {
   return (index + total) % total;
 }
 
+function clampNumber(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
 function getWrappedOffset(index: number, activeIndex: number, total: number) {
   let offset = index - activeIndex;
+
   if (offset > total / 2) offset -= total;
   if (offset < -total / 2) offset += total;
+
   return offset;
 }
 
@@ -98,11 +104,11 @@ function getThumbSize(
   atlas: boolean
 ) {
   const maxWidth = atlas
-    ? viewport.width * (isMobile ? 0.28 : 0.14)
+    ? viewport.width * (isMobile ? 0.34 : 0.16)
     : viewport.width * (isMobile ? 0.28 : 0.2);
 
   const maxHeight = atlas
-    ? viewport.height * (isMobile ? 0.18 : 0.16)
+    ? viewport.height * (isMobile ? 0.2 : 0.18)
     : viewport.height * (isMobile ? 0.18 : 0.22);
 
   if (!intrinsic || intrinsic.width === 0 || intrinsic.height === 0) {
@@ -190,17 +196,97 @@ function getOrbitState(offset: number, total: number, isMobile: boolean) {
 }
 
 function getAtlasState(index: number, total: number, isMobile: boolean) {
-  const columns = isMobile ? Math.min(2, total) : total <= 4 ? total : 4;
+  if (total <= 1) {
+    return {
+      left: "50%",
+      top: "50%",
+      opacity: 1,
+      rotateY: 0,
+      rotateX: 0,
+      rotateZ: 0,
+      zIndex: 40,
+    };
+  }
+
+  if (isMobile) {
+    const columns = Math.min(2, total);
+    const rows = Math.ceil(total / columns);
+
+    const columnIndex = index % columns;
+    const rowIndex = Math.floor(index / columns);
+
+    const left = columns === 1 ? 50 : columnIndex === 0 ? 32 : 68;
+    const top =
+      rows === 1 ? 50 : 24 + (rowIndex * 52) / Math.max(1, rows - 1);
+
+    return {
+      left: `${left}%`,
+      top: `${top}%`,
+      opacity: 1,
+      rotateY: 0,
+      rotateX: 0,
+      rotateZ: 0,
+      zIndex: 40 - rowIndex,
+    };
+  }
+
+  if (total === 2) {
+    return {
+      left: index === 0 ? "38%" : "62%",
+      top: "50%",
+      opacity: 1,
+      rotateY: 0,
+      rotateX: 0,
+      rotateZ: 0,
+      zIndex: 40,
+    };
+  }
+
+  if (total === 3) {
+    const positions = [
+      { left: "30%", top: "52%" },
+      { left: "50%", top: "44%" },
+      { left: "70%", top: "52%" },
+    ];
+
+    return {
+      left: positions[index]?.left ?? "50%",
+      top: positions[index]?.top ?? "50%",
+      opacity: 1,
+      rotateY: 0,
+      rotateX: 0,
+      rotateZ: 0,
+      zIndex: 40,
+    };
+  }
+
+  if (total === 4) {
+    const positions = [
+      { left: "36%", top: "38%" },
+      { left: "64%", top: "38%" },
+      { left: "36%", top: "64%" },
+      { left: "64%", top: "64%" },
+    ];
+
+    return {
+      left: positions[index]?.left ?? "50%",
+      top: positions[index]?.top ?? "50%",
+      opacity: 1,
+      rotateY: 0,
+      rotateX: 0,
+      rotateZ: 0,
+      zIndex: 40,
+    };
+  }
+
+  const columns = total <= 6 ? 3 : 4;
   const rows = Math.ceil(total / columns);
 
   const columnIndex = index % columns;
   const rowIndex = Math.floor(index / columns);
 
-  const left =
-    columns === 1 ? 50 : 18 + (columnIndex * 64) / (columns - 1);
-
-  const top =
-    rows === 1 ? 50 : 30 + (rowIndex * 40) / Math.max(1, rows - 1);
+  const left = 22 + (columnIndex * 56) / Math.max(1, columns - 1);
+  const top = rows === 1 ? 50 : 24 + (rowIndex * 52) / Math.max(1, rows - 1);
 
   return {
     left: `${left}%`,
@@ -209,12 +295,16 @@ function getAtlasState(index: number, total: number, isMobile: boolean) {
     rotateY: 0,
     rotateX: 0,
     rotateZ: 0,
-    zIndex: 30 + rowIndex,
+    zIndex: 40 - rowIndex,
   };
 }
 
 function formatCounter(index: number, total: number) {
   return `${String(index + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`;
+}
+
+function formatPageCounter(page: number, pageCount: number) {
+  return `PAGE ${String(page + 1).padStart(2, "0")} / ${String(pageCount).padStart(2, "0")}`;
 }
 
 function formatYear(value?: string) {
@@ -230,12 +320,58 @@ function defaultTitle(index: number) {
   return `Album Frame ${String(index + 1).padStart(3, "0")}`;
 }
 
+function getPageButtons(currentPage: number, pageCount: number) {
+  if (pageCount <= 7) {
+    return Array.from({ length: pageCount }, (_, index) => index);
+  }
+
+  const pages = new Set<number>();
+
+  pages.add(0);
+  pages.add(pageCount - 1);
+  pages.add(currentPage);
+  pages.add(currentPage - 1);
+  pages.add(currentPage + 1);
+
+  if (currentPage <= 2) {
+    pages.add(1);
+    pages.add(2);
+    pages.add(3);
+  }
+
+  if (currentPage >= pageCount - 3) {
+    pages.add(pageCount - 2);
+    pages.add(pageCount - 3);
+    pages.add(pageCount - 4);
+  }
+
+  const sorted = [...pages]
+    .filter((page) => page >= 0 && page < pageCount)
+    .sort((a, b) => a - b);
+
+  const result: Array<number | "ellipsis"> = [];
+
+  sorted.forEach((page, index) => {
+    const previous = sorted[index - 1];
+
+    if (previous !== undefined && page - previous > 1) {
+      result.push("ellipsis");
+    }
+
+    result.push(page);
+  });
+
+  return result;
+}
+
 export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [showAtlas, setShowAtlas] = useState(false);
+  const [atlasPage, setAtlasPage] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [viewport, setViewport] = useState<Size>({ width: 1440, height: 900 });
   const [sizes, setSizes] = useState<Record<string, Size>>({});
+
   const wheelLockRef = useRef(false);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
@@ -263,17 +399,41 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
     return () => window.removeEventListener("resize", updateViewport);
   }, []);
 
-  const total = entries.length;
-  const activeEntry = entries[activeIndex]!;
+  const orderedEntries = useMemo(() => {
+    return [...entries];
+  }, [entries]);
+
+  const total = orderedEntries.length;
+  const pageSize = isMobile ? 6 : 12;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const safeAtlasPage = clampNumber(atlasPage, 0, pageCount - 1);
+  const pageStart = safeAtlasPage * pageSize;
+  const pageEnd = pageStart + pageSize;
+
+  useEffect(() => {
+    if (atlasPage !== safeAtlasPage) {
+      setAtlasPage(safeAtlasPage);
+    }
+  }, [atlasPage, safeAtlasPage]);
 
   const visibleEntries = useMemo(() => {
-    if (showAtlas) return entries;
+    if (showAtlas) {
+      return orderedEntries.slice(pageStart, pageEnd);
+    }
 
-    return entries.filter((_, index) => {
+    return orderedEntries.filter((_, index) => {
       const offset = Math.abs(getWrappedOffset(index, activeIndex, total));
       return isMobile ? offset <= 1 : offset <= 2;
     });
-  }, [entries, showAtlas, activeIndex, total, isMobile]);
+  }, [
+    orderedEntries,
+    showAtlas,
+    pageStart,
+    pageEnd,
+    activeIndex,
+    total,
+    isMobile,
+  ]);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -284,7 +444,9 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
       if (wheelLockRef.current) return;
 
       const dominantDelta =
-        Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
+        Math.abs(event.deltaY) >= Math.abs(event.deltaX)
+          ? event.deltaY
+          : event.deltaX;
 
       if (Math.abs(dominantDelta) < 18) return;
 
@@ -316,11 +478,14 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
           <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
             {copy?.emptyStateLabel || "My Album"}
           </p>
+
           <h3 className="text-3xl font-semibold leading-tight text-zinc-100">
             {copy?.emptyStateTitle || "No album items published yet."}
           </h3>
+
           <p className="max-w-2xl text-sm leading-8 text-zinc-300 sm:text-base">
-            {copy?.emptyStateDescription || "Add album items in Studio and they will appear here automatically."}
+            {copy?.emptyStateDescription ||
+              "Add album items in Studio and they will appear here automatically."}
           </p>
         </div>
       </section>
@@ -331,12 +496,39 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
     setActiveIndex(wrapIndex(index, total));
   }
 
+  function goToPage(page: number) {
+    const nextPage = clampNumber(page, 0, pageCount - 1);
+    setAtlasPage(nextPage);
+    setActiveIndex(Math.min(nextPage * pageSize, total - 1));
+  }
+
   function goToPrevious() {
+    if (showAtlas) {
+      goToPage(wrapIndex(safeAtlasPage - 1, pageCount));
+      return;
+    }
+
     setActiveIndex((prev) => wrapIndex(prev - 1, total));
   }
 
   function goToNext() {
+    if (showAtlas) {
+      goToPage(wrapIndex(safeAtlasPage + 1, pageCount));
+      return;
+    }
+
     setActiveIndex((prev) => wrapIndex(prev + 1, total));
+  }
+
+  function toggleAtlas() {
+    if (!showAtlas) {
+      const currentPage = Math.floor(activeIndex / pageSize);
+      setAtlasPage(clampNumber(currentPage, 0, pageCount - 1));
+      setShowAtlas(true);
+      return;
+    }
+
+    setShowAtlas(false);
   }
 
   function handleTouchStart(event: React.TouchEvent<HTMLDivElement>) {
@@ -369,17 +561,10 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
     touchStartRef.current = null;
   }
 
-  function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-    if (event.key === "ArrowLeft") {
-      event.preventDefault();
-      goToPrevious();
-    }
+  const activeEntry = orderedEntries[activeIndex]!;
+  const activeEntryGlobalIndex = activeIndex;
 
-    if (event.key === "ArrowRight") {
-      event.preventDefault();
-      goToNext();
-    }
-  }
+  const pageButtons = getPageButtons(safeAtlasPage, pageCount);
 
   return (
     <section className="space-y-8">
@@ -394,14 +579,15 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
           </h2>
 
           <p className="max-w-2xl text-sm leading-8 text-zinc-300 sm:text-base">
-            {copy?.description || "Scroll or swipe to pull a photograph into focus."}
+            {copy?.description ||
+              "Scroll or swipe to pull a photograph into focus."}
           </p>
         </div>
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <button
             type="button"
-            onClick={() => setShowAtlas((prev) => !prev)}
+            onClick={toggleAtlas}
             className="rounded-full border border-white/10 px-4 py-3 text-sm text-zinc-200 transition hover:border-white/30 hover:text-white"
           >
             {showAtlas
@@ -410,7 +596,9 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
           </button>
 
           <div className="rounded-full border border-white/10 px-4 py-3 text-sm text-zinc-200">
-            {formatCounter(activeIndex, total)}
+            {showAtlas
+              ? formatPageCounter(safeAtlasPage, pageCount)
+              : formatCounter(activeIndex, total)}
           </div>
         </div>
       </div>
@@ -421,11 +609,12 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
             <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
               {copy?.orbitalLabel || "Orbital Album"}
             </p>
+
             <p className="text-sm leading-7 text-zinc-300">
-              {copy?.orbitalDescription ||
-                (showAtlas
-                  ? "All frames are aligned. Choose one to return it to the center."
-                  : "One frame dominates the view while the rest stay in orbit.")}
+              {showAtlas
+                ? "Frames are organized by page. Choose a page number below."
+                : copy?.orbitalDescription ||
+                  "One frame dominates the view while the rest stay in orbit."}
             </p>
           </div>
 
@@ -435,7 +624,7 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
               whileTap={{ scale: 0.95 }}
               onClick={goToPrevious}
               className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 text-zinc-200 transition hover:border-white/30 hover:text-white"
-              aria-label="Previous image"
+              aria-label={showAtlas ? "Previous page" : "Previous image"}
             >
               ←
             </motion.button>
@@ -445,7 +634,7 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
               whileTap={{ scale: 0.95 }}
               onClick={goToNext}
               className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 text-zinc-200 transition hover:border-white/30 hover:text-white"
-              aria-label="Next image"
+              aria-label={showAtlas ? "Next page" : "Next image"}
             >
               →
             </motion.button>
@@ -457,7 +646,6 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
           tabIndex={0}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
-          onKeyDown={handleKeyDown}
           className="relative h-[40rem] overflow-hidden outline-none sm:h-[48rem] lg:h-[58rem]"
           style={{
             perspective: isMobile ? "1100px" : "1800px",
@@ -467,13 +655,17 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-[76%] w-[132%] -translate-x-1/2 -translate-y-1/2 rounded-[100%] border border-white/[0.06]" />
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-[54%] w-[116%] -translate-x-1/2 -translate-y-1/2 rounded-[100%] border border-white/[0.04]" />
 
-          {visibleEntries.map((entry) => {
-            const index = entries.findIndex((item) => item.id === entry.id);
+          {visibleEntries.map((entry, localIndex) => {
+            const globalIndex = showAtlas
+              ? pageStart + localIndex
+              : orderedEntries.findIndex((item) => item.id === entry.id);
+
             const intrinsic = sizes[entry.id];
+
             const displaySize = getDisplaySize(intrinsic, viewport, isMobile);
             const thumbSize = getThumbSize(intrinsic, viewport, isMobile, showAtlas);
 
-            const isActive = index === activeIndex;
+            const isActive = globalIndex === activeEntryGlobalIndex;
 
             const frameMetrics = showAtlas
               ? thumbSize
@@ -482,21 +674,29 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
               : thumbSize;
 
             const state = showAtlas
-              ? getAtlasState(index, total, isMobile)
-              : getOrbitState(getWrappedOffset(index, activeIndex, total), total, isMobile);
+              ? getAtlasState(localIndex, visibleEntries.length, isMobile)
+              : getOrbitState(
+                  getWrappedOffset(globalIndex, activeEntryGlobalIndex, total),
+                  total,
+                  isMobile
+                );
 
             return (
               <motion.button
                 key={entry.id}
                 type="button"
                 onClick={() => {
-                  setActiveIndex(index);
+                  goToIndex(globalIndex);
                   setShowAtlas(false);
                 }}
+                aria-label={`Select image ${entry.title ?? defaultTitle(globalIndex)}`}
                 className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer"
                 style={{
                   zIndex: state.zIndex,
                   willChange: "transform, opacity, width, height",
+                  WebkitTapHighlightColor: "transparent",
+                  backfaceVisibility: "hidden",
+                  WebkitBackfaceVisibility: "hidden",
                 }}
                 animate={{
                   left: state.left,
@@ -513,13 +713,50 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
                   ease: [0.22, 1, 0.36, 1],
                 }}
               >
-                <div className="relative h-full w-full">
-                  <div className="relative flex h-full w-full flex-col overflow-hidden rounded-[1.6rem] bg-[#f6f1e8] p-3 shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
+                <div
+                  className="relative h-full w-full"
+                  style={{
+                    transformStyle: isMobile ? "flat" : "preserve-3d",
+                    willChange: "transform",
+                  }}
+                >
+                  {!isMobile && (
+                    <div
+                      className="absolute inset-0 rounded-[1.6rem] bg-gradient-to-b from-zinc-100 to-zinc-200 shadow-[0_30px_80px_rgba(0,0,0,0.45)]"
+                      style={{
+                        transform: "rotateY(180deg)",
+                        backfaceVisibility: "hidden",
+                        WebkitBackfaceVisibility: "hidden",
+                      }}
+                    >
+                      <div className="flex h-full flex-col justify-between rounded-[1.6rem] p-5 text-left">
+                        <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
+                          My Album
+                        </p>
+
+                        <div className="space-y-2">
+                          <div className="h-px w-full bg-zinc-300" />
+                          <p className="text-[11px] uppercase tracking-[0.24em] text-zinc-500">
+                            Reverse side / matte card
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div
+                    className="relative flex h-full w-full flex-col overflow-hidden rounded-[1.6rem] bg-[#f6f1e8] p-3 shadow-[0_30px_80px_rgba(0,0,0,0.45)]"
+                    style={{
+                      backfaceVisibility: "hidden",
+                      WebkitBackfaceVisibility: "hidden",
+                      transform: "translateZ(0)",
+                    }}
+                  >
                     <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-[1.2rem] border border-black/5 bg-white/40">
                       {entry.imageUrl ? (
                         <img
                           src={entry.imageUrl}
-                          alt={entry.title || defaultTitle(index)}
+                          alt={entry.title || defaultTitle(globalIndex)}
                           loading={isActive ? "eager" : "lazy"}
                           onLoad={(event) => {
                             const img = event.currentTarget;
@@ -554,11 +791,15 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
 
                     <div className="mt-3 flex items-center justify-between gap-4 px-1 text-[11px] uppercase tracking-[0.24em] text-zinc-600">
                       <span>{formatYear(entry.capturedAt)}</span>
-                      <span>{String(index + 1).padStart(3, "0")}</span>
+                      <span>{String(globalIndex + 1).padStart(3, "0")}</span>
                     </div>
 
                     <div className="mt-2 h-px w-full bg-black/10" />
                   </div>
+
+                  {!showAtlas && isActive && (
+                    <div className="pointer-events-none absolute -bottom-4 left-1/2 h-10 w-[72%] -translate-x-1/2 rounded-full bg-black/40 blur-2xl" />
+                  )}
                 </div>
               </motion.button>
             );
@@ -581,7 +822,7 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
               ) : (
                 <p className="max-w-2xl text-sm leading-8 text-zinc-500 sm:text-base">
                   {copy?.selectedFrameFallback ||
-                    "Titles and notes are now coming from CMS. Add them in Studio whenever you want this frame to carry its own text."}
+                    "Titles and notes are now coming from CMS."}
                 </p>
               )}
             </div>
@@ -604,7 +845,7 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
 
                 <button
                   type="button"
-                  onClick={() => setShowAtlas((prev) => !prev)}
+                  onClick={toggleAtlas}
                   className="rounded-full border border-white/10 px-4 py-3 transition hover:border-white/30 hover:text-white"
                 >
                   {showAtlas
@@ -622,8 +863,44 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
               </div>
 
               <div className="mt-4 text-center text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-                {formatCounter(activeIndex, total)}
+                {showAtlas
+                  ? formatPageCounter(safeAtlasPage, pageCount)
+                  : formatCounter(activeIndex, total)}
               </div>
+
+              {showAtlas && pageCount > 1 && (
+                <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                  {pageButtons.map((page, index) => {
+                    if (page === "ellipsis") {
+                      return (
+                        <span
+                          key={`ellipsis-${index}`}
+                          className="px-2 text-[11px] uppercase tracking-[0.24em] text-zinc-600"
+                        >
+                          ...
+                        </span>
+                      );
+                    }
+
+                    const active = page === safeAtlasPage;
+
+                    return (
+                      <button
+                        key={page}
+                        type="button"
+                        onClick={() => goToPage(page)}
+                        className={`h-9 min-w-9 rounded-full border px-3 text-[11px] uppercase tracking-[0.18em] transition ${
+                          active
+                            ? "border-white bg-white text-black"
+                            : "border-white/10 text-zinc-300 hover:border-white/30 hover:text-white"
+                        }`}
+                      >
+                        {String(page + 1).padStart(2, "0")}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>

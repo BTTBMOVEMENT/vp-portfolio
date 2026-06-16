@@ -43,6 +43,16 @@ function wrapIndex(index: number, total: number) {
   return (index + total) % total;
 }
 
+function clampNumber(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function getDateValue(value?: string) {
+  if (!value) return 0;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? 0 : time;
+}
+
 function getWrappedOffset(index: number, activeIndex: number, total: number) {
   let offset = index - activeIndex;
 
@@ -106,17 +116,97 @@ function getOrbitState(offset: number, total: number, isMobile: boolean) {
 }
 
 function getAtlasState(index: number, total: number, isMobile: boolean) {
-  const columns = isMobile ? Math.min(2, total) : total <= 4 ? total : 4;
+  if (total <= 1) {
+    return {
+      left: "50%",
+      top: "50%",
+      opacity: 1,
+      rotateY: 0,
+      rotateX: 0,
+      rotateZ: 0,
+      zIndex: 40,
+    };
+  }
+
+  if (isMobile) {
+    const columns = Math.min(2, total);
+    const rows = Math.ceil(total / columns);
+
+    const columnIndex = index % columns;
+    const rowIndex = Math.floor(index / columns);
+
+    const left = columns === 1 ? 50 : columnIndex === 0 ? 32 : 68;
+    const top =
+      rows === 1 ? 50 : 24 + (rowIndex * 52) / Math.max(1, rows - 1);
+
+    return {
+      left: `${left}%`,
+      top: `${top}%`,
+      opacity: 1,
+      rotateY: 0,
+      rotateX: 0,
+      rotateZ: 0,
+      zIndex: 40 - rowIndex,
+    };
+  }
+
+  if (total === 2) {
+    return {
+      left: index === 0 ? "38%" : "62%",
+      top: "50%",
+      opacity: 1,
+      rotateY: 0,
+      rotateX: 0,
+      rotateZ: 0,
+      zIndex: 40,
+    };
+  }
+
+  if (total === 3) {
+    const positions = [
+      { left: "30%", top: "52%" },
+      { left: "50%", top: "44%" },
+      { left: "70%", top: "52%" },
+    ];
+
+    return {
+      left: positions[index]?.left ?? "50%",
+      top: positions[index]?.top ?? "50%",
+      opacity: 1,
+      rotateY: 0,
+      rotateX: 0,
+      rotateZ: 0,
+      zIndex: 40,
+    };
+  }
+
+  if (total === 4) {
+    const positions = [
+      { left: "36%", top: "38%" },
+      { left: "64%", top: "38%" },
+      { left: "36%", top: "64%" },
+      { left: "64%", top: "64%" },
+    ];
+
+    return {
+      left: positions[index]?.left ?? "50%",
+      top: positions[index]?.top ?? "50%",
+      opacity: 1,
+      rotateY: 0,
+      rotateX: 0,
+      rotateZ: 0,
+      zIndex: 40,
+    };
+  }
+
+  const columns = total <= 6 ? 3 : 4;
   const rows = Math.ceil(total / columns);
 
   const columnIndex = index % columns;
   const rowIndex = Math.floor(index / columns);
 
-  const left =
-    columns === 1 ? 50 : 18 + (columnIndex * 64) / (columns - 1);
-
-  const top =
-    rows === 1 ? 50 : 30 + (rowIndex * 40) / Math.max(1, rows - 1);
+  const left = 22 + (columnIndex * 56) / Math.max(1, columns - 1);
+  const top = rows === 1 ? 50 : 24 + (rowIndex * 52) / Math.max(1, rows - 1);
 
   return {
     left: `${left}%`,
@@ -125,12 +215,16 @@ function getAtlasState(index: number, total: number, isMobile: boolean) {
     rotateY: 0,
     rotateX: 0,
     rotateZ: 0,
-    zIndex: 30 + rowIndex,
+    zIndex: 40 - rowIndex,
   };
 }
 
 function formatCounter(index: number, total: number) {
   return `${String(index + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`;
+}
+
+function formatPageCounter(page: number, pageCount: number) {
+  return `PAGE ${String(page + 1).padStart(2, "0")} / ${String(pageCount).padStart(2, "0")}`;
 }
 
 function formatDate(value?: string) {
@@ -142,11 +236,56 @@ function formatDate(value?: string) {
   }
 }
 
+function getPageButtons(currentPage: number, pageCount: number) {
+  if (pageCount <= 7) {
+    return Array.from({ length: pageCount }, (_, index) => index);
+  }
+
+  const pages = new Set<number>();
+
+  pages.add(0);
+  pages.add(pageCount - 1);
+  pages.add(currentPage);
+  pages.add(currentPage - 1);
+  pages.add(currentPage + 1);
+
+  if (currentPage <= 2) {
+    pages.add(1);
+    pages.add(2);
+    pages.add(3);
+  }
+
+  if (currentPage >= pageCount - 3) {
+    pages.add(pageCount - 2);
+    pages.add(pageCount - 3);
+    pages.add(pageCount - 4);
+  }
+
+  const sorted = [...pages]
+    .filter((page) => page >= 0 && page < pageCount)
+    .sort((a, b) => a - b);
+
+  const result: Array<number | "ellipsis"> = [];
+
+  sorted.forEach((page, index) => {
+    const previous = sorted[index - 1];
+
+    if (previous !== undefined && page - previous > 1) {
+      result.push("ellipsis");
+    }
+
+    result.push(page);
+  });
+
+  return result;
+}
+
 export default function JournalCosmos({ entries, copy }: JournalCosmosProps) {
   const router = useRouter();
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [showAtlas, setShowAtlas] = useState(false);
+  const [atlasPage, setAtlasPage] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [viewport, setViewport] = useState<Viewport>({ width: 1440, height: 900 });
 
@@ -177,16 +316,43 @@ export default function JournalCosmos({ entries, copy }: JournalCosmosProps) {
     return () => window.removeEventListener("resize", updateViewport);
   }, []);
 
-  const total = entries.length;
+  const orderedEntries = useMemo(() => {
+    return [...entries].sort(
+      (a, b) => getDateValue(b.publishedAt) - getDateValue(a.publishedAt)
+    );
+  }, [entries]);
+
+  const total = orderedEntries.length;
+  const pageSize = isMobile ? 6 : 12;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const safeAtlasPage = clampNumber(atlasPage, 0, pageCount - 1);
+  const pageStart = safeAtlasPage * pageSize;
+  const pageEnd = pageStart + pageSize;
+
+  useEffect(() => {
+    if (atlasPage !== safeAtlasPage) {
+      setAtlasPage(safeAtlasPage);
+    }
+  }, [atlasPage, safeAtlasPage]);
 
   const visibleEntries = useMemo(() => {
-    if (showAtlas) return entries;
+    if (showAtlas) {
+      return orderedEntries.slice(pageStart, pageEnd);
+    }
 
-    return entries.filter((_, index) => {
+    return orderedEntries.filter((_, index) => {
       const offset = Math.abs(getWrappedOffset(index, activeIndex, total));
       return isMobile ? offset <= 1 : offset <= 2;
     });
-  }, [entries, showAtlas, activeIndex, total, isMobile]);
+  }, [
+    orderedEntries,
+    showAtlas,
+    pageStart,
+    pageEnd,
+    activeIndex,
+    total,
+    isMobile,
+  ]);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -242,11 +408,38 @@ export default function JournalCosmos({ entries, copy }: JournalCosmosProps) {
   }
 
   function goToPrevious() {
+    if (showAtlas) {
+      goToPage(wrapIndex(safeAtlasPage - 1, pageCount));
+      return;
+    }
+
     setActiveIndex((prev) => wrapIndex(prev - 1, total));
   }
 
   function goToNext() {
+    if (showAtlas) {
+      goToPage(wrapIndex(safeAtlasPage + 1, pageCount));
+      return;
+    }
+
     setActiveIndex((prev) => wrapIndex(prev + 1, total));
+  }
+
+  function goToPage(page: number) {
+    const nextPage = clampNumber(page, 0, pageCount - 1);
+    setAtlasPage(nextPage);
+    setActiveIndex(Math.min(nextPage * pageSize, total - 1));
+  }
+
+  function toggleAtlas() {
+    if (!showAtlas) {
+      const currentPage = Math.floor(activeIndex / pageSize);
+      setAtlasPage(clampNumber(currentPage, 0, pageCount - 1));
+      setShowAtlas(true);
+      return;
+    }
+
+    setShowAtlas(false);
   }
 
   function handleTouchStart(event: React.TouchEvent<HTMLDivElement>) {
@@ -285,8 +478,10 @@ export default function JournalCosmos({ entries, copy }: JournalCosmosProps) {
   const thumbWidth = isMobile ? viewport.width * 0.36 : 240;
   const thumbHeight = isMobile ? viewport.width * 0.5 : 320;
 
-  const atlasWidth = isMobile ? viewport.width * 0.38 : 260;
-  const atlasHeight = isMobile ? viewport.width * 0.52 : 340;
+  const atlasWidth = isMobile ? viewport.width * 0.38 : Math.min(220, viewport.width * 0.16);
+  const atlasHeight = isMobile ? viewport.width * 0.52 : 280;
+
+  const pageButtons = getPageButtons(safeAtlasPage, pageCount);
 
   return (
     <section className="space-y-8">
@@ -308,7 +503,7 @@ export default function JournalCosmos({ entries, copy }: JournalCosmosProps) {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <button
             type="button"
-            onClick={() => setShowAtlas((prev) => !prev)}
+            onClick={toggleAtlas}
             className="rounded-full border border-white/10 px-4 py-3 text-sm text-zinc-200 transition hover:border-white/30 hover:text-white"
           >
             {showAtlas
@@ -317,7 +512,9 @@ export default function JournalCosmos({ entries, copy }: JournalCosmosProps) {
           </button>
 
           <div className="rounded-full border border-white/10 px-4 py-3 text-sm text-zinc-200">
-            {formatCounter(activeIndex, total)}
+            {showAtlas
+              ? formatPageCounter(safeAtlasPage, pageCount)
+              : formatCounter(activeIndex, total)}
           </div>
         </div>
       </div>
@@ -331,8 +528,8 @@ export default function JournalCosmos({ entries, copy }: JournalCosmosProps) {
             <p className="text-sm leading-7 text-zinc-300">
               {copy?.orbitDescription ||
                 (showAtlas
-                  ? "All entries are aligned. Click one to open it."
-                  : "One entry stays dominant while the rest move in orbit.")}
+                  ? "Entries are organized by page. Choose a page number below."
+                  : "The newest entry appears first while the rest move in orbit.")}
             </p>
           </div>
 
@@ -342,7 +539,7 @@ export default function JournalCosmos({ entries, copy }: JournalCosmosProps) {
               whileTap={{ scale: 0.95 }}
               onClick={goToPrevious}
               className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 text-zinc-200 transition hover:border-white/30 hover:text-white"
-              aria-label="Previous entry"
+              aria-label={showAtlas ? "Previous page" : "Previous entry"}
             >
               ←
             </motion.button>
@@ -352,7 +549,7 @@ export default function JournalCosmos({ entries, copy }: JournalCosmosProps) {
               whileTap={{ scale: 0.95 }}
               onClick={goToNext}
               className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 text-zinc-200 transition hover:border-white/30 hover:text-white"
-              aria-label="Next entry"
+              aria-label={showAtlas ? "Next page" : "Next entry"}
             >
               →
             </motion.button>
@@ -372,16 +569,23 @@ export default function JournalCosmos({ entries, copy }: JournalCosmosProps) {
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-[76%] w-[132%] -translate-x-1/2 -translate-y-1/2 rounded-[100%] border border-white/[0.06]" />
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-[54%] w-[116%] -translate-x-1/2 -translate-y-1/2 rounded-[100%] border border-white/[0.04]" />
 
-          {visibleEntries.map((entry) => {
-            const index = entries.findIndex((item) => item._id === entry._id);
-            const isActive = index === activeIndex;
+          {visibleEntries.map((entry, localIndex) => {
+            const globalIndex = showAtlas
+              ? pageStart + localIndex
+              : orderedEntries.findIndex((item) => item._id === entry._id);
+
+            const isActive = globalIndex === activeIndex;
 
             const frameWidth = showAtlas ? atlasWidth : isActive ? activeWidth : thumbWidth;
             const frameHeight = showAtlas ? atlasHeight : isActive ? activeHeight : thumbHeight;
 
             const state = showAtlas
-              ? getAtlasState(index, total, isMobile)
-              : getOrbitState(getWrappedOffset(index, activeIndex, total), total, isMobile);
+              ? getAtlasState(localIndex, visibleEntries.length, isMobile)
+              : getOrbitState(
+                  getWrappedOffset(globalIndex, activeIndex, total),
+                  total,
+                  isMobile
+                );
 
             return (
               <motion.button
@@ -435,11 +639,11 @@ export default function JournalCosmos({ entries, copy }: JournalCosmosProps) {
 
                   <div className="absolute bottom-5 left-5 right-5 text-left">
                     <div className="space-y-3">
-                      <h3 className={`font-semibold leading-tight text-zinc-100 ${isActive ? "text-3xl sm:text-4xl" : "text-xl"}`}>
+                      <h3 className={`font-semibold leading-tight text-zinc-100 ${isActive || showAtlas ? "text-2xl sm:text-3xl" : "text-xl"}`}>
                         {entry.title}
                       </h3>
 
-                      {isActive && (
+                      {isActive && !showAtlas && (
                         <>
                           <p className="max-w-xl text-sm leading-7 text-zinc-300">
                             {entry.excerpt}
@@ -472,7 +676,7 @@ export default function JournalCosmos({ entries, copy }: JournalCosmosProps) {
         </div>
 
         <div className="mt-6">
-          <div className="mx-auto max-w-xl rounded-[2rem] border border-white/10 bg-black/30 p-5">
+          <div className="mx-auto max-w-2xl rounded-[2rem] border border-white/10 bg-black/30 p-5">
             <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">
               Navigation
             </p>
@@ -488,7 +692,7 @@ export default function JournalCosmos({ entries, copy }: JournalCosmosProps) {
 
               <button
                 type="button"
-                onClick={() => setShowAtlas((prev) => !prev)}
+                onClick={toggleAtlas}
                 className="rounded-full border border-white/10 px-4 py-3 transition hover:border-white/30 hover:text-white"
               >
                 {showAtlas
@@ -506,8 +710,44 @@ export default function JournalCosmos({ entries, copy }: JournalCosmosProps) {
             </div>
 
             <div className="mt-4 text-center text-[11px] uppercase tracking-[0.28em] text-zinc-500">
-              {formatCounter(activeIndex, total)}
+              {showAtlas
+                ? formatPageCounter(safeAtlasPage, pageCount)
+                : formatCounter(activeIndex, total)}
             </div>
+
+            {showAtlas && pageCount > 1 && (
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                {pageButtons.map((page, index) => {
+                  if (page === "ellipsis") {
+                    return (
+                      <span
+                        key={`ellipsis-${index}`}
+                        className="px-2 text-[11px] uppercase tracking-[0.24em] text-zinc-600"
+                      >
+                        ...
+                      </span>
+                    );
+                  }
+
+                  const active = page === safeAtlasPage;
+
+                  return (
+                    <button
+                      key={page}
+                      type="button"
+                      onClick={() => goToPage(page)}
+                      className={`h-9 min-w-9 rounded-full border px-3 text-[11px] uppercase tracking-[0.18em] transition ${
+                        active
+                          ? "border-white bg-white text-black"
+                          : "border-white/10 text-zinc-300 hover:border-white/30 hover:text-white"
+                      }`}
+                    >
+                      {String(page + 1).padStart(2, "0")}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>

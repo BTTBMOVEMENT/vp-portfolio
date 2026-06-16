@@ -1,9 +1,9 @@
+import type { Metadata } from "next";
 import JournalCosmos from "../../components/journal/JournalCosmos";
 import { sanityFetch } from "../../sanity/lib/client";
 import { JOURNAL_ENTRIES_QUERY, SITE_SETTINGS_QUERY } from "../../sanity/lib/queries";
 import { estimateReadTime } from "../../sanity/lib/text";
 import type { JournalListItem, SiteSettings } from "../../sanity/lib/types";
-import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Journal",
@@ -30,6 +30,12 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+function getDateValue(value?: string) {
+  if (!value) return 0;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? 0 : time;
+}
+
 export default async function JournalPage() {
   const [rawEntries, siteSettings] = await Promise.all([
     sanityFetch<JournalListItem[]>({
@@ -42,10 +48,12 @@ export default async function JournalPage() {
     }),
   ]);
 
-  const entries = (rawEntries || []).map((entry) => ({
-    ...entry,
-    readTime: estimateReadTime(entry.body),
-  }));
+  const entries = (rawEntries || [])
+    .map((entry) => ({
+      ...entry,
+      readTime: estimateReadTime(entry.body),
+    }))
+    .sort((a, b) => getDateValue(b.publishedAt) - getDateValue(a.publishedAt));
 
   const copy = {
     pageLabel: siteSettings?.journalPage?.pageLabel || "Journal",
@@ -58,23 +66,13 @@ export default async function JournalPage() {
     orbitLabel: siteSettings?.journalPage?.orbitLabel || "Journal Orbit",
     orbitDescription:
       siteSettings?.journalPage?.orbitDescription ||
-      "One entry stays dominant while the rest move in orbit.",
-
-    // 핵심 수정:
-    // 기존 Studio의 allEntriesLabel을 실제 펼쳐보기 버튼으로 연결
+      "The newest entry appears first while the rest move in orbit.",
     spreadLabel:
       siteSettings?.journalPage?.allEntriesLabel ||
       siteSettings?.journalPage?.spreadLabel ||
       "Spread Entries",
-
     mixLabel:
       siteSettings?.journalPage?.mixLabel || "Mix Again",
-
-    selectedEntryLabel:
-      siteSettings?.journalPage?.selectedEntryLabel || "Selected Entry",
-    selectedEntryFallback:
-      siteSettings?.journalPage?.selectedEntryFallback ||
-      "Open the selected entry to continue reading.",
     previousLabel:
       siteSettings?.journalPage?.previousLabel || "Previous",
     nextLabel:

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { TouchEvent } from "react";
 import { motion } from "motion/react";
 import PortableTextContent from "../cms/PortableTextContent";
 
@@ -41,6 +42,21 @@ type Size = {
   height: number;
 };
 
+type MotionState = {
+  left: string;
+  top: string;
+  opacity: number;
+  rotateY: number;
+  rotateX: number;
+  rotateZ: number;
+  zIndex: number;
+};
+
+type FrameMetrics = {
+  frameWidth: number;
+  frameHeight: number;
+};
+
 function wrapIndex(index: number, total: number) {
   return (index + total) % total;
 }
@@ -58,91 +74,69 @@ function getWrappedOffset(index: number, activeIndex: number, total: number) {
   return offset;
 }
 
-function getDisplaySize(
-  intrinsic: Size | undefined,
-  viewport: Size,
+function getImageRatio(intrinsic?: Size) {
+  if (!intrinsic || intrinsic.width <= 0 || intrinsic.height <= 0) {
+    return 0.78;
+  }
+
+  return intrinsic.width / intrinsic.height;
+}
+
+function getPhotoFrameMetrics({
+  intrinsic,
+  viewport,
+  isMobile,
+  mode,
+}: {
+  intrinsic?: Size;
+  viewport: Size;
+  isMobile: boolean;
+  mode: "active" | "thumb" | "atlas";
+}): FrameMetrics {
+  const ratio = getImageRatio(intrinsic);
+
+  const chromeX = mode === "active" ? 24 : 22;
+  const chromeY = mode === "active" ? 58 : 52;
+
+  const maxContentWidth =
+    mode === "active"
+      ? viewport.width * (isMobile ? 0.78 : 0.5)
+      : mode === "atlas"
+      ? viewport.width * (isMobile ? 0.32 : 0.14)
+      : viewport.width * (isMobile ? 0.26 : 0.16);
+
+  const maxContentHeight =
+    mode === "active"
+      ? viewport.height * (isMobile ? 0.52 : 0.62)
+      : mode === "atlas"
+      ? viewport.height * (isMobile ? 0.2 : 0.18)
+      : viewport.height * (isMobile ? 0.18 : 0.2);
+
+  const minContentWidth = mode === "active" ? (isMobile ? 190 : 260) : 110;
+  const minContentHeight = mode === "active" ? (isMobile ? 220 : 220) : 130;
+
+  let contentWidth = maxContentWidth;
+  let contentHeight = contentWidth / ratio;
+
+  if (contentHeight > maxContentHeight) {
+    contentHeight = maxContentHeight;
+    contentWidth = contentHeight * ratio;
+  }
+
+  contentWidth = clampNumber(contentWidth, minContentWidth, maxContentWidth);
+  contentHeight = clampNumber(contentHeight, minContentHeight, maxContentHeight);
+
+  return {
+    frameWidth: contentWidth + chromeX,
+    frameHeight: contentHeight + chromeY,
+  };
+}
+
+function getOrbitState(
+  offset: number,
+  total: number,
   isMobile: boolean
-) {
-  const maxWidth = viewport.width * (isMobile ? 0.82 : 0.7);
-  const maxHeight = viewport.height * (isMobile ? 0.48 : 0.66);
-
-  if (!intrinsic || intrinsic.width === 0 || intrinsic.height === 0) {
-    return {
-      imageWidth: maxWidth,
-      imageHeight: maxHeight,
-      frameWidth: maxWidth + 18,
-      frameHeight: maxHeight + 42,
-    };
-  }
-
-  const imageRatio = intrinsic.width / intrinsic.height;
-  const viewportRatio = maxWidth / maxHeight;
-
-  let imageWidth = maxWidth;
-  let imageHeight = maxHeight;
-
-  if (imageRatio > viewportRatio) {
-    imageWidth = maxWidth;
-    imageHeight = maxWidth / imageRatio;
-  } else {
-    imageHeight = maxHeight;
-    imageWidth = maxHeight * imageRatio;
-  }
-
-  return {
-    imageWidth,
-    imageHeight,
-    frameWidth: imageWidth + 18,
-    frameHeight: imageHeight + 42,
-  };
-}
-
-function getThumbSize(
-  intrinsic: Size | undefined,
-  viewport: Size,
-  isMobile: boolean,
-  atlas: boolean
-) {
-  const maxWidth = atlas
-    ? viewport.width * (isMobile ? 0.34 : 0.16)
-    : viewport.width * (isMobile ? 0.28 : 0.2);
-
-  const maxHeight = atlas
-    ? viewport.height * (isMobile ? 0.2 : 0.18)
-    : viewport.height * (isMobile ? 0.18 : 0.22);
-
-  if (!intrinsic || intrinsic.width === 0 || intrinsic.height === 0) {
-    return {
-      imageWidth: maxWidth,
-      imageHeight: maxHeight,
-      frameWidth: maxWidth + 16,
-      frameHeight: maxHeight + 34,
-    };
-  }
-
-  const imageRatio = intrinsic.width / intrinsic.height;
-  const viewportRatio = maxWidth / maxHeight;
-
-  let imageWidth = maxWidth;
-  let imageHeight = maxHeight;
-
-  if (imageRatio > viewportRatio) {
-    imageWidth = maxWidth;
-    imageHeight = maxWidth / imageRatio;
-  } else {
-    imageHeight = maxHeight;
-    imageWidth = maxHeight * imageRatio;
-  }
-
-  return {
-    imageWidth,
-    imageHeight,
-    frameWidth: imageWidth + 16,
-    frameHeight: imageHeight + 34,
-  };
-}
-
-function getOrbitState(offset: number, total: number, isMobile: boolean) {
+): MotionState {
   if (offset === 0) {
     return {
       left: "50%",
@@ -195,7 +189,11 @@ function getOrbitState(offset: number, total: number, isMobile: boolean) {
   };
 }
 
-function getAtlasState(index: number, total: number, isMobile: boolean) {
+function getAtlasState(
+  index: number,
+  total: number,
+  isMobile: boolean
+): MotionState {
   if (total <= 1) {
     return {
       left: "50%",
@@ -300,15 +298,21 @@ function getAtlasState(index: number, total: number, isMobile: boolean) {
 }
 
 function formatCounter(index: number, total: number) {
-  return `${String(index + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`;
+  return `${String(index + 1).padStart(2, "0")} / ${String(total).padStart(
+    2,
+    "0"
+  )}`;
 }
 
 function formatPageCounter(page: number, pageCount: number) {
-  return `PAGE ${String(page + 1).padStart(2, "0")} / ${String(pageCount).padStart(2, "0")}`;
+  return `PAGE ${String(page + 1).padStart(2, "0")} / ${String(
+    pageCount
+  ).padStart(2, "0")}`;
 }
 
 function formatYear(value?: string) {
   if (!value) return "";
+
   try {
     return String(new Date(value).getFullYear());
   } catch {
@@ -369,8 +373,11 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
   const [showAtlas, setShowAtlas] = useState(false);
   const [atlasPage, setAtlasPage] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
-  const [viewport, setViewport] = useState<Size>({ width: 1440, height: 900 });
-  const [sizes, setSizes] = useState<Record<string, Size>>({});
+  const [viewport, setViewport] = useState<Size>({
+    width: 1440,
+    height: 900,
+  });
+  const [imageSizes, setImageSizes] = useState<Record<string, Size>>({});
 
   const wheelLockRef = useRef(false);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -378,11 +385,18 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 767px)");
-    const update = () => setIsMobile(mediaQuery.matches);
+
+    const update = () => {
+      setIsMobile(mediaQuery.matches);
+    };
+
     update();
 
     mediaQuery.addEventListener("change", update);
-    return () => mediaQuery.removeEventListener("change", update);
+
+    return () => {
+      mediaQuery.removeEventListener("change", update);
+    };
   }, []);
 
   useEffect(() => {
@@ -394,9 +408,12 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
     };
 
     updateViewport();
+
     window.addEventListener("resize", updateViewport);
 
-    return () => window.removeEventListener("resize", updateViewport);
+    return () => {
+      window.removeEventListener("resize", updateViewport);
+    };
   }, []);
 
   const orderedEntries = useMemo(() => {
@@ -437,6 +454,7 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
 
   useEffect(() => {
     const stage = stageRef.current;
+
     if (!stage) return;
     if (isMobile || showAtlas) return;
 
@@ -459,6 +477,7 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
       }
 
       wheelLockRef.current = true;
+
       window.setTimeout(() => {
         wheelLockRef.current = false;
       }, 460);
@@ -498,6 +517,7 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
 
   function goToPage(page: number) {
     const nextPage = clampNumber(page, 0, pageCount - 1);
+
     setAtlasPage(nextPage);
     setActiveIndex(Math.min(nextPage * pageSize, total - 1));
   }
@@ -531,7 +551,7 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
     setShowAtlas(false);
   }
 
-  function handleTouchStart(event: React.TouchEvent<HTMLDivElement>) {
+  function handleTouchStart(event: TouchEvent<HTMLDivElement>) {
     if (showAtlas) return;
 
     touchStartRef.current = {
@@ -540,7 +560,7 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
     };
   }
 
-  function handleTouchEnd(event: React.TouchEvent<HTMLDivElement>) {
+  function handleTouchEnd(event: TouchEvent<HTMLDivElement>) {
     if (showAtlas) return;
     if (!touchStartRef.current) return;
 
@@ -562,8 +582,6 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
   }
 
   const activeEntry = orderedEntries[activeIndex]!;
-  const activeEntryGlobalIndex = activeIndex;
-
   const pageButtons = getPageButtons(safeAtlasPage, pageCount);
 
   return (
@@ -660,23 +678,20 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
               ? pageStart + localIndex
               : orderedEntries.findIndex((item) => item.id === entry.id);
 
-            const intrinsic = sizes[entry.id];
+            const isActive = globalIndex === activeIndex;
+            const intrinsic = imageSizes[entry.id];
 
-            const displaySize = getDisplaySize(intrinsic, viewport, isMobile);
-            const thumbSize = getThumbSize(intrinsic, viewport, isMobile, showAtlas);
-
-            const isActive = globalIndex === activeEntryGlobalIndex;
-
-            const frameMetrics = showAtlas
-              ? thumbSize
-              : isActive
-              ? displaySize
-              : thumbSize;
+            const frameMetrics = getPhotoFrameMetrics({
+              intrinsic,
+              viewport,
+              isMobile,
+              mode: showAtlas ? "atlas" : isActive ? "active" : "thumb",
+            });
 
             const state = showAtlas
               ? getAtlasState(localIndex, visibleEntries.length, isMobile)
               : getOrbitState(
-                  getWrappedOffset(globalIndex, activeEntryGlobalIndex, total),
+                  getWrappedOffset(globalIndex, activeIndex, total),
                   total,
                   isMobile
                 );
@@ -689,7 +704,9 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
                   goToIndex(globalIndex);
                   setShowAtlas(false);
                 }}
-                aria-label={`Select image ${entry.title ?? defaultTitle(globalIndex)}`}
+                aria-label={`Select image ${
+                  entry.title ?? defaultTitle(globalIndex)
+                }`}
                 className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer"
                 style={{
                   zIndex: state.zIndex,
@@ -752,7 +769,7 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
                       transform: "translateZ(0)",
                     }}
                   >
-                    <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-[1.2rem] border border-black/5 bg-white/40">
+                    <div className="relative min-h-0 flex-1 overflow-hidden rounded-[1.2rem] border border-black/5 bg-[#f6f1e8]">
                       {entry.imageUrl ? (
                         <img
                           src={entry.imageUrl}
@@ -763,9 +780,14 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
                             const width = img.naturalWidth;
                             const height = img.naturalHeight;
 
-                            setSizes((prev) => {
+                            setImageSizes((prev) => {
                               const current = prev[entry.id];
-                              if (current && current.width === width && current.height === height) {
+
+                              if (
+                                current &&
+                                current.width === width &&
+                                current.height === height
+                              ) {
                                 return prev;
                               }
 
@@ -775,7 +797,7 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
                               };
                             });
                           }}
-                          className="block max-h-full max-w-full object-contain"
+                          className="absolute inset-0 h-full w-full object-contain"
                         />
                       ) : entry.videoUrl ? (
                         <video
@@ -784,7 +806,7 @@ export default function VisionCosmos({ entries, copy }: VisionCosmosProps) {
                           loop
                           autoPlay
                           playsInline
-                          className="block max-h-full max-w-full object-contain"
+                          className="absolute inset-0 h-full w-full object-contain"
                         />
                       ) : null}
                     </div>

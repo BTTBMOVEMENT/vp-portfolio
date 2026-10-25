@@ -188,7 +188,7 @@ export default function BibleLibrary() {
                   {group.books.map((book, bookIndex) => (
                     <motion.li key={book.english} {...reveal(Math.min(bookIndex * 0.035, 0.28))} className="group">
                       <div className="flex min-h-24 min-w-[135px] flex-col justify-between border border-white/10 bg-white/[0.025] px-5 py-4 transition-colors duration-300 hover:border-[#b9a98a]/50 hover:bg-white/[0.055] sm:min-w-[160px]">
-                        <div className="space-y-2"><span lang="grc" className="block font-serif text-xl leading-snug text-zinc-200 sm:text-2xl">{book.greek}</span><span className="block text-xs tracking-[0.03em] text-zinc-400">({book.english})</span></div>
+                        <div className="space-y-2"><span lang="grc" className="block text-xl leading-[1.5] tracking-normal text-zinc-200 sm:text-2xl" style={{ fontFamily: "var(--font-greek-serif), serif", fontKerning: "normal", fontVariantLigatures: "normal" }}>{book.greek}</span><span className="block text-xs tracking-[0.03em] text-zinc-400">({book.english})</span></div>
                         <span className="mt-5 text-[9px] uppercase tracking-[0.18em] text-zinc-600">Soon</span>
                       </div>
                     </motion.li>

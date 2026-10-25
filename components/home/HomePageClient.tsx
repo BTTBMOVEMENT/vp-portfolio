@@ -53,6 +53,7 @@ type SiteSettingsData = {
     buttonLabel?: string | null;
     noteLabel?: string | null;
   } | null;
+  bibleGateway?: { sectionLabel?: string | null; title?: string | null; description?: string | null; buttonLabel?: string | null; overlayTitle?: string | null; overlaySubtitle?: string | null; ghostText?: string | null; } | null;
   contact?: {
     sectionLabel?: string | null;
     title?: string | null;
@@ -159,6 +160,16 @@ export default function HomePageClient({ siteSettings }: HomePageClientProps) {
       siteSettings?.albumGateway?.description ||
       "This route opens a more intimate image field: no grid, no archive wall, just drifting frames, optional notes, and a slower visual rhythm.",
     buttonLabel: siteSettings?.albumGateway?.buttonLabel || "My Album",
+  };
+
+  const bibleGateway = {
+    sectionLabel: siteSettings?.bibleGateway?.sectionLabel || "The Bible",
+    title: siteSettings?.bibleGateway?.title || "Return to the Word. Discover its depth.",
+    description: siteSettings?.bibleGateway?.description || "Explore the Scriptures through the original Greek text, word-by-word analysis, and the historical meaning behind every expression.",
+    buttonLabel: siteSettings?.bibleGateway?.buttonLabel || "The Bible",
+    overlayTitle: siteSettings?.bibleGateway?.overlayTitle || "The Bible",
+    overlaySubtitle: siteSettings?.bibleGateway?.overlaySubtitle || "Entering the Scripture library",
+    ghostText: siteSettings?.bibleGateway?.ghostText || "BIBLE",
   };
 
   const contact = {
@@ -287,6 +298,17 @@ export default function HomePageClient({ siteSettings }: HomePageClientProps) {
           overlayTitle="My Album"
           overlaySubtitle="Entering the orbital collection"
           ghostText="ALBUM"
+        />
+
+        <RouteGatewaySection
+          sectionLabel={bibleGateway.sectionLabel}
+          title={bibleGateway.title}
+          description={bibleGateway.description}
+          buttonLabel={bibleGateway.buttonLabel}
+          href="/bible"
+          overlayTitle={bibleGateway.overlayTitle}
+          overlaySubtitle={bibleGateway.overlaySubtitle}
+          ghostText={bibleGateway.ghostText}
         />
 
         <section id="contact" className="border-t border-white/10 px-5 py-20 sm:px-8">

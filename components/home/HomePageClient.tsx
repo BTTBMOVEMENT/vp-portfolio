@@ -53,6 +53,7 @@ type SiteSettingsData = {
     buttonLabel?: string | null;
     noteLabel?: string | null;
   } | null;
+  bibleGateway?: { sectionLabel?: string | null; title?: string | null; description?: string | null; buttonLabel?: string | null; overlayTitle?: string | null; overlaySubtitle?: string | null; ghostText?: string | null; } | null;
   contact?: {
     sectionLabel?: string | null;
     title?: string | null;
@@ -161,6 +162,16 @@ export default function HomePageClient({ siteSettings }: HomePageClientProps) {
     buttonLabel: siteSettings?.albumGateway?.buttonLabel || "My Album",
   };
 
+  const bibleGateway = {
+    sectionLabel: siteSettings?.bibleGateway?.sectionLabel || "The Bible",
+    title: siteSettings?.bibleGateway?.title || "ad fontes",
+    description: siteSettings?.bibleGateway?.description || "Step into the living world of the first century, where the words of Scripture were heard, spoken, and remembered. Through the Greek text of the New Testament, return to the language, history, and meaning that shaped its earliest readers.",
+    buttonLabel: siteSettings?.bibleGateway?.buttonLabel || "The Bible",
+    overlayTitle: siteSettings?.bibleGateway?.overlayTitle || "The Bible",
+    overlaySubtitle: siteSettings?.bibleGateway?.overlaySubtitle || "Entering the Scripture library",
+    ghostText: siteSettings?.bibleGateway?.ghostText || "BIBLE",
+  };
+
   const contact = {
     sectionLabel: siteSettings?.contact?.sectionLabel || "Contact",
     title: siteSettings?.contact?.title || "Ready for the next build.",
@@ -255,6 +266,17 @@ export default function HomePageClient({ siteSettings }: HomePageClientProps) {
             </motion.div>
           </div>
         </section>
+
+        <RouteGatewaySection
+          sectionLabel={bibleGateway.sectionLabel}
+          title={bibleGateway.title}
+          description={bibleGateway.description}
+          buttonLabel={bibleGateway.buttonLabel}
+          href="/bible"
+          overlayTitle={bibleGateway.overlayTitle}
+          overlaySubtitle={bibleGateway.overlaySubtitle}
+          ghostText={bibleGateway.ghostText}
+        />
 
         <RouteGatewaySection
           sectionLabel={works.sectionLabel}

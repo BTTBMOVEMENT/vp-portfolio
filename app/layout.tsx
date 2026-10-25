@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Noto_Serif } from "next/font/google";
 import "./globals.css";
 import SiteNavigation from "../components/site/SiteNavigation";
 
@@ -11,6 +11,13 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const greekSerif = Noto_Serif({
+  variable: "--font-greek-serif",
+  subsets: ["greek", "greek-ext"],
+  weight: ["400"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -68,7 +75,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} bg-black text-white antialiased selection:bg-white selection:text-black`}
+        className={`${geistSans.variable} ${geistMono.variable} ${greekSerif.variable} bg-black text-white antialiased selection:bg-white selection:text-black`}
       >
         <SiteNavigation />
         <div className="pb-24 md:pb-0">{children}</div>

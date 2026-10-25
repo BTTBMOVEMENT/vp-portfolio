@@ -164,8 +164,8 @@ export default function HomePageClient({ siteSettings }: HomePageClientProps) {
 
   const bibleGateway = {
     sectionLabel: siteSettings?.bibleGateway?.sectionLabel || "The Bible",
-    title: siteSettings?.bibleGateway?.title || "Return to the Word. Discover its depth.",
-    description: siteSettings?.bibleGateway?.description || "Explore the Scriptures through the original Greek text, word-by-word analysis, and the historical meaning behind every expression.",
+    title: siteSettings?.bibleGateway?.title || "Ad Fontes.",
+    description: siteSettings?.bibleGateway?.description || "Return to the living language of Jesus’ time and enter the world of Scripture as its first hearers encountered it. Explore the Greek text, discover the depth of its words, and listen anew to the message they carry.",
     buttonLabel: siteSettings?.bibleGateway?.buttonLabel || "The Bible",
     overlayTitle: siteSettings?.bibleGateway?.overlayTitle || "The Bible",
     overlaySubtitle: siteSettings?.bibleGateway?.overlaySubtitle || "Entering the Scripture library",
@@ -268,6 +268,17 @@ export default function HomePageClient({ siteSettings }: HomePageClientProps) {
         </section>
 
         <RouteGatewaySection
+          sectionLabel={bibleGateway.sectionLabel}
+          title={bibleGateway.title}
+          description={bibleGateway.description}
+          buttonLabel={bibleGateway.buttonLabel}
+          href="/bible"
+          overlayTitle={bibleGateway.overlayTitle}
+          overlaySubtitle={bibleGateway.overlaySubtitle}
+          ghostText={bibleGateway.ghostText}
+        />
+
+        <RouteGatewaySection
           sectionLabel={works.sectionLabel}
           title={works.title}
           description={works.description}
@@ -298,17 +309,6 @@ export default function HomePageClient({ siteSettings }: HomePageClientProps) {
           overlayTitle="My Album"
           overlaySubtitle="Entering the orbital collection"
           ghostText="ALBUM"
-        />
-
-        <RouteGatewaySection
-          sectionLabel={bibleGateway.sectionLabel}
-          title={bibleGateway.title}
-          description={bibleGateway.description}
-          buttonLabel={bibleGateway.buttonLabel}
-          href="/bible"
-          overlayTitle={bibleGateway.overlayTitle}
-          overlaySubtitle={bibleGateway.overlaySubtitle}
-          ghostText={bibleGateway.ghostText}
         />
 
         <section id="contact" className="border-t border-white/10 px-5 py-20 sm:px-8">

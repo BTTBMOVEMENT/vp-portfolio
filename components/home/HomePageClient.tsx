@@ -164,8 +164,8 @@ export default function HomePageClient({ siteSettings }: HomePageClientProps) {
 
   const bibleGateway = {
     sectionLabel: siteSettings?.bibleGateway?.sectionLabel || "The Bible",
-    title: siteSettings?.bibleGateway?.title || "Ad Fontes.",
-    description: siteSettings?.bibleGateway?.description || "Return to the living language of Jesus’ time and enter the world of Scripture as its first hearers encountered it. Explore the Greek text, discover the depth of its words, and listen anew to the message they carry.",
+    title: siteSettings?.bibleGateway?.title || "ad fontes",
+    description: siteSettings?.bibleGateway?.description || "Step into the living world of the first century, where the words of Scripture were heard, spoken, and remembered. Through the Greek text of the New Testament, return to the language, history, and meaning that shaped its earliest readers.",
     buttonLabel: siteSettings?.bibleGateway?.buttonLabel || "The Bible",
     overlayTitle: siteSettings?.bibleGateway?.overlayTitle || "The Bible",
     overlaySubtitle: siteSettings?.bibleGateway?.overlaySubtitle || "Entering the Scripture library",

@@ -14,7 +14,7 @@ const verbs=new Set(["γεννάω","λέγω","εἰμί","μνηστεύω","�
 export const finalTokens:Record<number,FinalToken[]>=Object.fromEntries(sourceVerses12to25.map(v=>[v.number,v.greek.split(/\s+/).map(raw=>{
  const greek=raw.replace(/[.,;·:“”]+$/g,"");
  const key=normalize(greek);
- const lemma=forms[key]??base[key]??greek;
- const parsing=articles[key]??(particles.has(lemma)?"CONJ":preps.has(lemma)?"PREP":verbs.has(lemma)?"V-REVIEW":["αὐτός","ὅς","σύ","ἐγώ","οὗτος"].includes(lemma)?"P-REVIEW":"N-REVIEW");
+ const lemma=greek==="ὅ"?"ὅς":greek==="ἢ"?"ἤ":forms[key]??base[key]??greek;
+ const parsing=greek==="ὅ"?"P-NSN":greek==="ἢ"?"CONJ":articles[key]??(particles.has(lemma)?"CONJ":preps.has(lemma)?"PREP":verbs.has(lemma)?"V-REVIEW":["αὐτός","ὅς","σύ","ἐγώ","οὗτος"].includes(lemma)?"P-REVIEW":"N-REVIEW");
  return {greek,lemma,parsing,verified:!parsing.includes("REVIEW")};
 })]));

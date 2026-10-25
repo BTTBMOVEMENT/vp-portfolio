@@ -70,7 +70,8 @@ export default function MatthewOneReader() {
   const stopChapter=()=>{if(typeof window!=="undefined"&&"speechSynthesis" in window)window.speechSynthesis.cancel();setChapterPlayback("stopped");};
   const activeParts=active?.split("-")??[];
   const activeVerse=Number(activeParts[0]),activeIndex=Number(activeParts[1]);
-  const activeWord=active&&Number.isInteger(activeIndex)?(activeVerse===1?words[activeIndex]:activeVerse===2||activeVerse===3?verseWords[activeVerse-2]?.[activeIndex]:activeVerse>=4?activeVerse===4?verifiedVerse4[activeIndex]??studyWord(extendedVerses[activeVerse-4]?.greek.split(/\s+/)[activeIndex]??""):studyWord(extendedVerses[activeVerse-4]?.greek.split(/\s+/)[activeIndex]??""):undefined):undefined;
+  const activeWordRaw=active&&Number.isInteger(activeIndex)?(activeVerse===1?words[activeIndex]:activeVerse===2||activeVerse===3?verseWords[activeVerse-2]?.[activeIndex]:activeVerse>=4?activeVerse===4?verifiedVerse4[activeIndex]??studyWord(extendedVerses[activeVerse-4]?.greek.split(/\s+/)[activeIndex]??""):studyWord(extendedVerses[activeVerse-4]?.greek.split(/\s+/)[activeIndex]??""):undefined):undefined;
+  const activeWord=activeWordRaw?withLemma(activeWordRaw):undefined;
   const deepEntry=activeWord?(verseTwoLexicon[activeWord.lemma]??verseTwoNames[activeWord.lemma]??deepLexicon[activeWord.lemma]):undefined;
   const lemmaInfo=activeWord?lemmaMorphology[activeWord.lemma]:undefined;
   const lemmaGrammarEn=lemmaInfo?.grammarEn??(activeWord?.grammarEn.match(/^[^·]+/)?.[0].trim()??"");

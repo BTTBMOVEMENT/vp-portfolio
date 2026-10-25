@@ -1,3 +1,4 @@
+import {matthewFiveToElevenNames,matthewFiveToElevenCommon} from "./matthew-5-11";
 /** Shared lemma records: separate from token parsing and verse text. */
 type LexicalWord={meaningEn:string;meaningKo:string;originEn:string;originKo:string};
 type LemmaEntry = Pick<LexicalWord,"meaningEn"|"meaningKo"|"originEn"|"originKo">;
@@ -69,8 +70,22 @@ const matthewFourDeep:Record<string,DeepLexiconEntry>={
 "Ναασσών":{pronunciation:"Naassṓn · Ναασσών",morphologyEn:"Indeclinable masculine personal name; syntactic case is inferred from its clause.",morphologyKo:"불변화 남성 인명으로 문장 속 역할을 통해 격을 판단합니다.",historyEn:"Greek transcription of Hebrew נַחְשׁוֹן (Naḥšôn). A more remote derivation of the Hebrew name is uncertain and should not be presented as established.",historyKo:"히브리어 נַחְשׁוֹן(나흐숀)의 그리스어 음역입니다. 히브리어 이름의 더 먼 어원은 확실하지 않습니다.",semanticEn:"Nahshon, son of Amminadab; identified as a leader of Judah in Numbers 1:7.",semanticKo:"아미나답의 아들 나손이며 민수기 1:7에서 유다 지파의 지도자로 언급됩니다.",relatedEn:"Hebrew נַחְשׁוֹן; Numbers 1:7; Ruth 4:20.",relatedKo:"히브리어 נַחְשׁוֹן; 민수기 1:7, 룻기 4:20.",examplesEn:"Numbers 1:7; Ruth 4:20; Matthew 1:4; Luke 3:32.",examplesKo:"민수기 1:7, 룻기 4:20, 마태복음 1:4, 누가복음 3:32.",sourceLabel:"Biblical name · Nahshon",sourceUrl:"https://logeion.uchicago.edu/"},
 "Σαλμών":{pronunciation:"Salmṓn · Σαλμών",morphologyEn:"Indeclinable masculine personal name; contextual grammatical function depends on the clause.",morphologyKo:"불변화 남성 인명이며 구문에 따라 문법적 역할이 결정됩니다.",historyEn:"Greek rendering of the Hebrew biblical name commonly written שַׂלְמוֹן (Salmôn). A definitive deeper etymology is not securely established.",historyKo:"일반적으로 שַׂלְמוֹן(살몬)으로 적는 히브리어 인명의 그리스어 음역입니다. 더 깊은 어원은 확실하게 규명되지 않았습니다.",semanticEn:"Salmon, a personal name in the biblical genealogies, identified as the father of Boaz.",semanticKo:"성경 족보의 인명 살몬이며 보아스의 아버지로 언급됩니다.",relatedEn:"Hebrew שַׂלְמוֹן; Ruth 4:20–21.",relatedKo:"히브리어 שַׂלְמוֹן; 룻기 4:20–21.",examplesEn:"Ruth 4:20–21; Matthew 1:4–5; Luke 3:32.",examplesKo:"룻기 4:20–21, 마태복음 1:4–5, 누가복음 3:32.",sourceLabel:"Biblical name · Salmon",sourceUrl:"https://logeion.uchicago.edu/"}
 };
+/** Canonical lemma extensions; the same entry is used in every verse. */
+for (const [lemma,entry] of Object.entries(matthewFiveToElevenNames)){
+  if(!lemmaDictionary[lemma])lemmaDictionary[lemma]={meaningEn:entry.en+" (proper name)",meaningKo:entry.ko+"(인명)",originEn:entry.historyEn,originKo:entry.historyKo};
+}
+for (const [lemma,entry] of Object.entries(matthewFiveToElevenCommon)){
+  if(!lemmaDictionary[lemma])lemmaDictionary[lemma]={meaningEn:entry.en,meaningKo:entry.ko,originEn:entry.historyEn,originKo:entry.historyKo};
+}
+const extendedDeepLexicon:Record<string,DeepLexiconEntry>={};
+for(const [lemma,entry] of Object.entries(matthewFiveToElevenNames)){
+  extendedDeepLexicon[lemma]={pronunciation:lemma,morphologyEn:"Biblical personal or place name of Semitic origin; Greek inflection varies by name and form. Consult token parsing for the occurrence.",morphologyKo:"셈어계 성경 인명·지명입니다. 그리스어 굴절은 이름과 형태에 따라 다릅니다. 해당 출현형의 파싱은 본문에서 확인하십시오.",historyEn:entry.historyEn,historyKo:entry.historyKo,semanticEn:entry.en+"; proper name.",semanticKo:entry.ko+"라는 고유명사입니다.",relatedEn:entry.hebrew?"Hebrew form: "+entry.hebrew:"Compare the source-language form.",relatedKo:entry.hebrew?"히브리어 형태: "+entry.hebrew:"원어의 형태를 비교하십시오.",examplesEn:"Attested references: "+entry.refs+".",examplesKo:"문헌 출현 위치: "+entry.refs+".",sourceLabel:"Biblical name · cross-references",sourceUrl:"https://www.stepbible.org/"};
+}
+for(const [lemma,entry] of Object.entries(matthewFiveToElevenCommon)){
+  extendedDeepLexicon[lemma]={pronunciation:lemma,morphologyEn:entry.pos,morphologyKo:entry.pos,historyEn:entry.historyEn,historyKo:entry.historyKo,semanticEn:entry.en,semanticKo:entry.ko,relatedEn:"Compare other Greek words in the same lexical family where attested.",relatedKo:"확인된 그리스어 동일 어휘군의 단어와 비교할 수 있습니다.",examplesEn:"Attested references: "+entry.refs+".",examplesKo:"문헌 출현 위치: "+entry.refs+".",sourceLabel:"Greek lexical reference · cross-references",sourceUrl:"https://logeion.uchicago.edu/"};
+}
 /** Single canonical lookup; verse references never choose competing lexicon tables. */
-const canonicalDeepLexicon: Record<string,DeepLexiconEntry> = {...deepLexicon,...verseTwoLexicon,...verseTwoNames,...matthewThreeDeep,...matthewFourDeep};
+const canonicalDeepLexicon: Record<string,DeepLexiconEntry> = {...deepLexicon,...verseTwoLexicon,...verseTwoNames,...matthewThreeDeep,...matthewFourDeep,...extendedDeepLexicon};
 function getLemmaCard(lemma:string){return {basic:lemmaDictionary[lemma],deep:canonicalDeepLexicon[lemma],morphology:lemmaMorphology[lemma]};}
 export {lemmaDictionary,canonicalDeepLexicon,getLemmaCard,withLemma};
 

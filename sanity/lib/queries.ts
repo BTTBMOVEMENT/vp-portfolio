@@ -47,6 +47,15 @@ export const SITE_SETTINGS_QUERY = `
       buttonLabel,
       noteLabel
     },
+    bibleGateway{
+      sectionLabel,
+      title,
+      description,
+      buttonLabel,
+      overlayTitle,
+      overlaySubtitle,
+      ghostText
+    },
     worksPage{
       pageLabel,
       pageIntro,

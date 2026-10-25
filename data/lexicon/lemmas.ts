@@ -1,3 +1,4 @@
+import {names12to25,words12to25} from "./matthew-12-25-lexicon";
 import {matthewFiveToElevenNames,matthewFiveToElevenCommon} from "./matthew-5-11";
 /** Shared lemma records: separate from token parsing and verse text. */
 type LexicalWord={meaningEn:string;meaningKo:string;originEn:string;originKo:string};
@@ -84,8 +85,13 @@ for(const [lemma,entry] of Object.entries(matthewFiveToElevenNames)){
 for(const [lemma,entry] of Object.entries(matthewFiveToElevenCommon)){
   extendedDeepLexicon[lemma]={pronunciation:lemma,morphologyEn:entry.pos,morphologyKo:entry.pos,historyEn:entry.historyEn,historyKo:entry.historyKo,semanticEn:entry.en,semanticKo:entry.ko,relatedEn:"Compare other Greek words in the same lexical family where attested.",relatedKo:"확인된 그리스어 동일 어휘군의 단어와 비교할 수 있습니다.",examplesEn:"Attested references: "+entry.refs+".",examplesKo:"문헌 출현 위치: "+entry.refs+".",sourceLabel:"Greek lexical reference · cross-references",sourceUrl:"https://logeion.uchicago.edu/"};
 }
+const finalChapterDeep:Record<string,DeepLexiconEntry>={};
+for(const [lemma,entry] of Object.entries({...names12to25,...words12to25})){
+  if(!lemmaDictionary[lemma])lemmaDictionary[lemma]={meaningEn:entry.en,meaningKo:entry.ko,originEn:entry.originEn,originKo:entry.originKo};
+  finalChapterDeep[lemma]={pronunciation:lemma,morphologyEn:entry.pos,morphologyKo:entry.pos,historyEn:entry.originEn,historyKo:entry.originKo,semanticEn:entry.en,semanticKo:entry.ko,relatedEn:entry.hebrew?"Source-language form: "+entry.hebrew:"Compare cognate and derived forms in specialist lexica.",relatedKo:entry.hebrew?"원어 형태: "+entry.hebrew:"전문 사전에서 파생어·동계어를 확인하십시오.",examplesEn:"Corpus references: "+entry.refs,examplesKo:"용례 참조: "+entry.refs,sourceLabel:"Lexical draft · source verification pending",sourceUrl:"https://logeion.uchicago.edu/"};
+}
 /** Single canonical lookup; verse references never choose competing lexicon tables. */
-const canonicalDeepLexicon: Record<string,DeepLexiconEntry> = {...deepLexicon,...verseTwoLexicon,...verseTwoNames,...matthewThreeDeep,...matthewFourDeep,...extendedDeepLexicon};
+const canonicalDeepLexicon: Record<string,DeepLexiconEntry> = {...deepLexicon,...verseTwoLexicon,...verseTwoNames,...matthewThreeDeep,...matthewFourDeep,...extendedDeepLexicon,...finalChapterDeep};
 function getLemmaCard(lemma:string){return {basic:lemmaDictionary[lemma],deep:canonicalDeepLexicon[lemma],morphology:lemmaMorphology[lemma]};}
 export {lemmaDictionary,canonicalDeepLexicon,getLemmaCard,withLemma};
 

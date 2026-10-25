@@ -11,10 +11,28 @@ const articles:Record<string,string>={"τον":"T-ASM","την":"T-ASF","της"
 const particles=new Set(["δέ","καί","γάρ","οὖν","ἵνα","ἰδού","μή","οὐ","πρίν","ἤ","ὡς"]);
 const preps=new Set(["μετά","ἐκ","ἐν","ἀπό","ἕως","κατά","ὑπό","διά"]);
 const verbs=new Set(["γεννάω","λέγω","εἰμί","μνηστεύω","συνέρχομαι","εὑρίσκω","ἔχω","θέλω","παραδειγματίζω","βουλεύομαι","ἀπολύω","ἐνθυμέομαι","φαίνω","φοβέομαι","παραλαμβάνω","τίκτω","καλέω","σῴζω","γίγνομαι","πληρόω","μεθερμηνεύω","ἐγείρω","ποιέω","προστάσσω","γινώσκω"]);
-export const finalTokens:Record<number,FinalToken[]>=Object.fromEntries(sourceVerses12to25.map(v=>[v.number,v.greek.split(/\s+/).map(raw=>{
+/** Individually reviewed token morphology. Other forms remain visibly marked REVIEW. */
+const reviewed:Record<string,string>={
+"12:3":"N-ASF","12:4":"N-GSF","12:5":"N-NSM","12:6":"V-AAI-3S","12:8":"N-PRI","12:9":"N-PRI","12:11":"V-AAI-3S","12:13":"N-PRI",
+"13:0":"N-PRI","13:2":"V-AAI-3S","13:4":"N-PRI","13:5":"N-PRI","13:7":"V-AAI-3S","13:9":"N-PRI","13:10":"N-PRI","13:12":"V-AAI-3S","13:14":"N-PRI",
+"14:0":"N-PRI","14:2":"V-AAI-3S","14:4":"N-PRI","14:5":"N-PRI","14:7":"V-AAI-3S","14:9":"N-PRI","14:10":"N-PRI","14:12":"V-AAI-3S","14:14":"N-PRI",
+"15:0":"N-PRI","15:2":"V-AAI-3S","15:4":"N-PRI","15:5":"N-PRI","15:7":"V-AAI-3S","15:9":"N-PRI","15:10":"N-PRI","15:12":"V-AAI-3S","15:14":"N-PRI",
+"16:0":"N-PRI","16:2":"V-AAI-3S","16:4":"N-PRI","16:6":"N-ASM","16:7":"N-GSF","16:9":"P-GSF","16:10":"V-API-3S","16:11":"N-NSM","16:13":"V-PPP-NSM","16:14":"N-NSM",
+"17:0":"A-NPF","17:3":"N-NPF","17:8":"N-NPF","17:9":"A-NPF","17:17":"N-NPF","17:18":"A-NPF","17:27":"N-NPF","17:28":"A-NPF",
+"18:5":"N-NSF","18:7":"V-IAI-3S","18:8":"V-APP-GSF","18:11":"N-GSF","18:18":"V-AAN","18:20":"V-API-3S","18:22":"N-DSF","18:23":"V-PAP-NSF","18:25":"N-GSN","18:26":"A-GSN",
+"19:3":"N-NSM","19:5":"A-NSM","19:6":"V-PAP-NSM","19:9":"V-PAP-NSM","19:11":"V-AAN","19:12":"V-API-3S","19:13":"ADV","19:14":"V-AAN",
+"20:0":"P-APN","20:2":"P-GSM","20:3":"V-APP-GSM","20:5":"N-NSM","20:6":"N-GSM","20:8":"N-ASN","20:9":"V-API-3S","20:10":"P-DSM","20:11":"V-PAP-NSM","20:13":"N-VSM","20:16":"V-APS-2S","20:17":"V-AAN","20:20":"N-ASF","20:21":"P-GS2","20:25":"P-DSF","20:26":"V-APP-NSN","20:28":"N-GSN","20:29":"V-PAI-3S","20:30":"A-GSN",
+"21:0":"V-FMI-3S","21:2":"N-ASM","21:4":"V-FAI-2S","21:6":"N-ASN","21:7":"P-GSM","21:8":"N-ASM","21:9":"P-NSM","21:11":"V-FAI-3S","21:13":"N-ASM","21:14":"P-GSM","21:17":"N-GPF","21:18":"P-GPM",
+"22:0":"P-NSN","22:2":"A-NSN","22:3":"V-RAI-3S","22:5":"V-APS-3S","22:7":"V-APP-NSN","22:10":"N-GSM","22:13":"N-GSM","22:14":"V-PAP-GSM",
+"23:2":"N-NSF","23:4":"N-DSF","23:5":"V-FAI-3S","23:7":"V-FMI-3S","23:8":"N-ASM","23:10":"V-FAI-3P","23:12":"N-ASN","23:14":"N-PRI","23:15":"P-NSN","23:16":"V-PAI-3S","23:17":"V-PPP-NSN","23:19":"P-GP1","23:21":"N-NSM",
+"24:0":"V-APP-NSM","24:3":"N-NSM","24:6":"N-GSM","24:7":"V-AAI-3S","24:9":"V-AAI-3S","24:10":"P-DSM","24:12":"N-NSM","24:13":"N-GSM","24:15":"V-AAI-3S","24:17":"N-ASF","24:18":"P-GSM",
+"25:2":"V-IAI-3S","25:3":"P-ASF","25:5":"P-GSM","25:6":"V-AAI-3S","25:8":"N-ASM","25:9":"P-GSF","25:11":"A-ASM","25:13":"V-AAI-3S","25:15":"N-ASN","25:16":"P-GSM","25:17":"N-ASM"
+};
+export const finalTokens:Record<number,FinalToken[]>=Object.fromEntries(sourceVerses12to25.map(v=>[v.number,v.greek.split(/\s+/).map((raw,i)=>{
  const greek=raw.replace(/[.,;·:“”]+$/g,"");
  const key=normalize(greek);
  const lemma=greek==="ὅ"?"ὅς":greek==="ἢ"?"ἤ":forms[key]??base[key]??greek;
  const parsing=greek==="ὅ"?"P-NSN":greek==="ἢ"?"CONJ":articles[key]??(particles.has(lemma)?"CONJ":preps.has(lemma)?"PREP":verbs.has(lemma)?"V-REVIEW":["αὐτός","ὅς","σύ","ἐγώ","οὗτος"].includes(lemma)?"P-REVIEW":"N-REVIEW");
- return {greek,lemma,parsing,verified:!parsing.includes("REVIEW")};
+ const resolved=reviewed[v.number+":"+i]??parsing;
+ return {greek,lemma,parsing:resolved,verified:!resolved.includes("REVIEW")};
 })]));

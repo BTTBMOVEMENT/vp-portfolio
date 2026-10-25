@@ -11,7 +11,8 @@ Modules are introduced only when they have implementation, not as empty director
 | research | search, sources, evidence relationships | canonical corpus editing |
 | patristics | historical authors, works, provenance | biblical textual authority |
 | my-work | owner-authored publications, notes, essays | corpus imports |
-| private-archive | protected legacy project and album content | public site navigation |
+| typology | public existing Works portfolio and project case studies | private album data |
+| private-album | protected My Album content | public site navigation |
 | site-content | editable labels, page text, metadata | security rules |
 
 ## Data modeling rules

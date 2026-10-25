@@ -7,6 +7,7 @@ export default defineType({
   groups: [
     {name: 'global', title: 'Global', default: true},
     {name: 'home', title: 'Home'},
+    {name: 'bible', title: 'The Bible'},
     {name: 'works', title: 'Works'},
     {name: 'journal', title: 'Journal'},
     {name: 'album', title: 'My Album'},
@@ -118,6 +119,23 @@ export default defineType({
         defineField({name: 'description', title: 'Description', type: 'text', rows: 4}),
         defineField({name: 'buttonLabel', title: 'Button Label', type: 'string'}),
         defineField({name: 'noteLabel', title: 'Note Label', type: 'string'}),
+      ],
+    }),
+
+    defineField({
+      name: 'bibleGateway',
+      title: 'Home → The Bible Gateway',
+      type: 'object',
+      group: ['home', 'bible'],
+      description: 'Controls the animated The Bible section on the home page. Leave fields blank for defaults.',
+      fields: [
+        defineField({name:'sectionLabel',title:'Section Label',type:'string'}),
+        defineField({name:'title',title:'Main Quote / Heading',type:'text',rows:3}),
+        defineField({name:'description',title:'Description',type:'text',rows:4}),
+        defineField({name:'buttonLabel',title:'Button Label',type:'string'}),
+        defineField({name:'overlayTitle',title:'Transition Overlay Title',type:'string'}),
+        defineField({name:'overlaySubtitle',title:'Transition Overlay Subtitle',type:'string'}),
+        defineField({name:'ghostText',title:'Large Background Text',type:'string'}),
       ],
     }),
 

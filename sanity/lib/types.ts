@@ -52,6 +52,16 @@ export type SiteSettings = {
     noteLabel?: string | null
   } | null
 
+  bibleGateway?: {
+    sectionLabel?: string | null
+    title?: string | null
+    description?: string | null
+    buttonLabel?: string | null
+    overlayTitle?: string | null
+    overlaySubtitle?: string | null
+    ghostText?: string | null
+  } | null
+
   worksPage?: {
     pageLabel?: string | null
     pageIntro?: string | null

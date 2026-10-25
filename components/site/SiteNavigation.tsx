@@ -9,6 +9,7 @@ const showAdminButton = process.env.NEXT_PUBLIC_SHOW_ADMIN_BUTTON === "true";
 
 const navItems = [
   { label: "Home", href: "/" },
+  { label: "The Bible", href: "/bible" },
   { label: "Typology", href: "/works" },
   { label: "Journal", href: "/journal" },
   { label: "My Album", href: "/my-album" },
@@ -17,6 +18,7 @@ const navItems = [
 
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
+  if (href === "/bible") return pathname === "/bible" || pathname.startsWith("/bible/");
   if (href === "/works") return pathname === "/works" || pathname.startsWith("/projects/");
   if (href === "/journal") return pathname === "/journal" || pathname.startsWith("/journal/");
   if (href === "/my-album") return pathname === "/my-album" || pathname === "/my-vision";

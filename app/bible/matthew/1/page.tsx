@@ -72,7 +72,6 @@ export default function MatthewOneReader() {
   const [active,setActive]=useState<string|null>(null);
   const reduced=useReducedMotion();
   const [audioMessage,setAudioMessage]=useState("");
-  const [audioMenu,setAudioMenu]=useState(false);
   const [chapterPlayback,setChapterPlayback]=useState<"stopped"|"playing"|"paused">("stopped");
   const [selectedChapter,setSelectedChapter]=useState(1);
   const [selectedVerse,setSelectedVerse]=useState(1);

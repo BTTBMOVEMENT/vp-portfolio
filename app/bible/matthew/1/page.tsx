@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {deepLexicon,verseTwoLexicon,verseTwoNames,lemmaMorphology,withLemma} from "@/data/lexicon/lemmas";
+import {getLemmaCard,withLemma} from "@/data/lexicon/lemmas";
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
@@ -72,8 +72,9 @@ export default function MatthewOneReader() {
   const activeVerse=Number(activeParts[0]),activeIndex=Number(activeParts[1]);
   const activeWordRaw=active&&Number.isInteger(activeIndex)?(activeVerse===1?words[activeIndex]:activeVerse===2||activeVerse===3?verseWords[activeVerse-2]?.[activeIndex]:activeVerse>=4?activeVerse===4?verifiedVerse4[activeIndex]??studyWord(extendedVerses[activeVerse-4]?.greek.split(/\s+/)[activeIndex]??""):studyWord(extendedVerses[activeVerse-4]?.greek.split(/\s+/)[activeIndex]??""):undefined):undefined;
   const activeWord=activeWordRaw?withLemma(activeWordRaw):undefined;
-  const deepEntry=activeWord?(verseTwoLexicon[activeWord.lemma]??verseTwoNames[activeWord.lemma]??deepLexicon[activeWord.lemma]):undefined;
-  const lemmaInfo=activeWord?lemmaMorphology[activeWord.lemma]:undefined;
+  const lemmaCard=activeWord?getLemmaCard(activeWord.lemma):undefined;
+  const deepEntry=lemmaCard?.deep;
+  const lemmaInfo=lemmaCard?.morphology;
   const lemmaGrammarEn=lemmaInfo?.grammarEn??(activeWord?.grammarEn.match(/^[^·]+/)?.[0].trim()??"");
   const lemmaGrammarKo=lemmaInfo?.grammarKo??(activeWord?.grammarKo.match(/^[^·]+/)?.[0].trim()??"");
   const lemmaUsageEn=lemmaInfo?.usageEn??"";

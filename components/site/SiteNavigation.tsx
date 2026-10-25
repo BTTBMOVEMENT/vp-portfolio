@@ -9,7 +9,7 @@ const showAdminButton = process.env.NEXT_PUBLIC_SHOW_ADMIN_BUTTON === "true";
 
 const navItems = [
   { label: "Home", href: "/" },
-  { label: "Works", href: "/works" },
+  { label: "Typology", href: "/works" },
   { label: "Journal", href: "/journal" },
   { label: "My Album", href: "/my-album" },
   { label: "Contact", href: "/#contact" },

@@ -4,11 +4,139 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
 
 const groups = [
-  { title: "The Gospels", books: ["Matthew", "Mark", "Luke", "John"] },
-  { title: "History", books: ["Acts"] },
-  { title: "Pauline Letters", books: ["Romans", "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians", "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon"] },
-  { title: "General Letters", books: ["Hebrews", "James", "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude"] },
-  { title: "Apocalypse", books: ["Revelation"] },
+  {
+    "title": "The Gospels",
+    "books": [
+      {
+        "greek": "Κατὰ Ματθαῖον",
+        "english": "Matthew"
+      },
+      {
+        "greek": "Κατὰ Μᾶρκον",
+        "english": "Mark"
+      },
+      {
+        "greek": "Κατὰ Λουκᾶν",
+        "english": "Luke"
+      },
+      {
+        "greek": "Κατὰ Ἰωάννην",
+        "english": "John"
+      }
+    ]
+  },
+  {
+    "title": "History",
+    "books": [
+      {
+        "greek": "Πράξεις Ἀποστόλων",
+        "english": "Acts"
+      }
+    ]
+  },
+  {
+    "title": "Pauline Letters",
+    "books": [
+      {
+        "greek": "Πρὸς Ῥωμαίους",
+        "english": "Romans"
+      },
+      {
+        "greek": "Πρὸς Κορινθίους Αʹ",
+        "english": "1 Corinthians"
+      },
+      {
+        "greek": "Πρὸς Κορινθίους Βʹ",
+        "english": "2 Corinthians"
+      },
+      {
+        "greek": "Πρὸς Γαλάτας",
+        "english": "Galatians"
+      },
+      {
+        "greek": "Πρὸς Ἐφεσίους",
+        "english": "Ephesians"
+      },
+      {
+        "greek": "Πρὸς Φιλιππησίους",
+        "english": "Philippians"
+      },
+      {
+        "greek": "Πρὸς Κολοσσαεῖς",
+        "english": "Colossians"
+      },
+      {
+        "greek": "Πρὸς Θεσσαλονικεῖς Αʹ",
+        "english": "1 Thessalonians"
+      },
+      {
+        "greek": "Πρὸς Θεσσαλονικεῖς Βʹ",
+        "english": "2 Thessalonians"
+      },
+      {
+        "greek": "Πρὸς Τιμόθεον Αʹ",
+        "english": "1 Timothy"
+      },
+      {
+        "greek": "Πρὸς Τιμόθεον Βʹ",
+        "english": "2 Timothy"
+      },
+      {
+        "greek": "Πρὸς Τίτον",
+        "english": "Titus"
+      },
+      {
+        "greek": "Πρὸς Φιλήμονα",
+        "english": "Philemon"
+      }
+    ]
+  },
+  {
+    "title": "General Letters",
+    "books": [
+      {
+        "greek": "Πρὸς Ἑβραίους",
+        "english": "Hebrews"
+      },
+      {
+        "greek": "Ἰακώβου",
+        "english": "James"
+      },
+      {
+        "greek": "Πέτρου Αʹ",
+        "english": "1 Peter"
+      },
+      {
+        "greek": "Πέτρου Βʹ",
+        "english": "2 Peter"
+      },
+      {
+        "greek": "Ἰωάννου Αʹ",
+        "english": "1 John"
+      },
+      {
+        "greek": "Ἰωάννου Βʹ",
+        "english": "2 John"
+      },
+      {
+        "greek": "Ἰωάννου Γʹ",
+        "english": "3 John"
+      },
+      {
+        "greek": "Ἰούδα",
+        "english": "Jude"
+      }
+    ]
+  },
+  {
+    "title": "Apocalypse",
+    "books": [
+      {
+        "greek": "Ἀποκάλυψις Ἰωάννου",
+        "english": "Revelation"
+      }
+    ]
+  }
 ];
 
 export default function BibleLibrary() {
@@ -58,9 +186,9 @@ export default function BibleLibrary() {
                 </div>
                 <ul className="flex flex-wrap gap-3 sm:gap-4">
                   {group.books.map((book, bookIndex) => (
-                    <motion.li key={book} {...reveal(Math.min(bookIndex * 0.035, 0.28))} className="group">
+                    <motion.li key={book.english} {...reveal(Math.min(bookIndex * 0.035, 0.28))} className="group">
                       <div className="flex min-h-24 min-w-[135px] flex-col justify-between border border-white/10 bg-white/[0.025] px-5 py-4 transition-colors duration-300 hover:border-[#b9a98a]/50 hover:bg-white/[0.055] sm:min-w-[160px]">
-                        <span className="font-serif text-xl text-zinc-200 sm:text-2xl">{book}</span>
+                        <div className="space-y-2"><span lang="grc" className="block font-serif text-xl leading-snug text-zinc-200 sm:text-2xl">{book.greek}</span><span className="block text-xs tracking-[0.03em] text-zinc-400">({book.english})</span></div>
                         <span className="mt-5 text-[9px] uppercase tracking-[0.18em] text-zinc-600">Soon</span>
                       </div>
                     </motion.li>

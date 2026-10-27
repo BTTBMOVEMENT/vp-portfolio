@@ -1,0 +1,1 @@
+import type {Metadata} from "next";import GreekLetterMerge from "./GreekLetterMerge";export const metadata:Metadata={title:"Greek Letter Merge — 3D Game",description:"A playable 3D Greek alphabet block-merging puzzle.",robots:{index:false,follow:false}};export default function Page(){return <GreekLetterMerge/>}

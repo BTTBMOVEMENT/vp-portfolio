@@ -1,5 +1,5 @@
 "use client";
-import {useState} from "react";
+import {useRef,useState} from "react";
 import Link from "next/link";
 const leaves=[
  {folio:"Folio 01",head:"ΚΑΤΑ ΜΑΤΘΑΙΟΝ",lines:["ΒΙΒΛΟΣ ΓΕΝΕΣΕΩΣ ΙΗΣΟΥ ΧΡΙΣΤΟΥ","ΥΙΟΥ ΔΑΥΙΔ ΥΙΟΥ ΑΒΡΑΑΜ","ΑΒΡΑΑΜ ΕΓΕΝΝΗΣΕ ΤΟΝ ΙΣΑΑΚ","ΙΣΑΑΚ ΔΕ ΕΓΕΝΝΗΣΕ ΤΟΝ ΙΑΚΩΒ","ΙΑΚΩΒ ΔΕ ΕΓΕΝΝΗΣΕ ΤΟΝ ΙΟΥΔΑΝ","ΚΑΙ ΤΟΥΣ ΑΔΕΛΦΟΥΣ ΑΥΤΟΥ","ΙΟΥΔΑΣ ΔΕ ΕΓΕΝΝΗΣΕ ΤΟΝ ΦΑΡΕΣ","ΚΑΙ ΤΟΝ ΖΑΡΑ ΕΚ ΤΗΣ ΘΑΜΑΡ","ΦΑΡΕΣ ΔΕ ΕΓΕΝΝΗΣΕ ΤΟΝ ΕΣΡΩΜ","ΕΣΡΩΜ ΔΕ ΕΓΕΝΝΗΣΕ ΤΟΝ ΑΡΑΜ"]},
@@ -9,6 +9,10 @@ const leaves=[
 ];
 export default function CodexViewer(){
  const [leaf,setLeaf]=useState(0),[zoom,setZoom]=useState(1),[turn,setTurn]=useState(false),[modern,setModern]=useState(false);
+ const [orbit,setOrbit]=useState({x:-13,y:-23});const drag=useRef<{x:number,y:number,ox:number,oy:number}|null>(null);
+ const onDragStart=(e:React.PointerEvent<HTMLDivElement>)=>{if((e.target as HTMLElement).closest("button"))return;drag.current={x:e.clientX,y:e.clientY,ox:orbit.x,oy:orbit.y};e.currentTarget.setPointerCapture(e.pointerId)};
+ const onDragMove=(e:React.PointerEvent<HTMLDivElement>)=>{if(!drag.current)return;setOrbit({x:Math.max(-75,Math.min(75,drag.current.ox-(e.clientY-drag.current.y)*.35)),y:drag.current.oy+(e.clientX-drag.current.x)*.4})};
+ const onDragEnd=()=>{drag.current=null};
  const move=(d:number)=>{if(turn)return;setTurn(true);window.setTimeout(()=>{setLeaf(n=>Math.min(leaves.length-1,Math.max(0,n+d)));setTurn(false)},320)};
  const p=leaves[leaf];
  return <main className="min-h-screen bg-[#0b1014] text-[#e9e3d8]">
@@ -20,15 +24,15 @@ export default function CodexViewer(){
      <button aria-label="Zoom out" onClick={()=>setZoom(z=>Math.max(.7,+(z-.15).toFixed(2)))} className="rounded border border-white/20 px-4 py-3 hover:bg-white/10">−</button>
      <span className="min-w-14 text-center">{Math.round(zoom*100)}%</span>
      <button aria-label="Zoom in" onClick={()=>setZoom(z=>Math.min(1.6,+(z+.15).toFixed(2)))} className="rounded border border-white/20 px-4 py-3 hover:bg-white/10">+</button>
-     <button onClick={()=>setZoom(1)} className="rounded border border-white/20 px-4 py-3 hover:bg-white/10">Reset</button>
+     <button onClick={()=>{setZoom(1);setOrbit({x:-13,y:-23})}} className="rounded border border-white/20 px-4 py-3 hover:bg-white/10">Reset</button>
     </div>
    </div>
-   <section aria-label="Interactive manuscript viewer" className="relative mt-9 overflow-hidden rounded-2xl border border-[#6c6252]/40 bg-[radial-gradient(ellipse_at_center,#343029,#161a1d_68%)] px-4 py-12 shadow-2xl md:py-16">
-    <div className="flex min-h-[570px] items-center justify-center overflow-auto py-8" style={{perspective:"1400px"}}>
-     <div className="relative origin-center transition-transform duration-300" style={{transform:`scale(${zoom})`}}>
-      <div className="absolute inset-0 translate-x-3 translate-y-3 rounded-r-xl bg-[#4a3624] shadow-[14px_18px_40px_#0009]"/>
-      <div className="absolute inset-0 translate-x-1 translate-y-1 rounded-r-lg bg-[#a58b64]"/>
-      <article className="relative flex h-[490px] w-[305px] flex-col overflow-hidden rounded-r-lg border-l-[13px] border-[#806344] px-7 pb-8 pt-9 text-[#352818] shadow-[inset_0_0_45px_#98754a77,8px_12px_28px_#0008] sm:h-[550px] sm:w-[400px] sm:px-10" style={{background:"repeating-linear-gradient(95deg,transparent 0px,#7656310b 2px,transparent 4px,transparent 16px),linear-gradient(115deg,#dfc89c,#e8d5ad 40%,#d4b98a)",transformOrigin:"left center",transform:turn?"rotateY(-74deg)":"rotateY(0deg)",transition:"transform 320ms ease-in-out"}}>
+   <section aria-label="Interactive manuscript viewer" className="relative mt-9 overflow-hidden rounded-2xl border border-[#6c6252]/40 bg-[radial-gradient(ellipse_at_center,#42382a,#14130f_72%)] px-4 py-12 shadow-2xl md:py-16">
+    <div className="relative flex min-h-[570px] touch-none select-none cursor-grab active:cursor-grabbing items-center justify-center overflow-hidden py-8" style={{perspective:"1200px"}} onPointerDown={onDragStart} onPointerMove={onDragMove} onPointerUp={onDragEnd} onPointerCancel={onDragEnd} aria-label="Drag to rotate the virtual codex">
+     <div className="relative origin-center transition-transform duration-300" style={{transform:`scale(${zoom}) rotateX(${orbit.x}deg) rotateY(${orbit.y}deg)`,transformStyle:"preserve-3d",transition:drag.current?"none":"transform 250ms ease"}}>
+      <div className="absolute inset-0 translate-x-3 translate-y-3 rounded-r-xl bg-[#3b2516] shadow-[14px_18px_40px_#0009]" style={{transform:"translateZ(-18px)"}}/>
+      <div className="absolute inset-0 translate-x-1 translate-y-1 rounded-r-lg bg-[#715334]" style={{transform:"translateZ(-9px)"}}/>
+      <article className="relative flex h-[490px] w-[305px] flex-col overflow-hidden rounded-r-lg border-l-[18px] border-[#584027] px-7 pb-8 pt-9 text-[#352818] shadow-[inset_0_0_75px_#68422299,inset_0_0_8px_#49321c88,8px_12px_28px_#0008] sm:h-[550px] sm:w-[400px] sm:px-10" style={{background:"radial-gradient(ellipse at 8% 14%,#5a341e80,transparent 24%),radial-gradient(ellipse at 88% 90%,#6740228a,transparent 30%),repeating-linear-gradient(92deg,transparent 0px,#50301516 2px,transparent 5px,transparent 14px),repeating-linear-gradient(0deg,transparent 0px,#704a2412 1px,transparent 3px,transparent 19px),linear-gradient(115deg,#a98758,#c9ad78 35%,#b89763 65%,#8e6d46)",transformOrigin:"left center",transform:turn?"rotateY(-74deg)":"rotateY(0deg)",transition:"transform 320ms ease-in-out"}}>
        <div className="text-center text-[10px] tracking-[.25em] text-[#7a5d36]">{p.folio.toUpperCase()} · CODEX α</div>
        <h2 className="mt-7 text-center font-serif text-lg tracking-[.16em]">{p.head}</h2>
        <div className="mt-8 flex-1 space-y-3 overflow-hidden text-center font-serif text-[12px] leading-[1.55] tracking-[.045em] sm:text-[15px]" lang="grc">{p.lines.map((line,i)=><p key={i} className={modern?"normal-case tracking-normal":""}>{modern?line.toLocaleLowerCase("el"):line}</p>)}</div>
@@ -36,6 +40,7 @@ export default function CodexViewer(){
       </article>
      </div>
     </div>
+    <p className="mt-1 text-center text-xs tracking-[.12em] text-[#c5ad87]">DRAG TO ROTATE · EXPLORE THE CODEX IN 3D</p>
     <div className="mx-auto mt-4 flex max-w-md items-center justify-between gap-3">
      <button disabled={leaf===0||turn} onClick={()=>move(-1)} className="rounded-full border border-[#aa9475]/50 px-5 py-3 text-sm disabled:opacity-30 hover:bg-white/10">← Previous</button>
      <span className="text-sm text-[#c9b99d]">{leaf+1} / {leaves.length}</span>
@@ -43,7 +48,7 @@ export default function CodexViewer(){
     </div>
    </section>
    <div className="mt-7 grid gap-6 md:grid-cols-[1fr_1fr]">
-    <div className="rounded-xl border border-white/10 p-6"><p className="text-xs tracking-[.2em] uppercase text-[#c5a878]">Display settings</p><button onClick={()=>setModern(m=>!m)} className="mt-4 rounded-lg border border-white/20 px-4 py-3 text-sm hover:bg-white/10">{modern?"Restore uppercase manuscript style":"Toggle lowercase transcription"}</button><p className="mt-4 text-sm leading-6 text-[#aeb2b2]">Navigate folios with Previous / Next. Use + and − to zoom. The page-turn effect is a prototype animation.</p></div>
+    <div className="rounded-xl border border-white/10 p-6"><p className="text-xs tracking-[.2em] uppercase text-[#c5a878]">Display settings</p><button onClick={()=>setModern(m=>!m)} className="mt-4 rounded-lg border border-white/20 px-4 py-3 text-sm hover:bg-white/10">{modern?"Restore uppercase manuscript style":"Toggle lowercase transcription"}</button><p className="mt-4 text-sm leading-6 text-[#aeb2b2]">Drag the manuscript to orbit it in 3D. Navigate folios with Previous / Next. Use + and − to zoom. The codex is rendered with CSS 3D transforms; physical page deformation is not yet simulated.</p></div>
     <div className="rounded-xl border border-[#c5a878]/30 bg-[#c5a878]/5 p-6"><p className="text-xs tracking-[.2em] uppercase text-[#c5a878]">Scholarly notice</p><p className="mt-4 text-sm leading-7 text-[#d3c9b7]">Codex α is an <strong>illustrative virtual codex</strong>, not a photographic or diplomatic facsimile of a historical manuscript. Its sample lines are selective and not a continuous, verified transcription. Folio numbering, layout, material, and letterforms are artistic reconstructions. Do not cite this prototype as manuscript evidence.</p></div>
    </div>
   </div>

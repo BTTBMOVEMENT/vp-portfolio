@@ -1,116 +1,90 @@
 "use client";
-import {useEffect,useRef,useState} from "react";
+import {useCallback,useEffect,useRef,useState} from "react";
 import Link from "next/link";
+
 const LETTERS=["α","β","γ","δ","ε","ζ","η","θ","ι","κ","λ","μ","ν","ξ","ο","π","ρ","σ","τ","υ","φ","χ","ψ","ω"];
-type GameApi={drop:(letter:string)=>void,reset:()=>void,dispose:()=>void};
+const COLS=8,ROWS=13;
+type Piece={id:number,l:string,x:number,y:number,level:number,falling:boolean};
+type Game={pieces:Piece[],nextId:number,selected:number|null,dragging:boolean,last:number,over:boolean,score:number,merges:number};
+const palette=["#e8b87e","#87d9e7","#e9a3db","#a4e2a4","#e7db84"];
+function initial():Game{return {pieces:[],nextId:1,selected:null,dragging:false,last:0,over:false,score:0,merges:0}}
 export default function GreekLetterMerge(){
- const mount=useRef<HTMLDivElement>(null),api=useRef<GameApi|null>(null);
- const [letter,setLetter]=useState("α"),[score,setScore]=useState(0),[merges,setMerges]=useState(0),[count,setCount]=useState(0),[status,setStatus]=useState("Loading 3D engine…"),[gameOver,setGameOver]=useState(false);
- const selected=useRef("α");selected.current=letter;
+ const canvas=useRef<HTMLCanvasElement>(null),game=useRef<Game>(initial()),[active,setActive]=useState("α"),[score,setScore]=useState(0),[merges,setMerges]=useState(0),[over,setOver]=useState(false),[count,setCount]=useState(0);
+ const activeRef=useRef("α");activeRef.current=active;
+ const spawn=useCallback((letter:string)=>{const g=game.current;if(g.over)return;const x=3;if(g.pieces.some(p=>!p.falling&&p.x===x&&p.y<=0)){g.over=true;setOver(true);return}g.pieces.push({id:g.nextId++,l:letter,x,y:-1,level:1,falling:true});g.selected=g.pieces[g.pieces.length-1].id;setCount(g.pieces.length)},[]);
+ const reset=()=>{game.current=initial();setScore(0);setMerges(0);setOver(false);setCount(0)};
  useEffect(()=>{
-  let cancelled=false;let cleanup=()=>{};
-  (async()=>{
-   try{
-    const threeUrl="https://esm.sh/three@0.180.0";
-    const cannonUrl="https://esm.sh/cannon-es@0.20.0";
-    const [T,C]=await Promise.all([import(/* webpackIgnore: true */ threeUrl),import(/* webpackIgnore: true */ cannonUrl)]);
-    if(cancelled||!mount.current)return;
-    const host=mount.current;
-    const scene=new T.Scene();scene.background=new T.Color("#101b26");scene.fog=new T.Fog("#101b26",24,65);
-    const camera=new T.PerspectiveCamera(48,1,.1,120);
-    const renderer=new T.WebGLRenderer({antialias:true,alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.outputColorSpace=T.SRGBColorSpace;host.appendChild(renderer.domElement);
-    scene.add(new T.HemisphereLight("#c9e3ff","#4c3c2a",2.0));
-    const sun=new T.DirectionalLight("#fff0d2",3);sun.position.set(-5,14,8);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-14;sun.shadow.camera.right=14;sun.shadow.camera.top=18;sun.shadow.camera.bottom=-14;scene.add(sun);
-    const world=new C.World({gravity:new C.Vec3(0,-19,0)});world.allowSleep=true;world.defaultContactMaterial.friction=.65;world.defaultContactMaterial.restitution=.12;
-    const groundBody=new C.Body({mass:0,shape:new C.Box(new C.Vec3(6,.5,6)),position:new C.Vec3(0,-.5,0)});world.addBody(groundBody);
-    const floor=new T.Mesh(new T.BoxGeometry(12,.8,12),new T.MeshStandardMaterial({color:"#293a46",roughness:.85}));floor.position.y=-.4;floor.receiveShadow=true;scene.add(floor);
-    const grid=new T.GridHelper(12,12,"#647f91","#364c5d");grid.position.y=.012;scene.add(grid);
-    const railMat=new T.MeshStandardMaterial({color:"#bb9161",metalness:.5,roughness:.35});
-    for(const [x,z,sx,sz] of [[-6,0,.16,12],[6,0,.16,12],[0,-6,12,.16],[0,6,12,.16]]){
-      const rail=new T.Mesh(new T.BoxGeometry(sx,.5,sz),railMat);rail.position.set(x,.22,z);scene.add(rail);
-      const wall=new C.Body({mass:0,shape:new C.Box(new C.Vec3(sx/2,.6,sz/2)),position:new C.Vec3(x,.3,z)});world.addBody(wall);
+  const c=canvas.current;if(!c)return;const ctx=c.getContext("2d");if(!ctx)return;
+  let raf=0;let last=0;const w=480,h=650,cell=50,left=40,top=0;
+  function occupied(x:number,y:number,exclude:number){return game.current.pieces.some(p=>p.id!==exclude&&p.x===x&&p.y===y)}
+  function settle(p:Piece){p.falling=false;p.y=Math.max(0,p.y);game.current.selected=null;resolve()}
+  function resolve(){
+   const g=game.current;let changed=true,rounds=0;
+   while(changed&&rounds++<20){
+    changed=false;
+    for(const p of [...g.pieces]){
+     const cluster:Piece[]=[];const seen=new Set<number>();const queue=[p];
+     while(queue.length){const q=queue.pop()!;if(seen.has(q.id))continue;seen.add(q.id);cluster.push(q);for(const n of g.pieces){if(!n.falling&&n.l===q.l&&n.level===q.level&&!seen.has(n.id)&&Math.abs(n.x-q.x)+Math.abs(n.y-q.y)===1)queue.push(n)}}
+     if(cluster.length>=3){
+      const triple=cluster.slice(0,3),base=triple[0];g.pieces=g.pieces.filter(q=>!triple.includes(q));g.pieces.push({...base,level:base.level+1,id:g.nextId++});
+      g.score+=100*base.level*base.level;g.merges++;setScore(g.score);setMerges(g.merges);changed=true;
+      // Gravity after a merge, with stable ordering per column.
+      for(let x=0;x<COLS;x++){const col=g.pieces.filter(q=>!q.falling&&q.x===x).sort((a,b)=>b.y-a.y);col.forEach((q,i)=>q.y=ROWS-1-i)}
+      break;
+     }
     }
-    const items:{mesh:any,body:any,letter:string,level:number,size:number,age:number}[]=[];
-    const mats=new Map<string,any[]>();
-    function material(l:string,level:number){
-      const key=l+"-"+level;if(mats.has(key))return mats.get(key)!;
-      const canvas=document.createElement("canvas");canvas.width=256;canvas.height=256;
-      const ctx=canvas.getContext("2d")!;ctx.fillStyle=["#c9aa75","#7eafba","#ba8dc5","#e7bd76","#93bfa0"][Math.min(level-1,4)];ctx.fillRect(0,0,256,256);
-      ctx.strokeStyle="#ffffff55";ctx.lineWidth=12;ctx.strokeRect(12,12,232,232);
-      ctx.fillStyle="#292334";ctx.font="bold 165px Georgia,serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(l,128,133);
-      ctx.fillStyle="#403747";ctx.font="bold 20px sans-serif";ctx.fillText("LV "+level,128,227);
-      const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;
-      const face=new T.MeshStandardMaterial({map:texture,roughness:.66,metalness:.05});
-      const arr=[face,face,face,face,face,face];mats.set(key,arr);return arr;
-    }
-    let aimX=0,aimZ=0,angle=.65,elevation=.63,radius=23,dragging=false,lastX=0,lastY=0,dragged=false,over=false,frame=0,raf=0;
-    const aim=new T.Mesh(new T.RingGeometry(.35,.45,32),new T.MeshBasicMaterial({color:"#ffe4a1",side:T.DoubleSide}));aim.rotation.x=-Math.PI/2;aim.position.y=.045;scene.add(aim);
-    function spawn(l:string,level=1,x=aimX,z=aimZ,y=13){
-      if(over)return;
-      const size=1.05*Math.pow(1.3,level-1);
-      const mesh=new T.Mesh(new T.BoxGeometry(size,size,size),material(l,level));mesh.castShadow=true;mesh.receiveShadow=true;mesh.position.set(x,y,z);scene.add(mesh);
-      const body=new C.Body({mass:Math.pow(size,3),shape:new C.Box(new C.Vec3(size/2,size/2,size/2)),position:new C.Vec3(x,y,z),linearDamping:.12,angularDamping:.35});body.quaternion.setFromEuler((Math.random()-.5)*.15,(Math.random()-.5)*.15,0);world.addBody(body);
-      items.push({mesh,body,letter:l,level,size,age:0});setCount(items.length);
-    }
-    function remove(item:typeof items[number]){
-      scene.remove(item.mesh);item.mesh.geometry.dispose();world.removeBody(item.body);const i=items.indexOf(item);if(i>=0)items.splice(i,1);
-    }
-    function merge(){
-      const used=new Set<typeof items[number]>();
-      for(const a of [...items]){
-       if(used.has(a)||a.age<.8||a.body.position.y>11)continue;
-       const near=items.filter(b=>!used.has(b)&&b.letter===a.letter&&b.level===a.level&&b.age>.8&&Math.hypot(b.body.position.x-a.body.position.x,b.body.position.y-a.body.position.y,b.body.position.z-a.body.position.z)<a.size*2.15);
-       if(near.length<3)continue;
-       const trio=near.slice(0,3);trio.forEach(v=>used.add(v));
-       const x=trio.reduce((s,v)=>s+v.body.position.x,0)/3,z=trio.reduce((s,v)=>s+v.body.position.z,0)/3,y=Math.max(2,trio.reduce((s,v)=>s+v.body.position.y,0)/3+1.5);
-       trio.forEach(remove);spawn(a.letter,a.level+1,Math.max(-4.5,Math.min(4.5,x)),Math.max(-4.5,Math.min(4.5,z)),y);
-       setMerges(v=>v+1);setScore(v=>v+100*a.level*a.level);setCount(items.length);break;
-      }
-    }
-    function reset(){for(const i of [...items])remove(i);setCount(0);setScore(0);setMerges(0);setGameOver(false);over=false;aimX=0;aimZ=0}
-    function updateCamera(){camera.position.set(radius*Math.sin(angle)*Math.cos(elevation),radius*Math.sin(elevation),radius*Math.cos(angle)*Math.cos(elevation));camera.lookAt(0,4,0)}
-    const onDown=(e:PointerEvent)=>{dragging=true;dragged=false;lastX=e.clientX;lastY=e.clientY;renderer.domElement.setPointerCapture(e.pointerId)};
-    const onMove=(e:PointerEvent)=>{if(!dragging)return;const dx=e.clientX-lastX,dy=e.clientY-lastY;if(Math.abs(dx)+Math.abs(dy)>2)dragged=true;angle-=dx*.008;elevation=Math.max(.15,Math.min(1.4,elevation+dy*.006));lastX=e.clientX;lastY=e.clientY};
-    const onUp=()=>{dragging=false};
-    const onWheel=(e:WheelEvent)=>{e.preventDefault();radius=Math.max(13,Math.min(38,radius+e.deltaY*.02))};
-    const onKey=(e:KeyboardEvent)=>{if(e.code==="Space"&&!(e.target instanceof HTMLInputElement)){e.preventDefault();spawn(selected.current)}if(e.key==="ArrowLeft")aimX=Math.max(-5,aimX-.6);if(e.key==="ArrowRight")aimX=Math.min(5,aimX+.6);if(e.key==="ArrowUp")aimZ=Math.max(-5,aimZ-.6);if(e.key==="ArrowDown")aimZ=Math.min(5,aimZ+.6)};
-    renderer.domElement.addEventListener("pointerdown",onDown);renderer.domElement.addEventListener("pointermove",onMove);renderer.domElement.addEventListener("pointerup",onUp);renderer.domElement.addEventListener("pointercancel",onUp);renderer.domElement.addEventListener("wheel",onWheel,{passive:false});window.addEventListener("keydown",onKey);
-    const resize=()=>{const w=host.clientWidth,h=host.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)};const observer=new ResizeObserver(resize);observer.observe(host);resize();
-    let last=performance.now(),acc=0;
-    function tick(now:number){raf=requestAnimationFrame(tick);const dt=Math.min(.05,(now-last)/1000);last=now;acc+=dt;while(acc>=1/60){world.step(1/60);acc-=1/60}
-      frame++;if(frame%12===0)merge();
-      for(const item of items){item.age+=dt;item.mesh.position.copy(item.body.position);item.mesh.quaternion.copy(item.body.quaternion);if(item.body.position.y>11&&item.age>5&&!over){over=true;setGameOver(true)}}
-      aim.position.x=aimX;aim.position.z=aimZ;updateCamera();renderer.render(scene,camera);
-    }
-    raf=requestAnimationFrame(tick);api.current={drop:l=>spawn(l),reset,dispose:()=>{}};
-    setStatus("Ready — select a Greek letter and drop!");
-    cleanup=()=>{cancelAnimationFrame(raf);observer.disconnect();window.removeEventListener("keydown",onKey);renderer.domElement.removeEventListener("pointerdown",onDown);renderer.domElement.removeEventListener("pointermove",onMove);renderer.domElement.removeEventListener("pointerup",onUp);renderer.domElement.removeEventListener("pointercancel",onUp);renderer.domElement.removeEventListener("wheel",onWheel);for(const i of [...items])remove(i);for(const arr of mats.values()){arr[0].map.dispose();arr[0].dispose()}renderer.dispose();if(host.contains(renderer.domElement))host.removeChild(renderer.domElement);api.current=null};
-   }catch(e){setStatus("3D engine failed to load. Check your network and refresh.");console.error(e)}
-  })();
-  return()=>{cancelled=true;cleanup()};
- },[]);
- return <main className="min-h-screen bg-[#0b1119] px-4 pb-20 pt-28 text-[#eee9dd] md:px-10">
-  <div className="mx-auto max-w-7xl">
-   <Link href="/bible" className="text-xs uppercase tracking-[.25em] text-[#bfa77c]">← The Bible</Link>
-   <div className="mt-7 flex flex-wrap items-end justify-between gap-5"><div><p className="text-xs uppercase tracking-[.3em] text-[#bfa77c]">Interactive 3D language laboratory</p><h1 className="mt-2 font-serif text-4xl md:text-6xl">Greek Letter Merge</h1><p className="mt-3 text-sm text-[#aab7c4]">Drop Greek letter cubes · Match three nearby cubes · Grow their level</p></div>
-    <div className="flex gap-6 text-center"><div><p className="text-xs text-[#9caab9]">SCORE</p><p className="text-2xl font-bold">{score}</p></div><div><p className="text-xs text-[#9caab9]">MERGES</p><p className="text-2xl font-bold">{merges}</p></div><div><p className="text-xs text-[#9caab9]">BLOCKS</p><p className="text-2xl font-bold">{count}</p></div></div>
-   </div>
-   <div className="mt-8 grid gap-5 lg:grid-cols-[1fr_310px]">
-    <div className="relative overflow-hidden rounded-2xl border border-[#526374] bg-[#101b26]">
-      <div ref={mount} className="h-[510px] w-full md:h-[660px]" aria-label="Interactive 3D Greek block game"/>
-      <div className="pointer-events-none absolute left-4 top-4 rounded-lg bg-black/45 px-3 py-2 text-xs text-[#dce3e8]">Drag: orbit camera · Scroll: zoom<br/>Arrow keys: move drop point · Space: drop</div>
-      {gameOver&&<div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0b1119]/85"><h2 className="font-serif text-4xl">Stack Overflow!</h2><p className="mt-3">Final score: {score}</p><button className="mt-6 rounded-lg bg-[#cba56d] px-7 py-3 font-bold text-[#1b1b1b]" onClick={()=>api.current?.reset()}>Play again</button></div>}
-      <div className="absolute bottom-3 left-4 text-xs text-[#c5d2da]">{status}</div>
+   }
+   setCount(g.pieces.length);
+   if(g.pieces.some(q=>q.y<0)){g.over=true;setOver(true)}
+  }
+  function tick(t:number){raf=requestAnimationFrame(tick);const g=game.current;
+   if(t-last>410&&!g.over){last=t;for(const p of g.pieces.filter(p=>p.falling)){
+    if(p.y+1>=ROWS||occupied(p.x,p.y+1,p.id)){settle(p)}else p.y++;
+   }}
+   ctx!.clearRect(0,0,w,h);
+   const bg=ctx!.createLinearGradient(0,0,0,h);bg.addColorStop(0,"#192d43");bg.addColorStop(1,"#0a1729");ctx!.fillStyle=bg;ctx!.fillRect(0,0,w,h);
+   ctx!.strokeStyle="#8cc6db19";ctx!.lineWidth=1;
+   for(let x=0;x<=COLS;x++){ctx!.beginPath();ctx!.moveTo(left+x*cell,0);ctx!.lineTo(left+x*cell,h);ctx!.stroke()}
+   for(let y=0;y<=ROWS;y++){ctx!.beginPath();ctx!.moveTo(left,y*cell);ctx!.lineTo(left+COLS*cell,y*cell);ctx!.stroke()}
+   ctx!.fillStyle="#e6c18b";ctx!.font="bold 11px sans-serif";ctx!.textAlign="left";ctx!.fillText("GREEK LETTER LAB",10,18);
+   for(const p of g.pieces){
+    const x=left+p.x*cell+cell/2,y=(p.y+.5)*cell;if(y<0)continue;
+    const color=palette[Math.min(p.level-1,palette.length-1)];
+    ctx!.save();ctx!.textAlign="center";ctx!.textBaseline="middle";ctx!.font="bold "+(p.level>1?42:39)+"px Georgia,serif";
+    // Layered offset silhouettes produce extruded glyphs, not printed cubes.
+    ctx!.lineJoin="round";ctx!.lineWidth=2.5;
+    for(let d=7;d>=1;d--){ctx!.strokeStyle="#152637";ctx!.fillStyle="#385269";ctx!.strokeText(p.l,x+d*.62,y+d*.65);ctx!.fillText(p.l,x+d*.62,y+d*.65)}
+    ctx!.shadowColor=color;ctx!.shadowBlur=p.id===g.selected?24:8;ctx!.strokeStyle="#fff2cf";ctx!.fillStyle=color;ctx!.strokeText(p.l,x,y);ctx!.fillText(p.l,x,y);ctx!.shadowBlur=0;
+    if(p.level>1){ctx!.font="bold 10px sans-serif";ctx!.fillStyle="#ffffff";ctx!.fillText("×"+p.level,x,y+23)}
+    if(p.id===g.selected){ctx!.strokeStyle="#fff3a6aa";ctx!.setLineDash([3,4]);ctx!.strokeRect(left+p.x*cell+3,p.y*cell+3,cell-6,cell-6)}
+    ctx!.restore();
+   }
+  }
+  raf=requestAnimationFrame(tick);
+  function cellAt(e:PointerEvent){const rect=c!.getBoundingClientRect();const px=(e.clientX-rect.left)*w/rect.width,py=(e.clientY-rect.top)*h/rect.height;return {x:Math.floor((px-left)/cell),y:Math.floor(py/cell)}}
+  function down(e:PointerEvent){const g=game.current;if(g.over)return;const v=cellAt(e);const p=[...g.pieces].reverse().find(q=>q.x===v.x&&q.y===v.y);if(!p)return;g.selected=p.id;g.dragging=true;c!.setPointerCapture(e.pointerId)}
+  function move(e:PointerEvent){const g=game.current;if(!g.dragging)return;const v=cellAt(e);const p=g.pieces.find(q=>q.id===g.selected);if(!p)return;const nx=Math.max(0,Math.min(COLS-1,v.x));if(nx!==p.x&&!occupied(nx,p.y,p.id))p.x=nx}
+  function up(){const g=game.current;if(!g.dragging)return;g.dragging=false;const p=g.pieces.find(q=>q.id===g.selected);if(p){p.falling=true;g.last=0}g.selected=null}
+  function key(e:KeyboardEvent){if(e.code==="Space"){e.preventDefault();spawn(activeRef.current)}if(e.key==="ArrowLeft"||e.key==="ArrowRight"){const p=game.current.pieces.find(q=>q.id===game.current.selected);if(p){const nx=Math.max(0,Math.min(COLS-1,p.x+(e.key==="ArrowLeft"?-1:1)));if(!occupied(nx,p.y,p.id))p.x=nx}}}
+  c.addEventListener("pointerdown",down);c.addEventListener("pointermove",move);c.addEventListener("pointerup",up);c.addEventListener("pointercancel",up);window.addEventListener("keydown",key);
+  return()=>{cancelAnimationFrame(raf);c.removeEventListener("pointerdown",down);c.removeEventListener("pointermove",move);c.removeEventListener("pointerup",up);c.removeEventListener("pointercancel",up);window.removeEventListener("keydown",key)};
+ },[spawn]);
+ return <main className="min-h-screen bg-[#090f1c] px-4 pb-24 pt-28 text-[#e9e7e2] md:px-8">
+  <div className="mx-auto max-w-5xl"><Link href="/bible" className="text-xs uppercase tracking-[.22em] text-[#d2b685]">← The Bible</Link>
+   <div className="mt-7 flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs uppercase tracking-[.3em] text-[#d2b685]">Greek Arcade · Prototype 02</p><h1 className="mt-2 font-serif text-4xl md:text-6xl">Greek Letter Merge</h1><p className="mt-3 text-sm text-[#b3c4d2]">An arcade-style Greek keyboard and a fixed-view falling-letter world</p></div><div className="flex gap-7 text-center"><div><p className="text-xs text-[#9eb0c3]">SCORE</p><p className="text-2xl font-bold">{score}</p></div><div><p className="text-xs text-[#9eb0c3]">MERGES</p><p className="text-2xl font-bold">{merges}</p></div><div><p className="text-xs text-[#9eb0c3]">LETTERS</p><p className="text-2xl font-bold">{count}</p></div></div></div>
+   <div className="mx-auto mt-8 max-w-[740px] rounded-[38px] border-[7px] border-[#31485f] bg-gradient-to-b from-[#2d4359] via-[#172638] to-[#0b1422] p-3 shadow-[0_28px_70px_#000a,inset_0_3px_2px_#b4d3ec55] md:p-6">
+    <div className="relative mx-auto max-w-[520px] overflow-hidden rounded-2xl border-[8px] border-[#0a1727] bg-[#122238] shadow-[inset_0_0_30px_#000b,0_6px_18px_#0007]">
+      <canvas ref={canvas} width={480} height={650} className="block aspect-[480/650] w-full touch-none" aria-label="Fixed front-view Greek letter puzzle board. Drag letters horizontally to move them."/>
+      {over&&<div className="absolute inset-0 flex flex-col items-center justify-center bg-[#07111e]/90"><h2 className="font-serif text-4xl text-[#f6dbab]">Game Over</h2><p className="mt-3">Score {score}</p><button onClick={reset} className="mt-6 rounded-xl bg-[#e1bc7f] px-8 py-3 font-bold text-[#172536]">Play Again</button></div>}
     </div>
-    <aside className="rounded-2xl border border-[#465363] bg-[#16212c] p-5">
-      <p className="text-xs uppercase tracking-[.25em] text-[#c7ac7e]">Greek keyboard</p>
-      <p className="mt-2 text-sm text-[#aab7c4]">Choose a letter, then press DROP.</p>
-      <div className="mt-5 grid grid-cols-4 gap-2">{LETTERS.map(l=><button key={l} onClick={()=>setLetter(l)} aria-pressed={letter===l} className={`aspect-square rounded-lg border font-serif text-2xl transition ${letter===l?"border-[#e8c58c] bg-[#bba071] text-[#1a2026]":"border-white/10 bg-white/5 hover:bg-white/15"}`}>{l}</button>)}</div>
-      <button disabled={gameOver||status.startsWith("Loading")||status.startsWith("3D engine failed")} onClick={()=>api.current?.drop(letter)} className="mt-5 w-full rounded-xl bg-[#d7ae72] py-4 text-lg font-bold text-[#18212b] transition hover:bg-[#f0cb93] disabled:opacity-40">DROP {letter} ↓</button>
-      <button onClick={()=>api.current?.reset()} className="mt-3 w-full rounded-lg border border-white/20 py-3 text-sm hover:bg-white/10">Restart game</button>
-      <div className="mt-7 border-t border-white/10 pt-5 text-sm leading-7 text-[#bbc7d0]"><p className="font-semibold text-[#e7d1a8]">How to play</p><p>Drop cubes into the 3D arena. Three nearby cubes with the same Greek letter and level merge into one larger cube. Keep the stack below the danger height.</p><p className="mt-3 text-xs text-[#93a4b3]">Prototype: WebGL 3D + rigid-body physics. Requires an internet connection to load the 3D modules.</p></div>
-    </aside>
+    <div className="mx-auto mt-5 flex max-w-[520px] items-center justify-between px-3"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-[#7deda5] shadow-[0_0_12px_#7deda5]"/><span className="text-[10px] tracking-[.2em] text-[#b6cad9]">HELLENIC CONSOLE</span></div><button onClick={reset} className="rounded-full border border-white/20 px-4 py-2 text-xs text-[#d8e2e9] hover:bg-white/10">RESET</button></div>
+    <div className="mx-auto mt-5 max-w-[620px] rounded-[25px] border border-[#708ba5]/40 bg-gradient-to-b from-[#30465f] to-[#152539] px-3 pb-6 pt-5 shadow-[inset_0_3px_5px_#b4cee633,0_12px_20px_#0009] md:px-6" style={{perspective:"850px"}}>
+     <p className="mb-4 text-center text-[10px] font-bold tracking-[.38em] text-[#a5c0d2]">ΕΛΛΗΝΙΚΟ ΠΛΗΚΤΡΟΛΟΓΙΟ</p>
+     <div className="grid grid-cols-6 gap-2 md:gap-3" style={{transform:"rotateX(10deg)",transformOrigin:"center bottom"}}>{LETTERS.map(l=><button key={l} onClick={()=>{setActive(l);spawn(l)}} title={`Drop ${l}`} className={`relative aspect-[1.12] rounded-lg border-b-[6px] border-r-[3px] font-serif text-2xl font-bold transition active:translate-y-[4px] active:border-b-[2px] md:text-3xl ${active===l?"border-b-[#74502c] border-r-[#aa7b43] bg-gradient-to-b from-[#ffdfa6] to-[#cfa46b] text-[#392817] shadow-[0_0_15px_#d8b47a55]":"border-b-[#111d2d] border-r-[#182738] bg-gradient-to-b from-[#9eafbe] via-[#60798f] to-[#344d66] text-[#fff4df] shadow-[inset_0_2px_2px_#ffffff77,0_5px_5px_#0007]"}`}>{l}</button>)}</div>
+     <div className="mt-6 flex items-center gap-3"><div className="flex-1 text-xs leading-5 text-[#b6c9d7]">Press a key to drop a letter. Drag falling letters sideways in the playfield.</div><button disabled={over} onClick={()=>spawn(active)} className="rounded-xl border-b-[5px] border-[#8b5b37] bg-gradient-to-b from-[#f2d8a9] to-[#bc8754] px-5 py-3 font-bold text-[#33251c] active:translate-y-1 active:border-b-0 disabled:opacity-40">DROP ↓</button></div>
+    </div>
    </div>
+   <p className="mx-auto mt-5 max-w-[740px] text-center text-sm leading-7 text-[#a8bbcb]">Fixed front-view arcade board · Sculpted Greek letter silhouettes · Drag to move and release · Three adjacent identical letters merge into a larger letter. Keyboard uses 3D-styled keys; glyph extrusion is simulated in canvas, not a polygonal 3D mesh.</p>
   </div>
  </main>;
 }

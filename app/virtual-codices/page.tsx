@@ -1,0 +1,1 @@
+import type {Metadata} from "next";import CodexViewer from "./CodexViewer";export const metadata:Metadata={title:"Virtual Codices",description:"Experimental interactive virtual codex viewer",robots:{index:false,follow:false}};export default function Page(){return <CodexViewer/>}

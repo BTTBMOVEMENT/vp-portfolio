@@ -14,6 +14,7 @@ const navItems = [
   { label: "Journal", href: "/journal" },
   { label: "My Album", href: "/my-album" },
   { label: "Contact", href: "/#contact" },
+  { label: "Greek Letter Game", href: "/greek-letter-game" },
 ] as const;
 
 function isActive(pathname: string, href: string) {
@@ -22,6 +23,7 @@ function isActive(pathname: string, href: string) {
   if (href === "/works") return pathname === "/works" || pathname.startsWith("/projects/");
   if (href === "/journal") return pathname === "/journal" || pathname.startsWith("/journal/");
   if (href === "/my-album") return pathname === "/my-album" || pathname === "/my-vision";
+  if (href === "/greek-letter-game") return pathname === "/greek-letter-game" || pathname === "/greek-blocks";
   return false;
 }
 

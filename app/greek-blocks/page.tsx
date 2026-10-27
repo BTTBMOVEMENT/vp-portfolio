@@ -1,12 +1,6 @@
-import type { Metadata } from "next";
-import GreekLetterForest from "./GreekLetterForest";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Greek Letter Forest | Interactive Greek Alphabet Game",
-  description: "A miniature 3D woodland and a sculpted Greek mechanical keyboard: drop, move and merge real 3D Greek letters.",
-  robots: { index: false, follow: false },
-};
-
-export default function Page() {
-  return <GreekLetterForest />;
+// Keep older prototype links working while the game now lives at its own home destination.
+export default function LegacyGreekBlocksPage() {
+  redirect("/greek-letter-game");
 }

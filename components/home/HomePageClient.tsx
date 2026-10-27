@@ -311,6 +311,17 @@ export default function HomePageClient({ siteSettings }: HomePageClientProps) {
           ghostText="ALBUM"
         />
 
+        <RouteGatewaySection
+          sectionLabel="Greek Letter Game"
+          title="A little forest where Greek letters come to life."
+          description="Enter a playful miniature 3D woodland. Press the Greek keyboard to drop letters from the sky, move them around, and combine three matching letters to grow."
+          buttonLabel="Greek Letter Game"
+          href="/greek-letter-game"
+          overlayTitle="Greek Letter Game"
+          overlaySubtitle="Entering the little Greek forest"
+          ghostText="GREEK"
+        />
+
         <section id="contact" className="border-t border-white/10 px-5 py-20 sm:px-8">
           <div className="mx-auto max-w-6xl">
             <div className="grid gap-10 lg:grid-cols-[1fr_0.9fr]">

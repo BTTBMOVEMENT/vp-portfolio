@@ -446,10 +446,10 @@ export default function GreekLetterForest() {
   },[]);
   return <main className="min-h-screen bg-[#f6f6ef] px-3 pb-20 pt-24 text-[#3d594b] sm:px-6">
     <div className="mx-auto max-w-5xl">
-      <Link href="/bible" className="text-xs font-medium uppercase tracking-[.22em] text-[#6e9b80]">← The Bible</Link>
+      <Link href="/" className="text-xs font-medium uppercase tracking-[.22em] text-[#6e9b80]">← Home</Link>
       <div className="mt-6 flex flex-wrap items-end justify-between gap-4">
         <div><p className="text-xs uppercase tracking-[.31em] text-[#95b2a0]">A little woodland game · 3D study prototype</p>
-          <h1 className="mt-2 font-serif text-4xl text-[#4a705b] sm:text-6xl">Greek Letter Forest</h1>
+          <h1 className="mt-2 font-serif text-4xl text-[#4a705b] sm:text-6xl">Greek Letter Game</h1>
           <p className="mt-3 text-sm text-[#749181]">A tiny world of Greek letters, flowers and playful discoveries</p>
         </div>
         <div className="flex gap-5 rounded-2xl border border-[#d9e8dc] bg-white/80 px-5 py-3 text-center shadow-sm">

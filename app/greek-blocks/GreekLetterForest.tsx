@@ -43,7 +43,7 @@ export default function GreekLetterForest() {
         const keyboard=new T.Scene();keyboard.background=new T.Color("#e7e3dc");
         const forestCamera=new T.OrthographicCamera(-8,8,7,-7,.1,100);
         // Front-fixed camera, aimed at the actual center of the woodland playfield.
-        forestCamera.position.set(0,7.8,24);forestCamera.lookAt(0,4.2,0);
+        forestCamera.position.set(0,6.2,23);forestCamera.lookAt(0,2.75,0);
         const keyboardCamera=new T.PerspectiveCamera(30,2.5,.1,100);
         keyboardCamera.position.set(0,9.8,15.2);keyboardCamera.lookAt(0,0,0);
         forest.add(new T.HemisphereLight("#ffffff","#82ab93",2.8));
@@ -254,7 +254,7 @@ export default function GreekLetterForest() {
         const letters:Piece[]=[];const sparkles:Sparkle[]=[];
         let nextId=1,points=0,combo=0,activeDrag:Piece|null=null,pressedKey:string|null=null;
         const random=(a:number,b:number)=>a+Math.random()*(b-a);
-        function addLetter(letter:string,level=1,x=random(-2,2),y=10.35) {
+        function addLetter(letter:string,level=1,x=random(-2,2),y=7.65) {
           const group=letterMeshes(letter,level);forest.add(group);
           const p:Piece={id:nextId++,letter,level,x,y,vx:random(-.4,.4),vy:0,spin:random(-.4,.4),radius:.54*Math.pow(1.18,level-1),group,held:false,age:0};
           letters.push(p);setPiecesCount(letters.length);return p;
@@ -329,7 +329,7 @@ export default function GreekLetterForest() {
           const at=new T.Vector3();
           if(ray.ray.intersectPlane(dragPlane,at)){
             activeDrag.x=Math.max(-3.45,Math.min(3.45,at.x));
-            activeDrag.y=Math.max(.85,Math.min(10.2,at.y));
+            activeDrag.y=Math.max(.85,Math.min(7.8,at.y));
             activeDrag.vy=0;activeDrag.vx=0;
           }
         }
@@ -348,7 +348,7 @@ export default function GreekLetterForest() {
         window.addEventListener("keydown",onKey);
         function resize(){
           const w=host.clientWidth,h=host.clientHeight,topH=h*forestFraction,bottomH=h-topH;
-          const aspect=w/topH,halfHeight=6.8,halfWidth=Math.max(6.5,halfHeight*aspect);
+          const aspect=w/topH,halfHeight=5.5,halfWidth=Math.max(6.25,halfHeight*aspect);
           forestCamera.left=-halfWidth;forestCamera.right=halfWidth;
           forestCamera.top=halfWidth/aspect;forestCamera.bottom=-halfWidth/aspect;forestCamera.updateProjectionMatrix();
           keyboardCamera.aspect=w/bottomH;
@@ -359,7 +359,7 @@ export default function GreekLetterForest() {
           renderer.setSize(w,h,false);
         }
         const resizeObserver=new ResizeObserver(resize);resizeObserver.observe(host);resize();
-        addLetter("α",1,-1.25,8.4);addLetter("β",1,.85,10.1);
+        addLetter("α",1,-1.25,7.3);addLetter("β",1,.85,7.9);
         let last=performance.now(),mergeAt=0,raf=0;
         function render(now:number){
           raf=requestAnimationFrame(render);
